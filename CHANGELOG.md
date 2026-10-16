@@ -3,6 +3,12 @@
 All notable changes to Potato Quiz. Versions follow `major.minor.patch`:
 **minor** for new features or question batches, **patch** for fixes and small tweaks.
 
+## 2.2.0 — 2026-10-16
+- **New Animals family** with 8 categories: General, Mammals, Birds, Ocean Life, Reptiles & Amphibians, Insects & Bugs, Pets & Dog Breeds, and Dinosaurs & Prehistoric (296 questions).
+- **7,754 new questions** across every family. The bank is now 18,425 questions, and each family grew by about 240–300. Thin categories got the most, such as History › General, Disney › General, TV › General, Cartoons and Horror.
+- Quality first: categories with no good fresh material left were stopped early instead of padded. Every new question was checked against the whole bank for repeats and for "giveaway" answers that echo the category name.
+- Fixed two wrong Pokémon answers (Katy's gym type, Sandy Shocks).
+
 ## 2.1.3 — 2026-10-16
 - **Item sounds:** earning an item now plays a louder power-up sound right away, using an item plays a whoosh-and-zap, and a Shield block plays a clank. You can preview them in Settings › Effects.
 - Groundwork for the upcoming **Animals** family. Its categories stay hidden until questions arrive.
