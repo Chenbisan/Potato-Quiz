@@ -50,6 +50,10 @@
   .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
   .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .setTabs { flex-wrap: wrap; }
+  #settings [data-stab] { display: none; }
+  #settings [data-stab].shown { display: block; }
+  .tableScroll { overflow-x: auto; }
   .tabs button.on { background: var(--accent); color: #222; font-weight: 700; }
   table { width: 100%; border-collapse: collapse; }
   th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #2f2f5c; vertical-align: top; }
@@ -108,6 +112,9 @@
   .badges { display: flex; justify-content: space-between; font-size: .85rem; margin-top: 4px; gap: 6px; }
   .itemBar { margin-top: 22px; padding-top: 16px; border-top: 1px solid #2f2f5c; }
   .itemList { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+  .rewardPill { background: #ffcc33; color: #2a1d00; }
+  .rewardHint { text-align: center; margin: 0 0 10px; color: #ffcc33; font-weight: 600; }
+  .rarityTag { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; color: var(--rc); border: 1px solid var(--rc); background: rgba(0,0,0,.25); vertical-align: middle; white-space: nowrap; }
   .itemCard { text-align: left; background: #2d2d63; border: 1px solid #4a4a8a; padding: 10px 12px; border-radius: 10px; font-weight: 700; }
   .itemCard small { display: block; font-weight: 400; color: var(--muted); font-size: .8rem; margin-top: 3px; }
   .itemCard.passive { border-style: dashed; }
@@ -229,6 +236,11 @@
     <button class="primary" style="margin-top:4px;font-size:1.2rem" onclick="startGame()">Start game →</button>
   </div>
   <div class="card">
+    <h3 style="margin:0">Multiple-choice answers</h3>
+    <div class="chips" id="choicePicker"></div>
+    <p class="muted" style="margin-bottom:0" id="choiceInfo"></p>
+  </div>
+  <div class="card">
     <h3 style="margin:0">Difficulties in this game <span class="muted" style="font-size:.9rem;font-weight:400">— click to turn on/off</span></h3>
     <div class="chips" id="tierPicker"></div>
     <p class="muted" style="margin-bottom:0">Hard Lock, Exodia and Beginner's Luck only use the difficulties that are on.</p>
@@ -309,6 +321,11 @@
         <input id="qW2" placeholder="Wrong option 2" style="flex:1">
         <input id="qW3" placeholder="Wrong option 3" style="flex:1">
       </div>
+      <div class="row">
+        <input id="qW4" placeholder="Wrong option 4 (6-answer games)" style="flex:1">
+        <input id="qW5" placeholder="Wrong option 5 (6-answer games)" style="flex:1">
+      </div>
+      <p class="muted" style="margin-top:2px">Options 4 and 5 are only used in 6-answer games. Leave them blank and the game picks look-alike answers from the same category.</p>
       <label>Picture or audio clip (optional — e.g. "Who is this?" or "Name that tune!")</label>
       <div class="row">
         <button onclick="qFile.click()">📎 Choose picture or audio…</button>
@@ -331,6 +348,9 @@
         <h3 style="margin:0">Question bank (<span id="qCount">0</span>)</h3>
         <div class="row">
           <select id="qFilter" onchange="renderQuestions()"></select>
+          <select id="qTypeFilter" onchange="renderQuestions()"><option value="">All question types</option>
+            <option value="mc">☑️ Multiple choice</option><option value="open">✍️ Open answer (no choices)</option>
+            <option value="image">🖼️ Picture</option><option value="audio">🎵 Audio clip</option><option value="nomedia">No picture or audio</option></select>
           <select id="qCatFilter" onchange="renderQuestions()"></select>
         </div>
       </div>
@@ -367,6 +387,7 @@
   <div class="tabs">
     <button id="stTabP" class="on" onclick="statsTab('p')">Players</button>
     <button id="stTabQ" onclick="statsTab('q')">Questions</button>
+    <button id="stTabI" onclick="statsTab('i')">Items</button>
   </div>
   <div class="card" id="statsQ" style="display:none">
     <div class="row">
@@ -381,6 +402,19 @@
       <tbody id="qStatsTable"></tbody></table>
     <p class="muted" id="qStatsInfo"></p>
   </div>
+  <div class="card" id="statsI" style="display:none">
+    <div class="row">
+      <select id="isView" onchange="renderItemStats()">
+        <option value="used">Most used</option><option value="unused">Most unused (still held when a game ended)</option>
+        <option value="shown">Shown up the most</option><option value="rate">Highest % used</option>
+      </select>
+    </div>
+    <table style="margin-top:12px"><thead><tr><th>#</th><th>Item</th><th>Rarity</th><th title="Times it appeared: from a streak or as a question prize">Shown</th>
+      <th title="Times a player got it (question prizes only count when answered right)">Earned</th><th>Used</th><th title="Still in a player's hand when a game ended">Unused</th><th>% Used</th></tr></thead>
+      <tbody id="itemStatsTable"></tbody></table>
+    <p class="muted" id="itemStatsInfo"></p>
+    <div class="row"><button class="small bad" onclick="resetItemStats()">Reset item stats</button></div>
+  </div>
   <div class="card" id="statsP">
     <table><thead><tr><th>Player</th><th>Games</th><th>Wins</th><th>Win %</th><th>Correct</th><th>Incorrect</th><th>% Correct</th></tr></thead>
       <tbody id="statsTable"></tbody></table>
@@ -391,12 +425,20 @@
 
 <section id="settings" class="screen">
   <div class="topbar"><h2>Settings</h2><button class="ghost" onclick="go('menu')">← Menu</button></div>
-  <div class="card">
+  <div class="tabs setTabs" id="setTabs">
+    <button data-t="game" onclick="settingsTab('game')">🎯 Game</button>
+    <button data-t="items" onclick="settingsTab('items')">🎒 Items</button>
+    <button data-t="timing" onclick="settingsTab('timing')">⏱️ Timer</button>
+    <button data-t="fx" onclick="settingsTab('fx')">✨ Effects</button>
+    <button data-t="data" onclick="settingsTab('data')">💾 Data</button>
+  </div>
+
+  <div class="card" data-stab="game">
     <label>Points needed to win</label>
     <input type="number" id="setTarget" min="1" style="width:140px" onchange="saveSettings()">
     <p class="muted">The first player to reach this score wins the game.</p>
   </div>
-  <div class="card">
+  <div class="card" data-stab="game">
     <label>Players choose their question by</label>
     <div class="tabs" style="margin:6px 0 0">
       <button id="modeTier" onclick="setPickMode('tier')">Difficulty</button>
@@ -407,28 +449,28 @@
       Show the 🎰 Gamble button — a random question worth double if right, but double is taken away if wrong</label>
     <p class="muted" style="margin-top:6px">Gamble isn't offered on a turn where the player used Double Points or Triple Threat, or while they're locked.</p>
     <div class="row" style="gap:24px">
-      <div><label>🎰 Gamble cooldown — each player can Gamble once every</label>
-        <input type="number" id="gambleCd" min="1" max="20" style="width:90px" onchange="saveChoiceSettings()"> <span class="muted">turns (1 = no cooldown)</span></div>
+      <div><label>🎰 Gamble cooldown — after gambling, a player waits</label>
+        <input type="number" id="gambleCd" min="0" max="20" style="width:90px" onchange="saveChoiceSettings()"> <span class="muted">turn(s) before gambling again (0 = no cooldown)</span></div>
       <div><label class="switch" style="margin-top:22px"><input type="checkbox" id="gambleNeedsWin" onchange="saveChoiceSettings()">
         After a Gamble, a player must get a regular question right before gambling again</label></div>
       <div><label>🎲 Random bonus — extra points for getting a Random question right</label>
         <input type="number" id="randomBonus" min="0" max="20" style="width:90px" onchange="saveChoiceSettings()"> <span class="muted">points (0 = off)</span></div>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-stab="fx">
     <h3 style="margin-top:0">✨ Effects</h3>
     <label class="switch"><input type="checkbox" id="fxOn" onchange="saveFxSettings()"> Animations — screen transitions and points flying to / dropping off players</label>
     <label class="switch" style="margin-top:10px"><input type="checkbox" id="sfxOn" onchange="saveFxSettings()"> Sound effects — right / wrong answers, points, items and the winner</label>
     <div class="row" style="margin-top:10px"><button class="small" onclick="sfx('right')">▶ Right</button><button class="small" onclick="sfx('wrong')">▶ Wrong</button>
       <button class="small" onclick="sfx('item')">▶ Item</button><button class="small" onclick="sfx('win')">▶ Winner</button></div>
   </div>
-  <div class="card">
+  <div class="card" data-stab="timing">
     <h3 style="margin-top:0">🏷️ Question preview</h3>
     <label>Show the category &amp; difficulty for this many seconds before each question</label>
     <input type="number" id="introSecs" min="0" max="30" step="0.5" style="width:120px" onchange="saveIntroSetting()">
     <p class="muted">The question appears automatically afterwards (the host can also click "Show now"). Set to 0 to skip the preview.</p>
   </div>
-  <div class="card">
+  <div class="card" data-stab="timing">
     <div class="row" style="justify-content:space-between">
       <h3 style="margin:0">⏱️ Answer timer</h3>
       <label class="switch"><input type="checkbox" id="timerOn" onchange="saveTimerSettings()"> Timer enabled</label>
@@ -441,7 +483,7 @@
         If time runs out, the answer is shown and it counts as wrong.</p>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-stab="items">
     <div class="row" style="justify-content:space-between">
       <h3 style="margin:0">🎒 Items</h3>
       <label class="switch"><input type="checkbox" id="itemsEnabled" onchange="saveItemSettings()"> Items enabled</label>
@@ -452,18 +494,25 @@
       <label>Give an item at these streak lengths</label>
       <input id="itemStreaks" placeholder="3, 5, 7" style="width:200px" onchange="saveItemSettings()">
       <p class="muted" style="margin-top:4px">Separate numbers with commas. With 3, 5, 7, a player earns an item on their 3rd, 5th and 7th answer in a row.</p>
-      <table style="margin-top:10px"><thead><tr><th>Item</th><th>What it does</th><th style="text-align:center">🔥 Hot streak</th><th style="text-align:center">🧊 Cold streak</th></tr></thead>
-        <tbody id="itemTable"></tbody></table>
+      <label class="switch" style="margin-top:14px"><input type="checkbox" id="rewardsOn"
+        onchange="data.settings.items.rewards = this.checked; save(); renderItemSettings(); toast('Saved')"> 🎁 Question prizes — players in the bottom half can find an item on a question they pick</label>
+      <div class="row" id="rewardChanceRow"><span class="muted">Chance per picked question:</span> <input type="number" id="rewardChance" min="0" max="100" style="width:80px"
+        onchange="data.settings.items.rewardChance = Math.min(100, Math.max(0, parseInt(this.value) || 0)); save(); toast('Saved')"> <span class="muted">%. Not for Random, Gamble or Exodia draws; the item is won by answering correctly. Tick which items can be prizes below.</span></div>
+      <label style="margin-top:14px">How often each rarity is picked when an item is earned</label>
+      <div class="row" id="rarityWeights"></div>
+      <p class="muted" style="margin-top:4px">These are relative weights (60 / 30 / 10 = 60% Common, 30% Rare, 10% Legendary). Set one to 0 to switch that rarity off.</p>
+      <div class="tableScroll"><table style="margin-top:10px"><thead><tr><th>Item</th><th>Rarity</th><th>What it does</th><th style="text-align:center">🔥 Hot streak</th><th style="text-align:center">🧊 Cold streak</th><th style="text-align:center">🎁 Question prize</th></tr></thead>
+        <tbody id="itemTable"></tbody></table></div>
       <p class="muted">Untick both boxes to turn an item off completely.</p>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-stab="data">
     <h3 style="margin-top:0">🔁 Question counter</h3>
     <p class="muted">The game counts how many times each question has been shown (see the "Seen" column in Edit Questions).
       Questions seen more often are less likely to come up, so the team sees fewer repeats.</p>
     <button class="small bad" onclick="resetSeenCounts()">Reset "seen" counts and % correct</button>
   </div>
-  <div class="card">
+  <div class="card" data-stab="data">
     <h3 style="margin-top:0">Backup</h3>
     <p class="muted">Questions are saved automatically on this computer. Use these to back them up or move them to another computer.</p>
     <div class="row">
@@ -480,7 +529,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '1.7.0';
+const APP_VERSION = '1.8.0';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -7294,7 +7343,10 @@ function upgrade(d) {
   d.settings.introSeconds ??= 2.5;
   d.settings.fx ??= true;  // animations: screen transitions, flying points
   d.settings.sfx ??= true; // sound effects
-  d.settings.gambleCooldown ??= 2; // a player can Gamble at most once every N of their turns
+  // Gamble cooldown = how many of their own turns a player waits after gambling (0 = none). Before 1.8 it meant
+  // "once every N turns" (N − 1 turns of waiting), so older saves are converted once.
+  if ((d.settings.rev ?? 1) < 5 && d.settings.gambleCooldown != null) d.settings.gambleCooldown = Math.max(0, d.settings.gambleCooldown - 1);
+  d.settings.gambleCooldown ??= 1;
   d.settings.randomBonus ??= 2;    // extra points for a correct answer on a 🎲 Random question
   d.settings.gambleNeedsWin ??= true; // after a Gamble, a player must get a regular question right before gambling again
   // Saved settings still on an earlier default preview time move to the current default (2.5 s); custom values are kept
@@ -7307,6 +7359,7 @@ function upgrade(d) {
     if (d.settings.randomBonus === 1) d.settings.randomBonus = 2;
     d.settings.rev = 4;
   }
+  if (d.settings.rev < 5) d.settings.rev = 5;
   if (!d.categories) {
     d.categories = structuredClone(DEFAULT.categories);
     d.questions.forEach(q => q.categoryId ??= DEFAULT.questions.find(x => x.id === q.id)?.categoryId || '');
@@ -7372,6 +7425,10 @@ function upgrade(d) {
   }
   d.settings.items ??= defaultItemSettings();
   for (const k in ITEMS) d.settings.items.pools[k] ??= { hot: ITEMS[k].hot, cold: ITEMS[k].cold };
+  d.settings.items.rarity ??= {}; for (const k in ITEMS) d.settings.items.rarity[k] ??= DEFAULT_RARITY[k] ?? 1;
+  d.settings.items.rarityWeights ??= { 1: 60, 2: 30, 3: 10 };
+  for (const k in ITEMS) d.settings.items.pools[k].reward ??= ITEMS[k].hot;
+  d.settings.items.rewardChance ??= 20; d.settings.items.rewards ??= true;
   return d;
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { alert('Could not save: ' + e.message); } }
@@ -7479,6 +7536,8 @@ function renderMenu() {
 
 // ---------- Settings ----------
 function renderSettings() {
+  let tab = 'game'; try { tab = localStorage.getItem('potatoQuizSettingsTab') || 'game'; } catch (e) {}
+  settingsTab(tab);
   document.getElementById('setTarget').value = data.settings.targetPoints;
   document.getElementById('modeTier').classList.toggle('on', data.settings.pickMode === 'tier');
   document.getElementById('modeCat').classList.toggle('on', data.settings.pickMode === 'cat');
@@ -7496,14 +7555,32 @@ function renderSettings() {
   document.getElementById('timerBody').style.opacity = tm.enabled ? 1 : .45;
   renderItemSettings();
 }
+// Settings are split into tabs; the last one opened is remembered on this device
+function settingsTab(t) {
+  if (!document.querySelector(`#setTabs [data-t="${t}"]`)) t = 'game';
+  document.querySelectorAll('#setTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  document.querySelectorAll('#settings [data-stab]').forEach(c => c.classList.toggle('shown', c.dataset.stab === t));
+  try { localStorage.setItem('potatoQuizSettingsTab', t); } catch (e) {}
+}
 function renderItemSettings() {
   const st = data.settings.items;
   document.getElementById('itemsEnabled').checked = st.enabled;
   document.getElementById('itemSettingsBody').style.opacity = st.enabled ? 1 : .45;
   document.getElementById('itemStreaks').value = st.streaks.join(', ');
+  document.getElementById('rewardChance').value = st.rewardChance;
+  document.getElementById('rewardsOn').checked = st.rewards;
+  document.getElementById('rewardChanceRow').style.opacity = st.rewards ? '' : '.45';
+  document.getElementById('rewardChance').disabled = !st.rewards;
+  document.getElementById('rarityWeights').innerHTML = [1, 2, 3].map(r => `<label class="switch" style="margin:0 14px 0 0">
+    <span class="rarityTag" style="--rc:${RARITIES[r].color}">${RARITIES[r].stars} ${RARITIES[r].name}</span>
+    <input type="number" min="0" max="100" style="width:70px" value="${st.rarityWeights[r] ?? 0}"
+      onchange="data.settings.items.rarityWeights[${r}] = Math.max(0, parseInt(this.value) || 0); save(); toast('Saved')"></label>`).join('');
   document.getElementById('itemTable').innerHTML = Object.entries(ITEMS).map(([k, it]) => `<tr>
-    <td style="white-space:nowrap"><b>${it.icon} ${it.name}</b></td><td class="muted">${esc(itemDesc(k))}${it.needsTimer ? ' <i>(only appears when the timer is on)</i>' : ''}</td>
-    ${['hot', 'cold'].map(kind => `<td style="text-align:center"><input type="checkbox" ${st.pools[k][kind] ? 'checked' : ''}
+    <td style="white-space:nowrap"><b>${it.icon} ${it.name}</b></td>
+    <td><select onchange="data.settings.items.rarity['${k}'] = +this.value; save(); toast('Saved')">${[1, 2, 3].map(r =>
+      `<option value="${r}" ${itemRarity(k) === r ? 'selected' : ''}>${RARITIES[r].stars} ${RARITIES[r].name}</option>`).join('')}</select></td>
+    <td class="muted">${esc(itemDesc(k))}${it.needsTimer ? ' <i>(only appears when the timer is on)</i>' : ''}</td>
+    ${['hot', 'cold', 'reward'].map(kind => `<td style="text-align:center"><input type="checkbox" ${st.pools[k][kind] ? 'checked' : ''}
       onchange="data.settings.items.pools['${k}'].${kind} = this.checked; save(); toast('Saved')"></td>`).join('')}</tr>`).join('');
 }
 function saveItemSettings() {
@@ -7515,7 +7592,7 @@ function saveItemSettings() {
 }
 function saveChoiceSettings() {
   const cd = parseInt(document.getElementById('gambleCd').value), rb = parseInt(document.getElementById('randomBonus').value);
-  if (cd >= 1) data.settings.gambleCooldown = Math.min(20, cd);
+  if (cd >= 0) data.settings.gambleCooldown = Math.min(20, cd);
   data.settings.gambleNeedsWin = document.getElementById('gambleNeedsWin').checked;
   if (rb >= 0) data.settings.randomBonus = Math.min(20, rb);
   save(); renderSettings(); toast('Saved');
@@ -7607,9 +7684,11 @@ function sortQuestions(key) {
   renderQuestions();
 }
 function renderQuestions() {
-  const f = document.getElementById('qFilter').value, cf = document.getElementById('qCatFilter').value;
+  const f = document.getElementById('qFilter').value, cf = document.getElementById('qCatFilter').value, tf = document.getElementById('qTypeFilter').value;
   const inCat = cf === '*' ? () => true : choiceMatch(cf);
-  const list = data.questions.filter(q => (!f || q.tierId === f) && inCat(q));
+  const isMC = q => (q.wrong || []).some(Boolean);
+  const ofType = { '': () => true, mc: isMC, open: q => !isMC(q), image: q => q.media?.type === 'image', audio: q => q.media?.type === 'audio', nomedia: q => !q.media }[tf];
+  const list = data.questions.filter(q => (!f || q.tierId === f) && inCat(q) && ofType(q));
   if (qSort.key) {
     list.sort((a, b) => qSort.dir * (seenCount(a.id) - seenCount(b.id)));
   }
@@ -7618,7 +7697,7 @@ function renderQuestions() {
   document.getElementById('qTable').innerHTML = list.map(q => {
     const t = tierOf(q.tierId) || { name: '?', color: '#888' };
     const c = catOf(q.categoryId) || NO_CAT;
-    const tags = [q.wrong?.filter(Boolean).length && 'Multiple choice',
+    const tags = [isMC(q) ? '☑️ Multiple choice' : '✍️ Open answer',
       q.media && (q.media.type === 'image' ? '🖼️ Picture' : '🎵 Audio clip')].filter(Boolean);
     const mc = tags.length ? `<br><small class="muted">${tags.join(' · ')}</small>` : '';
     return `<tr><td>${esc(q.text)}${mc}</td><td>${esc(q.answer)}</td>
@@ -7627,7 +7706,7 @@ function renderQuestions() {
       <td>${seenCount(q.id)}</td>
       <td style="white-space:nowrap"><button class="small" onclick="editQuestion('${q.id}')">Edit</button>
       <button class="small bad" onclick="deleteQuestion('${q.id}')">Delete</button></td></tr>`;
-  }).join('') || `<tr><td colspan="6" class="muted">${cf === ''
+  }).join('') || `<tr><td colspan="6" class="muted">${cf === '' && !tf
       ? 'No uncategorized questions — every question has a category. Pick a category above to browse.'
       : 'No questions here yet — add one above.'}</td></tr>`;
 }
@@ -7660,7 +7739,7 @@ async function saveQuestion() {
     catch (e) { return alert('Could not save the file: ' + e.message); }
   } else if (formMedia) media = old;
   if (old && old.id !== media?.id) mediaDel(old.id);
-  const q = { text, answer, media, tierId: qTier.value, categoryId: qCat.value, wrong: [qW1.value.trim(), qW2.value.trim(), qW3.value.trim()].filter(Boolean) };
+  const q = { text, answer, media, tierId: qTier.value, categoryId: qCat.value, wrong: [qW1, qW2, qW3, qW4, qW5].map(el => el.value.trim()).filter(Boolean) };
   if (editingId) Object.assign(data.questions.find(x => x.id === editingId), q);
   else data.questions.push({ id: uid(), ...q });
   save(); toast(editingId ? 'Question updated' : 'Question added'); resetQForm(); renderQuestions(); renderTiers();
@@ -7669,12 +7748,12 @@ function editQuestion(id) {
   const q = data.questions.find(x => x.id === id); editingId = id;
   qText.value = q.text; qAnswer.value = q.answer; qTier.value = q.tierId; qCat.value = q.categoryId || '';
   setFormMedia(q.media || null);
-  [qW1, qW2, qW3].forEach((el, i) => el.value = q.wrong?.[i] || '');
+  [qW1, qW2, qW3, qW4, qW5].forEach((el, i) => el.value = q.wrong?.[i] || '');
   qFormTitle.textContent = 'Edit question'; qSaveBtn.textContent = 'Save changes'; qCancelBtn.style.display = '';
   window.scrollTo({ top: 0, behavior: 'smooth' }); qText.focus();
 }
 function resetQForm() {
-  editingId = null; [qText, qAnswer, qW1, qW2, qW3].forEach(el => el.value = ''); setFormMedia(null);
+  editingId = null; [qText, qAnswer, qW1, qW2, qW3, qW4, qW5].forEach(el => el.value = ''); setFormMedia(null);
   qFormTitle.textContent = 'Add a question'; qSaveBtn.textContent = 'Add question'; qCancelBtn.style.display = 'none';
 }
 function deleteQuestion(id) {
@@ -7773,6 +7852,15 @@ function toggleTier(id) {
   i >= 0 ? off.splice(i, 1) : off.push(id);
   saveRoster(); renderCatPicker();
 }
+const choiceCount = () => roster.choiceCount === 6 ? 6 : 4;
+function setChoiceCount(n) { roster.choiceCount = n; saveRoster(); renderChoicePicker(); }
+function renderChoicePicker() {
+  document.getElementById('choicePicker').innerHTML = [[4, 'Normal'], [6, 'Harder']].map(([n, label]) =>
+    `<button class="catToggle ${choiceCount() === n ? 'on' : ''}" style="--c:${n === 4 ? '#4da3ff' : '#ff7a59'}" onclick="setChoiceCount(${n})">${choiceCount() === n ? '✓' : '○'} ${n} answers <small>${label}</small></button>`).join('');
+  document.getElementById('choiceInfo').textContent = choiceCount() === 6
+    ? 'Each question shows 6 answers. Questions with only 3 wrong answers get 2 extra look-alike answers from the same category.'
+    : 'Each question shows 4 answers (the correct one plus 3 wrong ones).';
+}
 function renderTierPicker() {
   const off = offTiers();
   document.getElementById('tierPicker').innerHTML = data.tiers.map(t => {
@@ -7830,6 +7918,8 @@ function saveStats() { try { localStorage.setItem(SKEY, JSON.stringify(stats)); 
 const seenCount = id => stats.seen[id] || 0;
 // share of times a question was answered correctly (null if never answered)
 const rightRate = id => stats.answered[id] ? (stats.right[id] || 0) / stats.answered[id] : null;
+// items: key -> { shown (appeared: streak reward or question prize), earned, used, unused (still held when a game ended) }
+const itemStat = k => (stats.items ??= {})[k] ??= { shown: 0, earned: 0, used: 0, unused: 0 };
 function playerStat(name) { const k = name.toLowerCase(); return stats.players[k] ??= { name, games: 0, wins: 0, correct: 0, wrong: 0 }; }
 const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '—';
 function renderStats() {
@@ -7844,8 +7934,26 @@ function statsTab(t) {
   document.getElementById('statsP').style.display = t === 'p' ? '' : 'none';
   document.getElementById('statsQ').style.display = t === 'q' ? '' : 'none';
   document.getElementById('stTabP').classList.toggle('on', t === 'p');
+  document.getElementById('statsI').style.display = t === 'i' ? '' : 'none';
   document.getElementById('stTabQ').classList.toggle('on', t === 'q');
+  document.getElementById('stTabI').classList.toggle('on', t === 'i');
   if (t === 'q') renderQuestionStats();
+  if (t === 'i') renderItemStats();
+}
+function renderItemStats() {
+  const view = document.getElementById('isView').value, s = k => stats.items?.[k] || { shown: 0, earned: 0, used: 0, unused: 0 };
+  const rate = k => s(k).used / ((s(k).used + s(k).unused) || 1);
+  const val = k => view === 'rate' ? rate(k) : s(k)[view];
+  const keys = Object.keys(ITEMS).sort((a, b) => val(b) - val(a) || s(b).shown - s(a).shown);
+  document.getElementById('itemStatsTable').innerHTML = keys.map((k, i) => { const x = s(k), it = ITEMS[k];
+    return `<tr><td>${i + 1}</td><td style="white-space:nowrap"><b>${it.icon} ${it.name}</b></td><td>${rarityTag(k)}</td>
+      <td>${x.shown}</td><td>${x.earned}</td><td>${x.used}</td><td>${x.unused}</td><td>${pct(x.used, x.used + x.unused)}</td></tr>`; }).join('');
+  const total = keys.reduce((a, k) => a + s(k).shown, 0);
+  document.getElementById('itemStatsInfo').textContent = total ? `${total} items shown so far. Unused counts items still held when a game finished.` : 'No items have shown up yet — play a game with items on.';
+}
+function resetItemStats() {
+  if (!confirm('Reset all item stats?')) return;
+  stats.items = {}; saveStats(); renderItemStats(); toast('Item stats reset');
 }
 // Question rankings: most correct / most incorrect (by % correct, then by how often answered) or most seen
 function renderQuestionStats() {
@@ -7901,7 +8009,7 @@ function renderSetup() {
     || '<span class="muted">Everyone from your recent list is already playing.</span>';
   document.getElementById('lastLineupBtn').style.display = roster.lastGame.some(n => !isPlaying(n)) ? '' : 'none';
   document.getElementById('clearPlayersBtn').style.display = players.length ? '' : 'none';
-  renderCatPicker();
+  renderCatPicker(); renderChoicePicker();
   document.getElementById('playerChips').innerHTML = players.map((p, i) =>
     `<span class="chip">${esc(p.name)} <b onclick="removePlayer(${i})" title="Remove">✕</b></span>`).join('');
   document.getElementById('setupInfo').textContent = players.length
@@ -7941,10 +8049,17 @@ const ITEMS = {
   blueshell:  { icon: '🐢', name: 'Blue Shell',    target: false, hot: false, cold: true,  desc: 'Hits the leader (not you) for −10 points. Ties are all hit. No choosing needed.' },
   shield:     { icon: '🛡️', name: 'Shield',        target: false, hot: true,  cold: true,  desc: 'Automatically blocks the next item used against you.', passive: true },
 };
+// Item rarity tiers: when an item is earned, a tier is chosen by its weight, then an item within it
+const RARITIES = { 1: { name: 'Common', stars: '⭐', color: '#9aa4c4' }, 2: { name: 'Rare', stars: '⭐⭐', color: '#4da3ff' }, 3: { name: 'Legendary', stars: '⭐⭐⭐', color: '#ffcc33' } };
+const DEFAULT_RARITY = { pickpocket: 1, skip: 1, shield: 1, double: 1, timecrunch: 1, phone: 1, bet: 1, dodge: 1, beginner: 1,
+  heist: 2, hardlock: 2, catlock: 2, triple: 2, storm: 2, tax: 2, catchup: 2, blueshell: 2, exodia: 3, nuke: 3, swap: 3 };
+const itemRarity = k => data.settings.items.rarity?.[k] ?? DEFAULT_RARITY[k] ?? 1;
 const LOCK_TURNS = 2, BLUE_SHELL_POINTS = 10, BEGINNER_TURNS = 5, EXODIA_PIECES = 5; // minimum; Exodia grows to one piece per tier if there are more tiers than this
 const defaultItemSettings = () => ({
   enabled: true, streaks: [3, 5, 7],
-  pools: Object.fromEntries(Object.entries(ITEMS).map(([k, it]) => [k, { hot: it.hot, cold: it.cold }])),
+  pools: Object.fromEntries(Object.entries(ITEMS).map(([k, it]) => [k, { hot: it.hot, cold: it.cold, reward: it.hot }])),
+  rewards: true, rewardChance: 20, // question prizes on/off, and the % chance that a question a trailing player picks carries an item prize
+  rarity: { ...DEFAULT_RARITY }, rarityWeights: { 1: 60, 2: 30, 3: 10 },
 });
 const itemsOn = () => data.settings.items.enabled;
 const rand = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
@@ -7952,8 +8067,16 @@ function randomItem(kind) {
   const multiTier = rankedTiers().length > 1; // Hard Lock / Beginner's Luck do nothing with a single difficulty in play
   const pool = Object.keys(ITEMS).filter(k => data.settings.items.pools[k]?.[kind] && (!ITEMS[k].needsTimer || data.settings.timer.enabled)
     && (multiTier || !['hardlock', 'beginner'].includes(k)));
-  return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+  if (!pool.length) return null;
+  // pick a rarity tier by weight (only tiers that have an eligible item), then an item in that tier
+  const w = data.settings.items.rarityWeights, tiers = [1, 2, 3].filter(r => pool.some(k => itemRarity(k) === r) && (w[r] ?? 0) > 0);
+  if (!tiers.length) return pool[Math.floor(Math.random() * pool.length)];
+  let x = Math.random() * tiers.reduce((a, r) => a + w[r], 0), tier = tiers.at(-1);
+  for (const r of tiers) { x -= w[r]; if (x <= 0) { tier = r; break; } }
+  const inTier = pool.filter(k => itemRarity(k) === tier);
+  return inTier[Math.floor(Math.random() * inTier.length)];
 }
+const rarityTag = k => { const r = RARITIES[itemRarity(k)]; return `<span class="rarityTag" style="--rc:${r.color}" title="${r.name}">${r.stars} ${r.name}</span>`; };
 // The hardest tier that actually has questions
 // Tiers that have questions in this game, in difficulty order (the order set in the editor: easiest first)
 const rankedTiers = () => data.tiers.filter(t => gameQs().some(q => q.tierId === t.id));
@@ -8111,7 +8234,8 @@ function renderGameInner() {
       footer = `<p class="muted" style="text-align:center;margin:18px 0 0">Choosing by ${byCat ? 'category' : 'difficulty'} ·
         <a href="#" onclick="setPickMode('${byCat ? 'tier' : 'cat'}');return false" style="color:var(--blue)">switch to ${byCat ? 'difficulty' : 'category'}</a></p>`;
     }
-    stage.innerHTML = `<div class="turn"><span>${esc(p.name)}</span>, ${heading}</div>
+    const hint = !locked && rewardEligible(p) ? `<p class="rewardHint">🎁 Catching up: a question you pick has a ${data.settings.items.rewardChance}% chance to carry an item — get it right to keep it. (Not Random or Gamble.)</p>` : '';
+    stage.innerHTML = `<div class="turn"><span>${esc(p.name)}</span>, ${heading}</div>${hint}
       <div class="tierPick">${buttons.join('')}</div>${footer}${itemsOn() ? itemBar(p) : ''}`;
     return;
   }
@@ -8123,7 +8247,7 @@ function renderGameInner() {
         ${c.group ? `<div class="introGroup">${esc(c.group)}</div>` : ''}<div class="introBig" style="background:${c.color}">${esc(c.name)}</div>
         <div class="introLabel">Difficulty</div>
         <div class="introBig" style="background:${t.color}">${esc(t.name)} · ${t.points} pt${t.points == 1 ? '' : 's'}</div>
-        ${stakeBadge(p) ? `<div style="margin-top:14px">${stakeBadge(p)}</div>` : ''}
+        ${stakeBadge(p) || q.reward ? `<div style="margin-top:14px">${stakeBadge(p)} ${rewardPill(q)}</div>` : ''}
         <div class="introBar"><i style="animation-duration:${data.settings.introSeconds}s"></i></div>
         <div style="margin-top:10px"><button class="small ghost" onclick="showQuestion()">Show now ▶</button></div>
       </div>`;
@@ -8132,7 +8256,7 @@ function renderGameInner() {
   stage.innerHTML = `<div class="turn"><span>${esc(p.name)}</span> ·
       <span class="pill" style="background:${c.color}">${esc(catLabel(c))}</span>
       <span class="pill" style="background:${t.color}">${esc(t.name)} · ${t.points} pts</span>
-      ${stakeBadge(p)}</div>
+      ${stakeBadge(p)} ${rewardPill(q)}</div>
     <div id="timer"></div>
     <div class="question">${esc(q.text)}</div>
     <div id="qMedia" class="qMediaSlot"></div>
@@ -8156,15 +8280,83 @@ function itemBar(p) {
       const it = ITEMS[k];
       return it.passive
         ? `<div class="itemCard passive" title="${esc(itemDesc(k))}">${it.icon} ${it.name}<small>Active — ${esc(itemDesc(k).charAt(0).toLowerCase() + itemDesc(k).slice(1))}</small></div>`
-        : `<button class="itemCard" title="${esc(itemDesc(k))}" onclick="useItem(${i})" ${itemUsedThisTurn ? 'disabled' : ''}>${it.icon} ${it.name}<small>${esc(itemDesc(k))}</small></button>`;
+        : `<button class="itemCard" title="${esc(itemDesc(k))}" onclick="useItem(${i})" ${itemUsedThisTurn ? 'disabled' : ''}>${it.icon} ${it.name} ${rarityTag(k)}<small>${esc(itemDesc(k))}</small></button>`;
     }).join('')}</div></div>`;
+}
+// Answer choices for a question: 4 (answer + first 3 wrong) or 6 in a "harder" game.
+// For 6, the question's own extra wrong answers come first, then look-alike decoys.
+function buildChoices(q) {
+  const wrong = (q.wrong || []).filter(Boolean);
+  if (!wrong.length) return null;
+  const want = choiceCount() - 1;
+  const picked = wrong.slice(0, Math.min(want, wrong.length));
+  if (want > 3 && picked.length < want) picked.push(...decoys(q, [q.answer, ...wrong], want - picked.length));
+  return [q.answer, ...picked].sort(() => Math.random() - .5);
+}
+const NUM_RE = /^(-?[\d,]*\.?\d+)\s*(%|[a-z]{0,12})$/i;
+const normAns = a => String(a).trim().toLowerCase();
+function decoys(q, taken, n) {
+  const seen = new Set(taken.map(normAns));
+  const tooClose = c => { const x = normAns(c); return seen.has(x) || [...seen].some(t => t.length > 3 && x.length > 3 && (t.includes(x) || x.includes(t))); };
+  // Numbers (years, counts, percentages): invent nearby values in the same style
+  const nums = taken.map(a => String(a).trim().match(NUM_RE));
+  if (nums.every(Boolean) && new Set(nums.map(m => m[2].toLowerCase())).size === 1) {
+    const vals = nums.map(m => parseFloat(m[1].replace(/,/g, ''))), unit = nums[0][2], commas = taken.some(a => String(a).includes(','));
+    const ints = vals.every(Number.isInteger), years = ints && !unit && vals.every(v => v >= 1000 && v <= 2100);
+    const lo = Math.min(...vals), hi = Math.max(...vals), step = Math.max(ints ? 1 : 0.1, (hi - lo) / Math.max(2, vals.length - 1) || Math.abs(lo) * 0.1 || 1);
+    const spaced = /\d\s+\D/.test(String(taken[0]));
+    const out = [];
+    const wide = lo > 0 && hi / lo >= 4, nice = v => { const m = 10 ** (Math.floor(Math.log10(Math.abs(v))) - 1); return Math.round(v / m) * m; };
+    for (let k = 1; out.length < n && k < 40; k++) {
+      for (let v of wide ? [hi * 2 ** k, lo / 2 ** k, Math.sqrt(lo * hi) * 1.5 ** k] : [hi + k * step, lo - k * step, lo + (k - 0.5) * step]) {
+        if (wide) { v = nice(v); if (ints && v < 1) continue; }
+        if (out.length >= n) break;
+        if ((lo >= 0 && v < 0) || (years && v > new Date().getFullYear()) || (unit === '%' && v > 100)) continue;
+        let txt = ints ? String(Math.round(v)) : String(Math.round(v * 10) / 10);
+        if (commas) txt = Number(txt).toLocaleString('en-US');
+        if (unit) txt += (spaced ? ' ' : '') + unit;
+        if (!tooClose(txt)) { out.push(txt); seen.add(normAns(txt)); }
+      }
+    }
+    return out;
+  }
+  // Text: answers that sit next to this question's own options in other questions are the same kind of thing
+  // (countries with countries, singers with singers). Rank them by how many links they have, then by shape and category.
+  const idx = answerIndex(), opts = taken.map(normAns), fam = catOf(q.categoryId)?.group;
+  const shape = a => { a = String(a).trim(); return { len: a.length, words: a.split(/\s+/).length, digit: /\d/.test(a) }; };
+  const ref = taken.map(shape), avgLen = ref.reduce((s, r) => s + r.len, 0) / ref.length, avgWords = ref.reduce((s, r) => s + r.words, 0) / ref.length;
+  const off = c => { const s = shape(c); return Math.abs(Math.log((s.len + 1) / (avgLen + 1))) + Math.abs(s.words - avgWords) * 0.3 + (s.digit !== ref[0].digit) * 1.5; };
+  const links = new Map();
+  for (const o of opts) for (const x of idx.get(o) || []) {
+    if (x.id === q.id) continue;
+    const near = x.categoryId === q.categoryId ? 1.5 : fam && catOf(x.categoryId)?.group === fam ? 1.2 : 1;
+    for (const c of [x.answer, ...(x.wrong || [])]) if (c && !opts.includes(normAns(c))) links.set(c, (links.get(c) || 0) + near);
+  }
+  const out = [];
+  const take = list => { for (const c of list) { if (out.length >= n) break; if (!tooClose(c)) { out.push(c); seen.add(normAns(c)); } } };
+  take([...links].filter(([c, w]) => off(c) < 0.8 + w * 0.3).map(([c, w]) => [c, w - off(c) * 0.5 + Math.random() * 0.5]).sort((a, b) => b[1] - a[1]).map(([c]) => c));
+  if (out.length < n) // not enough linked answers: only very similar-looking answers from the same category
+    take([...new Set(data.questions.filter(x => x.id !== q.id && x.categoryId === q.categoryId).flatMap(x => [x.answer, ...(x.wrong || [])]).filter(Boolean))]
+      .map(c => [c, off(c) + Math.random() * 0.2]).filter(([, sc]) => sc < 0.5).sort((a, b) => a[1] - b[1]).map(([c]) => c));
+  return out; // may be short: a question then shows fewer answers rather than an obviously silly one
+}
+// lower-case answer text -> questions that use it as an answer or wrong option (rebuilt when the question list changes)
+let ansIdx = null, ansIdxKey = '';
+function answerIndex() {
+  const key = data.questions.length + ':' + (data.questions.at(-1)?.id || '');
+  if (ansIdx && ansIdxKey === key) return ansIdx;
+  ansIdx = new Map(); ansIdxKey = key;
+  for (const x of data.questions) for (const c of [x.answer, ...(x.wrong || [])]) if (c) {
+    const k = normAns(c); if (!ansIdx.has(k)) ansIdx.set(k, []); ansIdx.get(k).push(x);
+  }
+  return ansIdx;
 }
 // Only redraws the choices/answer area, so a playing audio clip isn't interrupted
 function renderReveal() {
   const q = current, choices = q.shuffled, st = stakes(players[turn]);
   document.getElementById('qReveal').innerHTML = `
     ${choices ? `<div class="choices">${choices.map((c, i) =>
-      `<div class="${revealed && c === q.answer ? 'right' : ''}"><b>${'ABCD'[i]}.</b> ${esc(c)}</div>`).join('')}</div>` : ''}
+      `<div class="${revealed && c === q.answer ? 'right' : ''}"><b>${'ABCDEF'[i]}.</b> ${esc(c)}</div>`).join('')}</div>` : ''}
     ${revealed ? `${timesUp ? `<div class="timesUp">⏰ Time's up!</div>` : ''}<div class="answer">✅ ${esc(q.answer)}</div>
       <div class="actions">${timesUp ? '' : `<button class="good" onclick="mark(true)">Correct (+${st.win})</button>`}
       <button class="bad" onclick="mark(false)">${timesUp ? 'Continue — counts as wrong' : 'Wrong'}${st.lose ? ` (−${st.lose})` : ''}</button></div>`
@@ -8184,7 +8376,7 @@ function stakes(p) {
   return { win: Math.ceil(base * mult * lucky / (p.halfGain ? 2 : 1)) + bonus, lose: p.boost === 'triple' || current.gamble ? base * mult : 0 };
 }
 // How many more of this player's turns until they can Gamble again (0 = ready)
-function gambleWait(p) { return Math.max(0, data.settings.gambleCooldown - (p.turnsPlayed - p.lastGamble)); }
+function gambleWait(p) { return Math.max(0, data.settings.gambleCooldown + 1 - (p.turnsPlayed - p.lastGamble)); }
 // Gamble is locked until the player gets a regular (non-Gamble) question right after their last Gamble
 const gambleNeedsRight = p => data.settings.gambleNeedsWin && p.gambleLocked;
 function stakeBadge(p) {
@@ -8195,6 +8387,14 @@ function stakeBadge(p) {
   const st = stakes(p);
   return `<span class="pill stakePill">${tags.join(' · ')}: +${st.win}${st.lose ? ` / −${st.lose}` : ''}</span>`;
 }
+// Question prizes: players in the bottom half of the scores (and not tied for the lead) can find an item
+// on a question they pick (not Random or Gamble); they win it by getting the question right
+function rewardEligible(p) {
+  if (!itemsOn() || !data.settings.items.rewards || players.length < 2 || !(data.settings.items.rewardChance > 0)) return false;
+  const scores = players.map(x => x.score).sort((a, b) => a - b), cutoff = scores[Math.floor(players.length / 2) - 1];
+  return p.score <= cutoff && p.score < scores.at(-1);
+}
+const rewardPill = q => q.reward ? `<span class="pill rewardPill" title="${esc(itemDesc(q.reward))}">🎁 Prize: ${ITEMS[q.reward].icon} ${ITEMS[q.reward].name}</span>` : '';
 // kind: 'tier' | 'cat' | 'any' | 'lock'; gamble = the Gamble button (random question, double or nothing)
 function draw(kind, id, gamble = false) {
   const match = kind === 'tier' ? q => q.tierId === id
@@ -8213,8 +8413,9 @@ function draw(kind, id, gamble = false) {
   for (let i = 0; i < pool.length; i++) { pick -= weights[i]; if (pick <= 0) { q = pool[i]; break; } }
   stats.seen[q.id] = seenCount(q.id) + 1; saveStats();
   used.add(q.id);
-  const wrong = (q.wrong || []).filter(Boolean);
-  current = { ...q, gamble, random: kind === 'any' && !gamble, shuffled: wrong.length ? [q.answer, ...wrong].sort(() => Math.random() - .5) : null };
+  current = { ...q, gamble, random: kind === 'any' && !gamble, shuffled: buildChoices(q),
+    reward: kind !== 'any' && !players[turn].exodia && rewardEligible(players[turn]) && Math.random() * 100 < data.settings.items.rewardChance ? randomItem('reward') : null };
+  if (current.reward) itemStat(current.reward).shown++;
   revealed = false;
   // Show category & difficulty first, then move to the question automatically (the answer timer starts with the question)
   const wait = data.settings.introSeconds;
@@ -8342,7 +8543,7 @@ function mark(correct) {
     const others = players.filter(o => o !== p && o.score > 0); // only players who actually have points to lose
     if (!correct && !others.length) {
       // Nobody can be hit yet (e.g. everyone is on 0), so don't waste the item
-      p.items.push('dodge');
+      p.items.push('dodge'); itemStat('dodge').used--;
       dodgeNote = `<p>💨 Nobody has any points to lose yet, so ${esc(p.name)} keeps Dodge the Bullet for later.</p>`;
     }
     if (!correct && others.length) {
@@ -8351,7 +8552,7 @@ function mark(correct) {
       return modal(`<div class="bigIcon">💨</div><h2>Dodge the Bullet!</h2><p>${esc(p.name)} got it wrong — who takes the hit of <b>${pts}</b> point${pts === 1 ? '' : 's'}?</p>`,
         others.map(v => ({ label: `${esc(v.name)} <small>(${v.score} pts)</small>`, fn: () => {
           const si = v.items.indexOf('shield');
-          if (si >= 0) { v.items.splice(si, 1); dodgeNote = `<p>🛡️ <b>${esc(v.name)}</b> blocked ${esc(p.name)}'s Dodge the Bullet with a Shield!</p>`; }
+          if (si >= 0) { v.items.splice(si, 1); itemStat('shield').used++; dodgeNote = `<p>🛡️ <b>${esc(v.name)}</b> blocked ${esc(p.name)}'s Dodge the Bullet with a Shield!</p>`; }
           else { const lost = Math.min(pts, v.score); v.score -= lost; dodgeNote = `<p>💨 ${esc(p.name)} dodged the bullet — <b>${esc(v.name)}</b> loses <b>${lost}</b>!</p>`; }
           mark(false);
         } })));
@@ -8417,10 +8618,12 @@ function mark(correct) {
   // Streaks: consecutive correct (hot) or wrong (cold) answers
   const kind = correct ? 'hot' : 'cold';
   p.streak = p.streak.kind === kind ? { kind, count: p.streak.count + 1 } : { kind, count: 1 };
+  const prize = correct && current.reward && itemsOn() ? current.reward : null;
+  if (prize) { p.items.push(prize); itemStat(prize).earned++; }
   let earned = null;
   if (itemsOn() && data.settings.items.streaks.includes(p.streak.count)) {
     earned = randomItem(kind);
-    if (earned) p.items.push(earned);
+    if (earned) { p.items.push(earned); const s = itemStat(earned); s.shown++; s.earned++; }
   }
   current = null;
   if (exodiaWin) return modal(`<div class="bigIcon">🃏🃏🃏🃏🃏</div><h2>EXODIA, OBLITERATE!</h2>
@@ -8431,13 +8634,19 @@ function mark(correct) {
   const name = p.name, count = p.streak.count;
   const skipped = advanceTurn();
   renderGame();
-  const notes = turnNotes + exodiaNote + skipped.map(n => `<p>⏭️ <b>${esc(n)}</b>'s turn was skipped!</p>`).join('');
+  let notes = turnNotes + exodiaNote + skipped.map(n => `<p>⏭️ <b>${esc(n)}</b>'s turn was skipped!</p>`).join('');
+  if (prize) {
+    const it = ITEMS[prize], box = `<div class="bigIcon">🎁${it.icon}</div><h2>Question prize!</h2>
+      <p><b>${esc(name)}</b> won <b>${it.name}</b> ${rarityTag(prize)}</p><p class="muted">${esc(itemDesc(prize))}</p>`;
+    if (!earned) { setTimeout(() => sfx('item'), 500); return modal(box + notes); }
+    notes = `<hr style="border-color:#4a4a8a">${box}` + notes;
+  }
   if (earned) {
     const it = ITEMS[earned];
     setTimeout(() => sfx('item'), 500);
     modal(`<div class="bigIcon">${it.icon}</div>
       <h2>${kind === 'hot' ? `🔥 ${count} in a row!` : `🧊 ${count} misses in a row…`}</h2>
-      <p><b>${esc(name)}</b> ${kind === 'hot' ? 'earned' : 'gets a comeback item:'} <b>${it.name}</b></p>
+      <p><b>${esc(name)}</b> ${kind === 'hot' ? 'earned' : 'gets a comeback item:'} <b>${it.name}</b> ${rarityTag(earned)}</p>
       <p class="muted">${esc(itemDesc(earned))}</p>${notes}`);
   } else if (notes) modal(notes);
 }
@@ -8556,7 +8765,7 @@ function applyItem(idx, ti, catId) {
   }
   const shieldAt = v.items.indexOf('shield');
   if (shieldAt >= 0) {
-    v.items.splice(shieldAt, 1);
+    v.items.splice(shieldAt, 1); itemStat('shield').used++;
     return finishItem(p, idx, `<div class="bigIcon">🛡️</div><h2>Blocked!</h2><p>${esc(v.name)}'s Shield stopped ${esc(p.name)}'s ${it.name}.</p>`);
   }
   let msg;
@@ -8589,7 +8798,7 @@ function blueShell(p, idx) {
   const top = Math.max(...others.map(o => o.score));
   const lines = others.filter(o => o.score === top).map(v => {
     const si = v.items.indexOf('shield');
-    if (si >= 0) { v.items.splice(si, 1); return `🛡️ <b>${esc(v.name)}</b> blocked it with a Shield!`; }
+    if (si >= 0) { v.items.splice(si, 1); itemStat('shield').used++; return `🛡️ <b>${esc(v.name)}</b> blocked it with a Shield!`; }
     const lost = Math.min(BLUE_SHELL_POINTS, v.score); v.score -= lost;
     return `💥 <b>${esc(v.name)}</b> loses ${lost} point${lost === 1 ? '' : 's'}`;
   });
@@ -8598,13 +8807,14 @@ function blueShell(p, idx) {
 function stormCloud(p, idx) {
   const lines = players.filter(o => o !== p).map(v => {
     const si = v.items.indexOf('shield');
-    if (si >= 0) { v.items.splice(si, 1); return `🛡️ <b>${esc(v.name)}</b> blocked it with a Shield!`; }
+    if (si >= 0) { v.items.splice(si, 1); itemStat('shield').used++; return `🛡️ <b>${esc(v.name)}</b> blocked it with a Shield!`; }
     v.halfGain = true; return `🌧️ <b>${esc(v.name)}</b> earns half points next turn`;
   });
   if (!lines.length) return toast('No other players to rain on');
   finishItem(p, idx, `<div class="bigIcon">🌧️</div><h2>Storm Cloud!</h2><p>${lines.join('<br>')}</p>`);
 }
 function finishItem(p, idx, html) {
+  itemStat(p.items[idx]).used++; saveStats();
   p.items.splice(idx, 1); itemUsedThisTurn = true;
   renderGame();
   const w = findWinner();
@@ -8614,7 +8824,9 @@ function finishItem(p, idx, html) {
 
 // ---------- Winner ----------
 function showWinner(w, how) {
-  playerStat(w.name).wins++; saveStats();
+  playerStat(w.name).wins++;
+  players.forEach(p => p.items.forEach(k => itemStat(k).unused++)); // still in hand when the game ended
+  saveStats();
   stopTimer(); go('winner'); sfx('win');
   document.getElementById('winnerName').textContent = w.name;
   document.getElementById('winnerPts').textContent = `${w.score} point${w.score === 1 ? "" : "s"}${how === 'exodia' ? ' · won by 🃏 Exodia!' : ''}`;

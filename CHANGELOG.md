@@ -3,6 +3,16 @@
 All notable changes to Potato Quiz. Versions follow `major.minor.patch`:
 **minor** for new features or question batches, **patch** for fixes and small tweaks.
 
+## 1.8.0 — 2026-10-16
+- **6-answer mode:** on the setup screen, choose 4 answers (normal) or 6 (harder). Questions without their own extra wrong answers get look-alike answers picked automatically.
+- Question editor has 2 optional extra wrong answers, used only in 6-answer games.
+- **Question prizes:** players in the bottom half of the scores have a 20% chance that a question they pick (not Random or Gamble) carries an item. Get it right to keep it. Turn it on or off, set the chance, and choose which items can be prizes in Settings.
+- **Item rarity:** items are Common, Rare or Legendary. Rarer items show up less often (60 / 30 / 10 by default). You can change an item's rarity and the weights in Settings.
+- **Item stats:** a new Items tab on the Stats screen shows how often each item showed up, was earned, used, or still held when a game ended.
+- Edit Questions can filter by question type: multiple choice, open answer, picture, audio clip, or no media.
+- Settings are now split into tabs (Game, Items, Timer, Effects, Data), which is easier on phones.
+- Gamble cooldown now counts turns to wait: 1 by default, and 0 means no cooldown. Saved settings convert automatically and behave the same.
+
 ## 1.7.0 — 2026-10-16
 - **Points doubled** so scores stay even: Easy 2, Medium 4, Hard 6, Obscure 10. Default win target is now **60**.
 - Items doubled to match: Pickpocket steals 2/4/6, Heist 6/8/10, Blue Shell −10; Random bonus is +2.
