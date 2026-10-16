@@ -330,8 +330,7 @@
           <select id="qCatFilter" onchange="renderQuestions()"></select>
         </div>
       </div>
-      <table><thead><tr><th>Question</th><th>Answer</th><th>Tier</th><th>Category</th><th class="sortable" id="sortSeen" onclick="sortQuestions('seen')" title="Times shown in games — click to sort">Seen</th>
-        <th class="sortable" id="sortRate" onclick="sortQuestions('rate')" title="How often it was answered correctly — click to sort">% Correct</th><th></th></tr></thead><tbody id="qTable"></tbody></table>
+      <table><thead><tr><th>Question</th><th>Answer</th><th>Tier</th><th>Category</th><th class="sortable" id="sortSeen" onclick="sortQuestions('seen')" title="Times shown in games — click to sort">Seen</th><th></th></tr></thead><tbody id="qTable"></tbody></table>
     </div>
   </div>
 
@@ -360,8 +359,25 @@
 
 <!-- SETTINGS -->
 <section id="stats" class="screen">
-  <div class="topbar"><h2>📊 Player Stats</h2><button class="ghost" onclick="go('menu')">← Menu</button></div>
-  <div class="card">
+  <div class="topbar"><h2>📊 Stats</h2><button class="ghost" onclick="go('menu')">← Menu</button></div>
+  <div class="tabs">
+    <button id="stTabP" class="on" onclick="statsTab('p')">Players</button>
+    <button id="stTabQ" onclick="statsTab('q')">Questions</button>
+  </div>
+  <div class="card" id="statsQ" style="display:none">
+    <div class="row">
+      <select id="qsView" onchange="renderQuestionStats()">
+        <option value="correct">Most often answered correctly</option>
+        <option value="wrong">Most often answered incorrectly</option>
+        <option value="seen">Most seen</option>
+      </select>
+      <select id="qsTop" onchange="renderQuestionStats()"><option value="10">Top 10</option><option value="50">Top 50</option><option value="100">Top 100</option></select>
+    </div>
+    <table style="margin-top:12px"><thead><tr><th>#</th><th>Question</th><th>Answer</th><th>Category</th><th>Difficulty</th><th>Seen</th><th>% Correct</th></tr></thead>
+      <tbody id="qStatsTable"></tbody></table>
+    <p class="muted" id="qStatsInfo"></p>
+  </div>
+  <div class="card" id="statsP">
     <table><thead><tr><th>Player</th><th>Games</th><th>Wins</th><th>Win %</th><th>Correct</th><th>Incorrect</th><th>% Correct</th></tr></thead>
       <tbody id="statsTable"></tbody></table>
     <p class="muted" id="statsInfo"></p>
@@ -7435,7 +7451,7 @@ function removeQuestions(pred) {
 function go(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  ({ menu: renderMenu, setup: renderSetup, editor: renderEditor, settings: renderSettings, stats: renderStats })[id]?.();
+  ({ menu: renderMenu, setup: renderSetup, editor: renderEditor, settings: renderSettings, stats: () => { renderStats(); renderQuestionStats(); } })[id]?.();
 }
 function renderMenu() {
   document.getElementById('menuStats').textContent =
@@ -7561,7 +7577,7 @@ function renderEditor() {
     (groups.length ? `<optgroup label="Whole groups">${groups.map(g => `<option value="g:${esc(g)}">All ${esc(g)}</option>`).join('')}</optgroup>` : '') + catOptions());
   renderQuestions(); renderTiers(); renderCats();
 }
-let qSort = { key: null, dir: -1 }; // question list sort: 'seen' or 'rate'; dir 1 = ascending, -1 = descending
+let qSort = { key: null, dir: -1 }; // question list sort by 'seen'; dir 1 = ascending, -1 = descending
 function sortQuestions(key) {
   qSort = qSort.key === key ? { key, dir: -qSort.dir } : { key, dir: -1 };
   renderQuestions();
@@ -7571,13 +7587,9 @@ function renderQuestions() {
   const inCat = cf === '*' ? () => true : choiceMatch(cf);
   const list = data.questions.filter(q => (!f || q.tierId === f) && inCat(q));
   if (qSort.key) {
-    const val = q => qSort.key === 'seen' ? seenCount(q.id) : rightRate(q.id);
-    list.sort((a, b) => { const x = val(a), y = val(b);
-      if (x === null || y === null) return (x === null) - (y === null); // never-answered questions go last
-      return qSort.dir * (x - y); });
+    list.sort((a, b) => qSort.dir * (seenCount(a.id) - seenCount(b.id)));
   }
   document.getElementById('sortSeen').textContent = 'Seen' + (qSort.key === 'seen' ? (qSort.dir > 0 ? ' ▲' : ' ▼') : '');
-  document.getElementById('sortRate').textContent = '% Correct' + (qSort.key === 'rate' ? (qSort.dir > 0 ? ' ▲' : ' ▼') : '');
   document.getElementById('qCount').textContent = data.questions.length;
   document.getElementById('qTable').innerHTML = list.map(q => {
     const t = tierOf(q.tierId) || { name: '?', color: '#888' };
@@ -7589,10 +7601,9 @@ function renderQuestions() {
       <td><span class="pill" style="background:${t.color}">${esc(t.name)}</span></td>
       <td><span class="pill" style="background:${c.color}">${esc(catLabel(c))}</span></td>
       <td>${seenCount(q.id)}</td>
-      <td>${rightRate(q.id) === null ? '<span class="muted">—</span>' : Math.round(rightRate(q.id) * 100) + '%'}<br><small class="muted">${stats.answered[q.id] ? `${stats.right[q.id] || 0}/${stats.answered[q.id]}` : ''}</small></td>
       <td style="white-space:nowrap"><button class="small" onclick="editQuestion('${q.id}')">Edit</button>
       <button class="small bad" onclick="deleteQuestion('${q.id}')">Delete</button></td></tr>`;
-  }).join('') || `<tr><td colspan="7" class="muted">No questions here yet — add one above.</td></tr>`;
+  }).join('') || `<tr><td colspan="6" class="muted">No questions here yet — add one above.</td></tr>`;
 }
 // Media attached in the form: { type, name, id } for an already-saved file, or { type, name, blob } for a new one
 let formMedia = null;
@@ -7802,6 +7813,35 @@ function renderStats() {
     || '<tr><td colspan="7" class="muted">No games played yet.</td></tr>';
   const shown = Object.values(stats.seen).reduce((a, b) => a + b, 0);
   document.getElementById('statsInfo').textContent = `${shown} questions shown so far · ${Object.keys(stats.seen).length} different questions seen.`;
+}
+function statsTab(t) {
+  document.getElementById('statsP').style.display = t === 'p' ? '' : 'none';
+  document.getElementById('statsQ').style.display = t === 'q' ? '' : 'none';
+  document.getElementById('stTabP').classList.toggle('on', t === 'p');
+  document.getElementById('stTabQ').classList.toggle('on', t === 'q');
+  if (t === 'q') renderQuestionStats();
+}
+// Question rankings: most correct / most incorrect (by % correct, then by how often answered) or most seen
+function renderQuestionStats() {
+  const view = document.getElementById('qsView').value, top = +document.getElementById('qsTop').value;
+  const byId = new Map(data.questions.map(q => [q.id, q]));
+  let ids;
+  if (view === 'seen') ids = Object.keys(stats.seen).filter(id => byId.has(id)).sort((a, b) => seenCount(b) - seenCount(a));
+  else {
+    ids = Object.keys(stats.answered).filter(id => byId.has(id) && stats.answered[id] > 0);
+    const sign = view === 'correct' ? -1 : 1;
+    ids.sort((a, b) => sign * (rightRate(a) - rightRate(b)) || stats.answered[b] - stats.answered[a]);
+  }
+  ids = ids.slice(0, top);
+  document.getElementById('qStatsTable').innerHTML = ids.map((id, i) => {
+    const q = byId.get(id), t = tierOf(q.tierId) || { name: '?', color: '#888' }, c = catOf(q.categoryId) || NO_CAT, r = rightRate(id);
+    return `<tr><td>${i + 1}</td><td>${esc(q.text)}</td><td>${esc(q.answer)}</td>
+      <td><span class="pill" style="background:${c.color}">${esc(catLabel(c))}</span></td>
+      <td><span class="pill" style="background:${t.color}">${esc(t.name)}</span></td>
+      <td>${seenCount(id)}</td>
+      <td>${r === null ? '<span class="muted">—</span>' : Math.round(r * 100) + '%'} <small class="muted">${stats.answered[id] ? `${stats.right[id] || 0}/${stats.answered[id]}` : ''}</small></td></tr>`;
+  }).join('') || '<tr><td colspan="7" class="muted">No questions have been answered yet — play a game first.</td></tr>';
+  document.getElementById('qStatsInfo').textContent = ids.length ? `Showing ${ids.length} question${ids.length === 1 ? '' : 's'}.` : '';
 }
 function resetPlayerStats() { if (confirm('Reset all player stats (games, wins, correct/incorrect)?')) { stats.players = {}; saveStats(); renderStats(); } }
 function resetSeenCounts() { if (confirm('Reset every question\'s "seen" count to 0?')) { stats.seen = {}; stats.answered = {}; stats.right = {}; saveStats(); toast('Counts reset'); } }
