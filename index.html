@@ -5157,12 +5157,13 @@ function load() {
 function upgrade(d) {
   d.settings ??= {}; d.settings.targetPoints ??= 30; d.settings.pickMode ??= 'tier'; d.settings.gamble ??= true;
   d.settings.timer ??= { enabled: true, seconds: 30, sound: true };
-  d.settings.introSeconds ??= 3;
+  d.settings.introSeconds ??= 2.5;
   d.settings.fx ??= true;  // animations: screen transitions, flying points
   d.settings.sfx ??= true; // sound effects
   d.settings.gambleCooldown ??= 2; // a player can Gamble at most once every N of their turns
   d.settings.randomBonus ??= 1;    // extra points for a correct answer on a 🎲 Random question
-  if ((d.settings.rev ?? 1) < 2) { if (d.settings.introSeconds === 2) d.settings.introSeconds = 3; d.settings.rev = 2; }
+  // Saved settings still on an earlier default preview time move to the current default (2.5 s); custom values are kept
+  if ((d.settings.rev ?? 1) < 3) { if ([2, 3].includes(d.settings.introSeconds)) d.settings.introSeconds = 2.5; d.settings.rev = 3; }
   if (!d.categories) {
     d.categories = structuredClone(DEFAULT.categories);
     d.questions.forEach(q => q.categoryId ??= DEFAULT.questions.find(x => x.id === q.id)?.categoryId || '');
