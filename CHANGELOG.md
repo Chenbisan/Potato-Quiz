@@ -3,6 +3,11 @@
 All notable changes to Potato Quiz. Versions follow `major.minor.patch`:
 **minor** for new features or question batches, **patch** for fixes and small tweaks.
 
+## 2.0.3 — 2026-10-16
+- **Question prizes reworked:** on a trailing player's turn, each difficulty (or category) button rolls the prize chance (20% by default) once. A button that wins shows a glowing 🎁 with the item's icon, so players can see the prize and choose that question. Pick it and answer correctly to keep the item. Never on Random, Gamble, locked turns or Exodia.
+- Moved 38 questions whose category gave away the answer. For example, Finding Nemo and Willy Wonka's dentist father are no longer under Dentistry, "Which sport is played at Wimbledon?" is no longer under Tennis, and "Which country…?" questions no longer sit in that country's own category.
+- Fixed: the box of Pokémon Black shows Reshiram, not Zekrom.
+
 ## 2.0.2 — 2026-10-16
 - Category lists no longer repeat the group name: under Food you now see "Drinks", not "Food: Drinks".
 - Categories inside each group are now strictly A–Z (General included), both in Edit Questions and on the setup screen.

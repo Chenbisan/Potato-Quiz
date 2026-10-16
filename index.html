@@ -124,6 +124,8 @@
   .badges { display: flex; justify-content: space-between; font-size: .85rem; margin-top: 4px; gap: 6px; }
   .itemBar { margin-top: 22px; padding-top: 16px; border-top: 1px solid #2f2f5c; }
   .itemList { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+  .prizeBadge { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #1b1b3a; color: #fff; border: 2px solid #ffcc33; font-size: .85em; box-shadow: 0 0 8px rgba(255,204,51,.7); animation: prizePulse 1.6s ease-in-out infinite; }
+  @keyframes prizePulse { 50% { transform: scale(1.12); } }
   .rewardPill { background: #ffcc33; color: #2a1d00; }
   .rewardHint { text-align: center; margin: 0 0 10px; color: #ffcc33; font-weight: 600; }
   .rarityTag { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; color: var(--rc); border: 1px solid var(--rc); background: rgba(0,0,0,.25); vertical-align: middle; white-space: nowrap; }
@@ -536,10 +538,10 @@
     <div class="setting">
       <label class="switch"><input type="checkbox" id="rewardsOn"
         onchange="data.settings.items.rewards = this.checked; save(); renderItemSettings(); toast('Saved')"> Players in the bottom half can find an item on a question they pick</label>
-      <div class="help">The item is won by answering correctly. Not for Random, Gamble or Exodia draws. Choose which items can be prizes in the list below.</div>
+      <div class="help">On a trailing player's turn, each difficulty (or category) button rolls this chance once. A hit shows the item on the button; pick it and answer correctly to win the item. Not for Random, Gamble, locked turns or Exodia. Choose which items can be prizes in the list below.</div>
     </div>
     <div class="setting" id="rewardChanceRow">
-      <div class="setName">Chance per picked question</div>
+      <div class="setName">Chance per button, per turn</div>
       <div class="ctrl"><input type="number" id="rewardChance" min="0" max="100" style="width:90px"
         onchange="data.settings.items.rewardChance = Math.min(100, Math.max(0, parseInt(this.value) || 0)); save(); toast('Saved')"><span class="unit">%</span></div>
     </div>
@@ -593,7 +595,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '2.0.2';
+const APP_VERSION = '2.0.3';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1699,7 +1701,7 @@ function startGame() {
   if (!players.length) return alert('Add at least one player.');
   if (!data.questions.length) return alert('Add some questions first (Edit Questions).');
   if (!gameQs().length) return alert("No questions are in play — turn at least one category and one difficulty back on.");
-  rememberPlayers();
+  rememberPlayers(); turnPrizes = {};
   players.forEach(p => playerStat(p.name).games++); saveStats();
   players.forEach(p => Object.assign(p, { score: 0, items: [], streak: { kind: null, count: 0 }, skip: 0, hardLock: 0, catLock: null, boost: null, halfTime: false, halfGain: false, beginner: 0, helper: null, tax: null, dodge: false, exodia: null, turnsPlayed: 0, lastGamble: -Infinity, gambleLocked: false }));
   bets = [];
@@ -1772,17 +1774,17 @@ function renderGameInner() {
         if (open) {
           heading = `pick a ${esc(open.group)} category!`;
           buttons = [`<button class="groupBack" onclick="pickGroup=null;renderGame()">← All categories</button>`,
-            `<button style="background:${open.color}" onclick="draw('cat','g:${esc(open.group)}')">🎲 Any ${esc(open.group)}<small>${open.count} questions</small></button>`,
-            ...open.cats.map(x => `<button style="background:${x.c.color}" onclick="draw('cat','${x.c.id}')">${esc(x.c.name)}<small>${x.count} question${x.count === 1 ? '' : 's'}</small></button>`)];
+            `<button style="background:${open.color}" onclick="draw('cat','g:${esc(open.group)}')">🎲 Any ${esc(open.group)}${prizeBadge('cat:g:' + open.group)}<small>${open.count} questions</small></button>`,
+            ...open.cats.map(x => `<button style="background:${x.c.color}" onclick="draw('cat','${x.c.id}')">${esc(x.c.name)}${prizeBadge('cat:' + x.c.id)}<small>${x.count} question${x.count === 1 ? '' : 's'}</small></button>`)];
         } else {
           pickGroup = null;
           buttons = top.map(e => e.kind === 'group'
             ? `<button class="groupBtn" style="background:${e.color}" onclick="pickGroup='${esc(e.group)}';renderGame()">${esc(e.group)} ▸<small>${e.cats.length} categories · ${e.count} questions</small></button>`
-            : `<button style="background:${e.c.color}" onclick="draw('cat','${e.c.id}')">${esc(e.c.name)}<small>${e.count} question${e.count === 1 ? '' : 's'}</small></button>`);
+            : `<button style="background:${e.c.color}" onclick="draw('cat','${e.c.id}')">${esc(e.c.name)}${prizeBadge('cat:' + e.c.id)}<small>${e.count} question${e.count === 1 ? '' : 's'}</small></button>`);
         }
       } else {
         buttons = data.tiers.filter(t => gameQs().some(q => q.tierId === t.id)).map(t =>
-          `<button style="background:${t.color}" onclick="draw('tier','${t.id}')">${esc(t.name)}<small>${t.points} pt${t.points == 1 ? '' : 's'}</small></button>`);
+          `<button style="background:${t.color}" onclick="draw('tier','${t.id}')">${esc(t.name)}${prizeBadge('tier:' + t.id)}<small>${t.points} pt${t.points == 1 ? '' : 's'}</small></button>`);
       }
       const rb = data.settings.randomBonus;
       if (!(byCat && pickGroup)) buttons.push(`<button class="randomBtn" onclick="draw('any')">🎲 Random<small>${rb ? `+${rb} bonus point${rb === 1 ? '' : 's'} if right!` : 'Surprise me!'}</small></button>`);
@@ -1795,7 +1797,7 @@ function renderGameInner() {
       footer = `<p class="muted" style="text-align:center;margin:18px 0 0">Choosing by ${byCat ? 'category' : 'difficulty'} ·
         <a href="#" onclick="setPickMode('${byCat ? 'tier' : 'cat'}');return false" style="color:var(--blue)">switch to ${byCat ? 'difficulty' : 'category'}</a></p>`;
     }
-    const hint = !locked && rewardEligible(p) ? `<p class="rewardHint">🎁 Catching up: a question you pick has a ${data.settings.items.rewardChance}% chance to carry an item — get it right to keep it. (Not Random or Gamble.)</p>` : '';
+    const hint = !locked && rewardEligible(p) ? `<p class="rewardHint">🎁 Catching up: each ${byCat ? 'category' : 'difficulty'} has a ${data.settings.items.rewardChance}% chance to carry an item each turn. Pick one marked 🎁 and get it right to win that item. (Not Random or Gamble.)</p>` : '';
     stage.innerHTML = `<div class="turn"><span>${esc(p.name)}</span>, ${heading}</div>${hint}
       <div class="tierPick">${buttons.join('')}</div>${footer}${itemsOn() ? itemBar(p) : ''}`;
     return;
@@ -1955,6 +1957,17 @@ function rewardEligible(p) {
   const scores = players.map(x => x.score).sort((a, b) => a - b), cutoff = scores[Math.floor(players.length / 2) - 1];
   return p.score <= cutoff && p.score < scores.at(-1);
 }
+// Each pick option (a difficulty, or a category in category mode) rolls once per turn; a hit shows the item on the button
+let turnPrizes = {};
+function prizeFor(key) {
+  if (!(key in turnPrizes)) {
+    const p = players[turn], hit = p && !p.exodia && !(p.hardLock > 0) && !p.catLock && rewardEligible(p) && Math.random() * 100 < data.settings.items.rewardChance;
+    turnPrizes[key] = hit ? randomItem('reward') : null;
+    if (turnPrizes[key]) itemStat(turnPrizes[key]).shown++;
+  }
+  return turnPrizes[key];
+}
+const prizeBadge = key => { const k = prizeFor(key); return k ? `<span class="prizeBadge" title="Prize: ${esc(ITEMS[k].name)} — get it right to keep it">🎁${ITEMS[k].icon}</span>` : ''; };
 const rewardPill = q => q.reward ? `<span class="pill rewardPill" title="${esc(itemDesc(q.reward))}">🎁 Prize: ${ITEMS[q.reward].icon} ${ITEMS[q.reward].name}</span>` : '';
 // kind: 'tier' | 'cat' | 'any' | 'lock'; gamble = the Gamble button (random question, double or nothing)
 function draw(kind, id, gamble = false) {
@@ -1975,8 +1988,7 @@ function draw(kind, id, gamble = false) {
   stats.seen[q.id] = seenCount(q.id) + 1; saveStats();
   used.add(q.id);
   current = { ...q, gamble, random: kind === 'any' && !gamble, shuffled: buildChoices(q),
-    reward: kind !== 'any' && !players[turn].exodia && rewardEligible(players[turn]) && Math.random() * 100 < data.settings.items.rewardChance ? randomItem('reward') : null };
-  if (current.reward) itemStat(current.reward).shown++;
+    reward: kind === 'tier' || kind === 'cat' ? turnPrizes[kind + ':' + id] ?? null : null };
   revealed = false;
   // Show category & difficulty first, then move to the question automatically (the answer timer starts with the question)
   const wait = data.settings.introSeconds;
@@ -2259,7 +2271,7 @@ function advanceTurn() {
     if (p.skip > 0) { p.skip--; p.halfGain = false; skipped.push(p.name); continue; }
     break;
   }
-  itemUsedThisTurn = false; pickGroup = null;
+  itemUsedThisTurn = false; pickGroup = null; turnPrizes = {};
   return skipped;
 }
 
