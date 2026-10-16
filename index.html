@@ -498,7 +498,7 @@
     <label class="switch"><input type="checkbox" id="fxOn" onchange="saveFxSettings()"> Animations — screen transitions and points flying to / dropping off players</label>
     <label class="switch" style="margin-top:10px"><input type="checkbox" id="sfxOn" onchange="saveFxSettings()"> Sound effects — right / wrong answers, points, items and the winner</label>
     <div class="row" style="margin-top:10px"><button class="small" onclick="sfx('right')">▶ Right</button><button class="small" onclick="sfx('wrong')">▶ Wrong</button>
-      <button class="small" onclick="sfx('item')">▶ Item</button><button class="small" onclick="sfx('win')">▶ Winner</button></div>
+      <button class="small" onclick="sfx('item')">▶ Item gained</button><button class="small" onclick="sfx('use')">▶ Item used</button><button class="small" onclick="sfx('block')">▶ Shield block</button><button class="small" onclick="sfx('win')">▶ Winner</button></div>
   </div>
   <div class="card" data-stab="timing">
     <h3 style="margin-top:0">🏷️ Question preview</h3>
@@ -602,7 +602,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '2.1.2';
+const APP_VERSION = '2.1.3';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -769,6 +769,15 @@ const SEED_CATEGORIES = [
   { id: 'cat_space', name: "Space & Astronomy", color: '#7d7dff', group: "Science", was: "Space & Astronomy", v: 7 },
   { id: 'cat_memes', name: "Internet & Memes", color: '#ffe066', group: "Pop Culture", was: "Internet & Memes", v: 7 },
   { id: 'cat_body', name: "Human Body", color: '#ff8f8f', group: "Medicine", was: "Human Body & Medicine", v: 6 },
+  // bank version 11: the Animals family
+  { id: 'cat_animals', name: "General", color: '#c08a4a', group: "Animals" },
+  { id: 'cat_animals_mammals', name: "Mammals", color: '#b5793a', group: "Animals" },
+  { id: 'cat_animals_birds', name: "Birds", color: '#d19a52', group: "Animals" },
+  { id: 'cat_animals_ocean', name: "Ocean Life", color: '#4aa3b8', group: "Animals" },
+  { id: 'cat_animals_reptiles', name: "Reptiles & Amphibians", color: '#7fae4f', group: "Animals" },
+  { id: 'cat_animals_insects', name: "Insects & Bugs", color: '#a3b34a', group: "Animals" },
+  { id: 'cat_animals_pets', name: "Pets & Dog Breeds", color: '#e0a66a', group: "Animals" },
+  { id: 'cat_animals_dinosaurs', name: "Dinosaurs & Prehistoric", color: '#8a6d4a', group: "Animals" },
 ];
 // Starter questions moved to the Obscure tier in version 8 (pre-1990 topics most players won't know), by number within their category
 const SEED_RETIER = {"actors":"11,81,98,112,113,114,115,116,117,118,121,122,124,125,128,129,131,132,133,134,135,136,137,138,139,142,145,146,149,150","anime":"59,98,144,151,152,209","body":"86,135","cars":"79,131,133,134,135,138,146","dentistry":"109,111,130,131,138","disney":"113,150","disney_parks":"28,36,41","games":"105,121,133,141","gossip":"129,130,131,135,141,142","memes":"12,98,99,107","movies":"63,81,95,99,108,118,119,122,129","music":"87,88,89,124,128,130,131,132,133,134,135,136,137,138,140,141,142,144","space":"54,94,106,114,135,140","sports":"117,121,126,134,203,204,206,207,208,225,229,233,236,237","tech":"121,122,129,133,135,144,150,151,152","tv":"52,53,54,55,97,119,131,132,199,203"};
@@ -2079,7 +2088,14 @@ const SFX = {
   coin:  () => { tone(988, 0, .08, { type: 'square', vol: .04 }); tone(1319, .07, .2, { type: 'square', vol: .04 }); },
   drop:  () => tone(320, 0, .35, { vol: .12, slide: 70 }),
   round: () => [392, 523, 659].forEach((f, i) => tone(f, i * .1, .3, { type: 'triangle', vol: .1 })),
-  item:  () => [784, 988, 1175, 1568].forEach((f, i) => tone(f, i * .06, .22, { vol: .09 })),
+  // item gained: a rising power-up chirp, then a sparkle
+  item:  () => { tone(330, 0, .28, { type: 'square', vol: .07, slide: 990 });
+                 [1047, 1319, 1568, 2093].forEach((f, i) => tone(f, .26 + i * .07, .25, { type: 'triangle', vol: .13 })); },
+  // item used: a quick whoosh down and a bright zap
+  use:   () => { tone(1400, 0, .22, { type: 'sawtooth', vol: .05, slide: 180 });
+                 tone(660, .18, .12, { type: 'square', vol: .07 }); tone(990, .26, .22, { type: 'triangle', vol: .13 }); },
+  // a Shield blocks an attack: two dull clanks
+  block: () => { tone(180, 0, .12, { type: 'square', vol: .1, slide: 120 }); tone(150, .13, .2, { type: 'square', vol: .09, slide: 90 }); },
   win:   () => [[523, 0, .12], [523, .13, .12], [523, .26, .12], [698, .4, .3], [880, .65, .3], [1047, .9, .6]]
            .forEach(([f, t, d]) => tone(f, t, d, { type: 'triangle', vol: .15 })),
 };
@@ -2234,12 +2250,12 @@ function mark(correct) {
   if (prize) {
     const it = ITEMS[prize], box = `<div class="bigIcon">🎁${it.icon}</div><h2>Question prize!</h2>
       <p><b>${esc(name)}</b> won <b>${it.name}</b> ${rarityTag(prize)}</p><p class="muted">${esc(itemDesc(prize))}</p>`;
-    if (!earned) { setTimeout(() => sfx('item'), 500); return modal(box + notes); }
+    if (!earned) { setTimeout(() => sfx('item'), 350); return modal(box + notes); }
     notes = `<hr style="border-color:#4a4a8a">${box}` + notes;
   }
   if (earned) {
     const it = ITEMS[earned];
-    setTimeout(() => sfx('item'), 500);
+    setTimeout(() => sfx('item'), 350);
     modal(`<div class="bigIcon">${it.icon}</div>
       <h2>${kind === 'hot' ? `🔥 ${count} in a row!` : `🧊 ${count} misses in a row…`}</h2>
       <p><b>${esc(name)}</b> ${kind === 'hot' ? 'earned' : 'gets a comeback item:'} <b>${it.name}</b> ${rarityTag(earned)}</p>
@@ -2363,7 +2379,7 @@ function applyItem(idx, ti, catId) {
   const shieldAt = v.items.indexOf('shield');
   if (shieldAt >= 0) {
     v.items.splice(shieldAt, 1); itemStat('shield').used++;
-    return finishItem(p, idx, `<div class="bigIcon">🛡️</div><h2>Blocked!</h2><p>${esc(v.name)}'s Shield stopped ${esc(p.name)}'s ${it.name}.</p>`);
+    return finishItem(p, idx, `<div class="bigIcon">🛡️</div><h2>Blocked!</h2><p>${esc(v.name)}'s Shield stopped ${esc(p.name)}'s ${it.name}.</p>`, 'block');
   }
   let msg;
   if (key === 'pickpocket' || key === 'heist') {
@@ -2410,7 +2426,8 @@ function stormCloud(p, idx) {
   if (!lines.length) return toast('No other players to rain on');
   finishItem(p, idx, `<div class="bigIcon">🌧️</div><h2>Storm Cloud!</h2><p>${lines.join('<br>')}</p>`);
 }
-function finishItem(p, idx, html) {
+function finishItem(p, idx, html, sound = 'use') {
+  sfx(sound);
   itemStat(p.items[idx]).used++; saveStats();
   p.items.splice(idx, 1); itemUsedThisTurn = true;
   renderGame();

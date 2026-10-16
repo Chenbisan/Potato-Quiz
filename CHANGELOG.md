@@ -3,6 +3,10 @@
 All notable changes to Potato Quiz. Versions follow `major.minor.patch`:
 **minor** for new features or question batches, **patch** for fixes and small tweaks.
 
+## 2.1.3 — 2026-10-16
+- **Item sounds:** earning an item now plays a louder power-up sound right away, using an item plays a whoosh-and-zap, and a Shield block plays a clank. You can preview them in Settings › Effects.
+- Groundwork for the upcoming **Animals** family. Its categories stay hidden until questions arrive.
+
 ## 2.1.2 — 2026-10-16
 - A failed Exodia now costs **half your points**, rounded in your favor, instead of all of them.
 - New Exodia stats: the Players tab shows how many times each player used and won with Exodia, plus how many times Exodia has been completed overall. The Items tab shows Exodia attempts, completions and failures.
