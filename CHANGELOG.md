@@ -3,6 +3,13 @@
 All notable changes to Potato Quiz. Versions follow `major.minor.patch`:
 **minor** for new features or question batches, **patch** for fixes and small tweaks.
 
+## 1.9.0 — 2026-10-16
+- **No-choices mode:** a third option on the setup screen hides all answers. Players say their answer out loud, then reveal it and mark it right or wrong.
+- Every starter question now has **5 wrong answers**, so 6-answer games use written options instead of auto-picked ones. Saved games pick them up automatically unless you changed that question's wrong answers.
+- New **Reset all settings to default** button (Settings › Data). Questions, categories, tiers, players and stats are kept.
+- Settings layout cleaned up: clearer sections and aligned inputs on the Game and Items tabs.
+- Random bonus is back to **1 point** by default, so it stays below an Easy question. Saves still on 2 switch back automatically.
+
 ## 1.8.0 — 2026-10-16
 - **6-answer mode:** on the setup screen, choose 4 answers (normal) or 6 (harder). Questions without their own extra wrong answers get look-alike answers picked automatically.
 - Question editor has 2 optional extra wrong answers, used only in 6-answer games.
