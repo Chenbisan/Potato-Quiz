@@ -10,3 +10,5 @@ A team quiz game that runs entirely in the browser — no install, works on Wind
 - Edit questions, tiers and categories; add pictures or audio clips; export/import backups from Settings
 
 Your questions and settings are saved in your own browser on this site.
+
+See [CHANGELOG.md](CHANGELOG.md) for what changed in each version.
