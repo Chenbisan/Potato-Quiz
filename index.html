@@ -437,8 +437,9 @@
     <div class="row"><button class="small bad" onclick="resetItemStats()">Reset item stats</button></div>
   </div>
   <div class="card" id="statsP">
-    <table><thead><tr><th>Player</th><th>Games</th><th>Wins</th><th>Win %</th><th>Correct</th><th>Incorrect</th><th>% Correct</th></tr></thead>
-      <tbody id="statsTable"></tbody></table>
+    <div class="tableScroll"><table><thead><tr><th>Player</th><th>Games</th><th>Wins</th><th>Win %</th><th>Correct</th><th>Incorrect</th><th>% Correct</th>
+      <th title="Times this player activated Exodia">🃏 Exodia used</th><th title="Times this player completed Exodia for an instant win">🃏 Exodia won</th></tr></thead>
+      <tbody id="statsTable"></tbody></table></div>
     <p class="muted" id="statsInfo"></p>
     <div class="row"><button class="small bad" onclick="resetPlayerStats()">Reset player stats</button></div>
   </div>
@@ -601,7 +602,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '2.1.1';
+const APP_VERSION = '2.1.2';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1491,16 +1492,20 @@ const seenCount = id => stats.seen[id] || 0;
 // share of times a question was answered correctly (null if never answered)
 const rightRate = id => stats.answered[id] ? (stats.right[id] || 0) / stats.answered[id] : null;
 // items: key -> { shown (appeared: streak reward or question prize), earned, used, unused (still held when a game ended) }
+// Exodia across all games: times started, completed (instant win) and failed
+const exodiaStats = () => stats.exodia ??= { activated: 0, completed: 0, failed: 0 };
 const itemStat = k => (stats.items ??= {})[k] ??= { shown: 0, earned: 0, used: 0, unused: 0 };
 function playerStat(name) { const k = name.toLowerCase(); return stats.players[k] ??= { name, games: 0, wins: 0, correct: 0, wrong: 0 }; }
 const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '—';
 function renderStats() {
   const rows = Object.values(stats.players).sort((a, b) => b.wins - a.wins || (b.correct / (b.correct + b.wrong || 1)) - (a.correct / (a.correct + a.wrong || 1)));
   document.getElementById('statsTable').innerHTML = rows.map(p => `<tr><td><b>${esc(p.name)}</b></td><td>${p.games}</td><td>${p.wins}</td>
-    <td>${pct(p.wins, p.games)}</td><td>${p.correct}</td><td>${p.wrong}</td><td>${pct(p.correct, p.correct + p.wrong)}</td></tr>`).join('')
-    || '<tr><td colspan="7" class="muted">No games played yet.</td></tr>';
+    <td>${pct(p.wins, p.games)}</td><td>${p.correct}</td><td>${p.wrong}</td><td>${pct(p.correct, p.correct + p.wrong)}</td>
+    <td>${p.exodiaUsed || 0}</td><td>${p.exodiaWins || 0}</td></tr>`).join('')
+    || '<tr><td colspan="9" class="muted">No games played yet.</td></tr>';
   const shown = Object.values(stats.seen).reduce((a, b) => a + b, 0);
-  document.getElementById('statsInfo').textContent = `${shown} questions shown so far · ${Object.keys(stats.seen).length} different questions seen.`;
+  const ex = exodiaStats();
+  document.getElementById('statsInfo').textContent = `${shown} questions shown so far · ${Object.keys(stats.seen).length} different questions seen · 🃏 Exodia completed ${ex.completed} time${ex.completed === 1 ? '' : 's'} (out of ${ex.activated} attempt${ex.activated === 1 ? '' : 's'}).`;
 }
 function statsTab(t) {
   document.getElementById('statsP').style.display = t === 'p' ? '' : 'none';
@@ -1521,11 +1526,13 @@ function renderItemStats() {
     return `<tr><td>${i + 1}</td><td style="white-space:nowrap"><b>${it.icon} ${it.name}</b></td><td>${rarityTag(k)}</td>
       <td>${x.shown}</td><td>${x.earned}</td><td>${x.used}</td><td>${x.unused}</td><td>${pct(x.used, x.used + x.unused)}</td></tr>`; }).join('');
   const total = keys.reduce((a, k) => a + s(k).shown, 0);
-  document.getElementById('itemStatsInfo').textContent = total ? `${total} items shown so far. Unused counts items still held when a game finished.` : 'No items have shown up yet — play a game with items on.';
+  const ex = exodiaStats();
+  document.getElementById('itemStatsInfo').textContent = (total ? `${total} items shown so far. Unused counts items still held when a game finished.` : 'No items have shown up yet — play a game with items on.')
+    + ` 🃏 Exodia: ${ex.activated} started · ${ex.completed} completed · ${ex.failed} failed.`;
 }
 function resetItemStats() {
   if (!confirm('Reset all item stats?')) return;
-  stats.items = {}; saveStats(); renderItemStats(); toast('Item stats reset');
+  stats.items = {}; stats.exodia = { activated: 0, completed: 0, failed: 0 }; saveStats(); renderItemStats(); toast('Item stats reset');
 }
 // Question rankings: most correct / most incorrect (by % correct, then by how often answered) or most seen
 function renderQuestionStats() {
@@ -1616,7 +1623,7 @@ const ITEMS = {
   tax:        { icon: '💸', name: 'Tax',           target: true,  hot: true,  cold: true,  desc: "On a player's next question, half of what they earn (rounded down) goes to you." },
   dodge:      { icon: '💨', name: 'Dodge the Bullet', target: false, hot: true, cold: true, desc: "Use before picking: if you get it wrong, choose a player who loses the question's points." },
   nuke:       { icon: '☢️', name: 'Nuke',          target: false, hot: false, cold: true,  desc: "Everyone's score (yours included) becomes the average of all scores, rounded." },
-  exodia:     { icon: '🃏', name: 'Exodia',        target: false, hot: true,  cold: true,  desc: 'Get your next 5 questions right, climbing the difficulty ladder, and win instantly. One wrong answer and you lose all your points.' },
+  exodia:     { icon: '🃏', name: 'Exodia',        target: false, hot: true,  cold: true,  desc: 'Get your next 5 questions right, climbing the difficulty ladder, and win instantly. One wrong answer and you lose half your points.' },
   catchup:    { icon: '🪜', name: 'Catch Up',      target: false, hot: false, cold: true,  desc: 'Jump up to match the score of the player just ahead of you.' },
   blueshell:  { icon: '🐢', name: 'Blue Shell',    target: false, hot: false, cold: true,  desc: 'Hits the leader (not you) for −10 points. Ties are all hit. No choosing needed.' },
   shield:     { icon: '🛡️', name: 'Shield',        target: false, hot: true,  cold: true,  desc: 'Automatically blocks the next item used against you.', passive: true },
@@ -1662,7 +1669,7 @@ function exodiaPath(path = exodiaSequence()) {
 // Item description for display; Exodia's includes the actual difficulties it will ask
 function itemDesc(k) {
   return k === 'exodia'
-    ? `Get your next ${exodiaSequence().length} questions right (${exodiaPath()}) and win instantly. One wrong answer and you lose all your points.`
+    ? `Get your next ${exodiaSequence().length} questions right (${exodiaPath()}) and win instantly. One wrong answer and you lose half your points.`
     : ITEMS[k].desc;
 }
 // The easiest tier that actually has questions
@@ -1771,7 +1778,7 @@ function renderGameInner() {
       heading = `assemble Exodia — piece ${n + 1} of ${total}!`;
       buttons = [`<button class="exodiaBtn" onclick="draw('lock')">🃏 Draw piece ${n + 1}<small>${tName} question${p.catLock ? ` · 🎯 ${esc(choiceLabel(p.catLock.id))} only` : ''}</small></button>`];
       footer = `<div class="exodiaPieces">${Array.from({ length: total }, (_, i) => `<span class="${i < n ? 'got' : ''}">${i < n ? '🃏' : '?'}</span>`).join('')}</div>
-        <p class="muted" style="text-align:center;margin:8px 0 0">Get it right to claim the piece. One wrong answer and ${esc(p.name)} loses all their points.</p>`;
+        <p class="muted" style="text-align:center;margin:8px 0 0">Get it right to claim the piece. One wrong answer and ${esc(p.name)} loses half their points.</p>`;
     } else if (locked) {
       const parts = [p.hardLock && `🔒 ${esc(tierOf(hardestTierId()).name)} questions only (${p.hardLock} turn${p.hardLock > 1 ? 's' : ''} left)`,
         p.catLock && `🎯 ${esc(choiceLabel(p.catLock.id))} only (${p.catLock.turns} turn${p.catLock.turns > 1 ? 's' : ''} left)`].filter(Boolean);
@@ -2197,7 +2204,11 @@ function mark(correct) {
   if (p.exodia) {
     if (correct && ++p.exodia.pieces >= p.exodia.path.length) exodiaWin = true;
     else if (correct) exodiaNote = `<p>🃏 <b>${esc(p.name)}</b> claims Exodia piece ${p.exodia.pieces} of ${p.exodia.path.length}!</p>`;
-    else { exodiaNote = `<p>🃏💥 Exodia crumbles! <b>${esc(p.name)}</b> loses all ${p.score} point${p.score === 1 ? '' : 's'}.</p>`; p.score = 0; p.exodia = null; }
+    else {
+      const lost = Math.ceil(p.score / 2); // keeps half, rounded down
+      exodiaNote = `<p>🃏💥 Exodia crumbles! <b>${esc(p.name)}</b> loses half their points (−${lost}).</p>`; p.score -= lost; p.exodia = null;
+      exodiaStats().failed++; saveStats();
+    }
   }
   // Streaks: consecutive correct (hot) or wrong (cold) answers
   const kind = correct ? 'hot' : 'cold';
@@ -2210,6 +2221,7 @@ function mark(correct) {
     if (earned) { p.items.push(earned); const s = itemStat(earned); s.shown++; s.earned++; }
   }
   current = null;
+  if (exodiaWin) { exodiaStats().completed++; playerStat(p.name).exodiaWins = (playerStat(p.name).exodiaWins || 0) + 1; saveStats(); }
   if (exodiaWin) return modal(`<div class="bigIcon">🃏🃏🃏🃏🃏</div><h2>EXODIA, OBLITERATE!</h2>
     <p><b>${esc(p.name)}</b> assembled all ${p.exodia.path.length} pieces of the Forbidden One.</p>${turnNotes}`,
     [{ label: `${esc(p.name)} wins the game! 🏆`, cls: 'primary', fn: () => showWinner(p, 'exodia') }]);
@@ -2301,9 +2313,10 @@ function useItem(idx) {
     if (key === 'exodia') {
       if (p.exodia) return toast('Exodia is already in progress!');
       p.exodia = { pieces: 0, path: exodiaSequence() };
+      exodiaStats().activated++; playerStat(p.name).exodiaUsed = (playerStat(p.name).exodiaUsed || 0) + 1; saveStats();
       const n = p.exodia.path.length, path = esc(exodiaPath(p.exodia.path));
       finishItem(p, idx, `<div class="bigIcon">🃏</div><h2>Exodia!</h2><p>${esc(p.name)} begins assembling the Forbidden One.</p>
-        <p>Their next ${n} questions: <b>${path}</b></p><p>All ${n} right = <b>instant win</b>. One wrong = <b>lose all points</b>.</p>`);
+        <p>Their next ${n} questions: <b>${path}</b></p><p>All ${n} right = <b>instant win</b>. One wrong = <b>lose half their points</b>.</p>`);
     }
     if (key === 'dodge') { p.dodge = true; finishItem(p, idx, `<div class="bigIcon">💨</div><h2>Dodge the Bullet!</h2><p>If ${esc(p.name)} gets this one wrong, they choose a player who loses the question's points.</p>`); }
     if (key === 'triple') { p.boost = 'triple'; finishItem(p, idx, `<div class="bigIcon">🔱</div><h2>Triple Threat!</h2><p>${esc(p.name)} wins <b>triple</b> points if right… and loses triple if wrong.</p>`); }

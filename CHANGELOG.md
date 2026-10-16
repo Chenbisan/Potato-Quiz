@@ -3,6 +3,10 @@
 All notable changes to Potato Quiz. Versions follow `major.minor.patch`:
 **minor** for new features or question batches, **patch** for fixes and small tweaks.
 
+## 2.1.2 — 2026-10-16
+- A failed Exodia now costs **half your points**, rounded in your favor, instead of all of them.
+- New Exodia stats: the Players tab shows how many times each player used and won with Exodia, plus how many times Exodia has been completed overall. The Items tab shows Exodia attempts, completions and failures.
+
 ## 2.1.1 — 2026-10-16
 - Question prizes now start only after the first **3 rounds**, so nobody gets items too early. Change it in Settings › Items › Question prizes › "Start after" (0 = from the first round).
 
