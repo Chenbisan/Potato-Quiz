@@ -186,6 +186,8 @@
   .tierRow.dragging { opacity: .4; }
   .tierRow.dropAbove td { box-shadow: inset 0 3px 0 var(--accent); }
   .tierRow.dropBelow td { box-shadow: inset 0 -3px 0 var(--accent); }
+  th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+  th.sortable:hover { color: var(--accent); }
   .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--good); color: #04210f; padding: 10px 20px; border-radius: 10px; font-weight: 700; opacity: 0; transition: opacity .3s; pointer-events: none; }
   .toast.show { opacity: 1; }
   .confetti { position: fixed; top: -10px; width: 10px; height: 14px; animation: fall linear forwards; pointer-events: none; }
@@ -201,6 +203,7 @@
   <div class="menu">
     <button class="primary" onclick="go('setup')">▶ Start Quiz</button>
     <button onclick="go('editor')">✏️ Edit Questions</button>
+    <button onclick="go('stats')">📊 Stats</button>
     <button onclick="go('settings')">⚙️ Settings</button>
   </div>
   <p class="sub" id="menuStats" style="margin-top:30px"></p>
@@ -327,7 +330,8 @@
           <select id="qCatFilter" onchange="renderQuestions()"></select>
         </div>
       </div>
-      <table><thead><tr><th>Question</th><th>Answer</th><th>Tier</th><th>Category</th><th></th></tr></thead><tbody id="qTable"></tbody></table>
+      <table><thead><tr><th>Question</th><th>Answer</th><th>Tier</th><th>Category</th><th class="sortable" id="sortSeen" onclick="sortQuestions('seen')" title="Times shown in games — click to sort">Seen</th>
+        <th class="sortable" id="sortRate" onclick="sortQuestions('rate')" title="How often it was answered correctly — click to sort">% Correct</th><th></th></tr></thead><tbody id="qTable"></tbody></table>
     </div>
   </div>
 
@@ -355,6 +359,16 @@
 </section>
 
 <!-- SETTINGS -->
+<section id="stats" class="screen">
+  <div class="topbar"><h2>📊 Player Stats</h2><button class="ghost" onclick="go('menu')">← Menu</button></div>
+  <div class="card">
+    <table><thead><tr><th>Player</th><th>Games</th><th>Wins</th><th>Win %</th><th>Correct</th><th>Incorrect</th><th>% Correct</th></tr></thead>
+      <tbody id="statsTable"></tbody></table>
+    <p class="muted" id="statsInfo"></p>
+    <div class="row"><button class="small bad" onclick="resetPlayerStats()">Reset player stats</button></div>
+  </div>
+</section>
+
 <section id="settings" class="screen">
   <div class="topbar"><h2>Settings</h2><button class="ghost" onclick="go('menu')">← Menu</button></div>
   <div class="card">
@@ -420,6 +434,12 @@
         <tbody id="itemTable"></tbody></table>
       <p class="muted">Untick both boxes to turn an item off completely.</p>
     </div>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">🔁 Question counter</h3>
+    <p class="muted">The game counts how many times each question has been shown (see the "Seen" column in Edit Questions).
+      Questions seen more often are less likely to come up, so the team sees fewer repeats.</p>
+    <button class="small bad" onclick="resetSeenCounts()">Reset "seen" counts and % correct</button>
   </div>
   <div class="card">
     <h3 style="margin-top:0">Backup</h3>
@@ -7415,7 +7435,7 @@ function removeQuestions(pred) {
 function go(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  ({ menu: renderMenu, setup: renderSetup, editor: renderEditor, settings: renderSettings })[id]?.();
+  ({ menu: renderMenu, setup: renderSetup, editor: renderEditor, settings: renderSettings, stats: renderStats })[id]?.();
 }
 function renderMenu() {
   document.getElementById('menuStats').textContent =
@@ -7541,10 +7561,23 @@ function renderEditor() {
     (groups.length ? `<optgroup label="Whole groups">${groups.map(g => `<option value="g:${esc(g)}">All ${esc(g)}</option>`).join('')}</optgroup>` : '') + catOptions());
   renderQuestions(); renderTiers(); renderCats();
 }
+let qSort = { key: null, dir: -1 }; // question list sort: 'seen' or 'rate'; dir 1 = ascending, -1 = descending
+function sortQuestions(key) {
+  qSort = qSort.key === key ? { key, dir: -qSort.dir } : { key, dir: -1 };
+  renderQuestions();
+}
 function renderQuestions() {
   const f = document.getElementById('qFilter').value, cf = document.getElementById('qCatFilter').value;
   const inCat = cf === '*' ? () => true : choiceMatch(cf);
   const list = data.questions.filter(q => (!f || q.tierId === f) && inCat(q));
+  if (qSort.key) {
+    const val = q => qSort.key === 'seen' ? seenCount(q.id) : rightRate(q.id);
+    list.sort((a, b) => { const x = val(a), y = val(b);
+      if (x === null || y === null) return (x === null) - (y === null); // never-answered questions go last
+      return qSort.dir * (x - y); });
+  }
+  document.getElementById('sortSeen').textContent = 'Seen' + (qSort.key === 'seen' ? (qSort.dir > 0 ? ' ▲' : ' ▼') : '');
+  document.getElementById('sortRate').textContent = '% Correct' + (qSort.key === 'rate' ? (qSort.dir > 0 ? ' ▲' : ' ▼') : '');
   document.getElementById('qCount').textContent = data.questions.length;
   document.getElementById('qTable').innerHTML = list.map(q => {
     const t = tierOf(q.tierId) || { name: '?', color: '#888' };
@@ -7555,9 +7588,11 @@ function renderQuestions() {
     return `<tr><td>${esc(q.text)}${mc}</td><td>${esc(q.answer)}</td>
       <td><span class="pill" style="background:${t.color}">${esc(t.name)}</span></td>
       <td><span class="pill" style="background:${c.color}">${esc(catLabel(c))}</span></td>
+      <td>${seenCount(q.id)}</td>
+      <td>${rightRate(q.id) === null ? '<span class="muted">—</span>' : Math.round(rightRate(q.id) * 100) + '%'}<br><small class="muted">${stats.answered[q.id] ? `${stats.right[q.id] || 0}/${stats.answered[q.id]}` : ''}</small></td>
       <td style="white-space:nowrap"><button class="small" onclick="editQuestion('${q.id}')">Edit</button>
       <button class="small bad" onclick="deleteQuestion('${q.id}')">Delete</button></td></tr>`;
-  }).join('') || `<tr><td colspan="5" class="muted">No questions here yet — add one above.</td></tr>`;
+  }).join('') || `<tr><td colspan="7" class="muted">No questions here yet — add one above.</td></tr>`;
 }
 // Media attached in the form: { type, name, id } for an already-saved file, or { type, name, blob } for a new one
 let formMedia = null;
@@ -7745,6 +7780,31 @@ function renderCatPicker() {
   document.getElementById('allCatsBtn').style.display = off.length ? '' : 'none';
   document.getElementById('allCatsOffBtn').style.display = total ? '' : 'none';
 }
+// ---------- Stats (saved separately from the question bank) ----------
+// seen: question id -> times shown; answered/right: question id -> times marked / marked correct;
+// players: lower-case name -> { name, games, wins, correct, wrong }
+const SKEY = 'potatoQuizStats_v1';
+let stats = loadStats();
+function loadStats() {
+  try { const st = JSON.parse(localStorage.getItem(SKEY)); if (st && st.seen && st.players) { st.answered ??= {}; st.right ??= {}; return st; } } catch (e) {}
+  return { seen: {}, answered: {}, right: {}, players: {} };
+}
+function saveStats() { try { localStorage.setItem(SKEY, JSON.stringify(stats)); } catch (e) {} }
+const seenCount = id => stats.seen[id] || 0;
+// share of times a question was answered correctly (null if never answered)
+const rightRate = id => stats.answered[id] ? (stats.right[id] || 0) / stats.answered[id] : null;
+function playerStat(name) { const k = name.toLowerCase(); return stats.players[k] ??= { name, games: 0, wins: 0, correct: 0, wrong: 0 }; }
+const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '—';
+function renderStats() {
+  const rows = Object.values(stats.players).sort((a, b) => b.wins - a.wins || (b.correct / (b.correct + b.wrong || 1)) - (a.correct / (a.correct + a.wrong || 1)));
+  document.getElementById('statsTable').innerHTML = rows.map(p => `<tr><td><b>${esc(p.name)}</b></td><td>${p.games}</td><td>${p.wins}</td>
+    <td>${pct(p.wins, p.games)}</td><td>${p.correct}</td><td>${p.wrong}</td><td>${pct(p.correct, p.correct + p.wrong)}</td></tr>`).join('')
+    || '<tr><td colspan="7" class="muted">No games played yet.</td></tr>';
+  const shown = Object.values(stats.seen).reduce((a, b) => a + b, 0);
+  document.getElementById('statsInfo').textContent = `${shown} questions shown so far · ${Object.keys(stats.seen).length} different questions seen.`;
+}
+function resetPlayerStats() { if (confirm('Reset all player stats (games, wins, correct/incorrect)?')) { stats.players = {}; saveStats(); renderStats(); } }
+function resetSeenCounts() { if (confirm('Reset every question\'s "seen" count to 0?')) { stats.seen = {}; stats.answered = {}; stats.right = {}; saveStats(); toast('Counts reset'); } }
 function saveRoster() { try { localStorage.setItem(PKEY, JSON.stringify(roster)); } catch (e) {} }
 const MAX_RECENT = 40;
 function rememberPlayers() {
@@ -7845,16 +7905,17 @@ function itemDesc(k) {
 }
 // The easiest tier that actually has questions
 function easiestTierId() { return rankedTiers()[0]?.id; }
-// Exodia's question ladder: every tier from easiest to hardest (in the editor's order), finishing once on the hardest.
-// It has at least 5 pieces; spare pieces lean hard — they go to the second-hardest tier first, then the next one down —
-// so Easy/Medium/Hard/Obscure → Easy, Medium, Hard, Hard, Obscure. With more than 5 tiers it has one piece per tier.
+// Exodia's question ladder: every tier from easiest to hardest (in the editor's order). It's an instant win, so it skews
+// hard: it has at least 5 pieces and spare pieces go to the second-hardest tier, then the hardest, then on down (never
+// the easiest). 3 tiers → Easy, Medium, Medium, Hard, Hard; 4 → Easy, Medium, Hard, Hard, Obscure; 5+ → one per tier.
 function exodiaSequence() {
   const ts = rankedTiers();
   if (!ts.length) return [];
   const counts = ts.map(() => 1);
-  // tiers that take spare pieces, hardest first: everything between the easiest and the finale (or the last tier if none)
-  let pool = ts.map((t, i) => i).slice(1, -1).reverse();
-  if (!pool.length) pool = [ts.length - 1];
+  // order in which tiers take spare pieces: second-hardest, hardest, then the rest downward — never the easiest
+  const n = ts.length;
+  let pool = n < 2 ? [0] : [n - 2, n - 1, ...Array.from({ length: n - 3 }, (_, k) => n - 3 - k)].filter(i => i > 0);
+  if (!pool.length) pool = [n - 1];
   for (let extra = EXODIA_PIECES - ts.length, i = 0; extra > 0; extra--, i++) counts[pool[i % pool.length]]++;
   return ts.flatMap((t, i) => Array(counts[i]).fill(t.id));
 }
@@ -7889,6 +7950,7 @@ function startGame() {
   if (!data.questions.length) return alert('Add some questions first (Edit Questions).');
   if (!gameQs().length) return alert("No questions are in play — turn at least one category and one difficulty back on.");
   rememberPlayers();
+  players.forEach(p => playerStat(p.name).games++); saveStats();
   players.forEach(p => Object.assign(p, { score: 0, items: [], streak: { kind: null, count: 0 }, skip: 0, hardLock: 0, catLock: null, boost: null, halfTime: false, halfGain: false, beginner: 0, helper: null, tax: null, dodge: false, exodia: null, turnsPlayed: 0, lastGamble: -Infinity }));
   bets = [];
   // Random turn order each game (Fisher–Yates shuffle)
@@ -8077,7 +8139,11 @@ function draw(kind, id, gamble = false) {
     pool = gameQs().filter(match);
     toast('All of these questions used — reshuffling');
   }
-  const q = pool[Math.floor(Math.random() * pool.length)];
+  // Questions shown more often are less likely: weight = 1 / (1 + times seen)
+  const weights = pool.map(q => 1 / (1 + seenCount(q.id)));
+  let pick = Math.random() * weights.reduce((a, b) => a + b, 0), q = pool[pool.length - 1];
+  for (let i = 0; i < pool.length; i++) { pick -= weights[i]; if (pick <= 0) { q = pool[i]; break; } }
+  stats.seen[q.id] = seenCount(q.id) + 1; saveStats();
   used.add(q.id);
   const wrong = (q.wrong || []).filter(Boolean);
   current = { ...q, gamble, random: kind === 'any' && !gamble, shuffled: wrong.length ? [q.answer, ...wrong].sort(() => Math.random() - .5) : null };
@@ -8227,6 +8293,10 @@ function mark(correct) {
   stopTimer(); timesUp = false;
   const st = stakes(p);
   const gained = correct ? st.win : 0;
+  playerStat(p.name)[correct ? 'correct' : 'wrong']++;
+  stats.answered[current.id] = (stats.answered[current.id] || 0) + 1;
+  if (correct) stats.right[current.id] = (stats.right[current.id] || 0) + 1;
+  saveStats();
   if (correct) { p.score += st.win; sfx('right'); const btn = document.querySelector('#qReveal .good'); if (btn) flyOrigin = centerOf(btn); }
   else {
     sfx('wrong');
@@ -8475,6 +8545,7 @@ function finishItem(p, idx, html) {
 
 // ---------- Winner ----------
 function showWinner(w, how) {
+  playerStat(w.name).wins++; saveStats();
   stopTimer(); go('winner'); sfx('win');
   document.getElementById('winnerName').textContent = w.name;
   document.getElementById('winnerPts').textContent = `${w.score} point${w.score === 1 ? "" : "s"}${how === 'exodia' ? ' · won by 🃏 Exodia!' : ''}`;
