@@ -593,7 +593,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.0.1';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -962,10 +962,17 @@ function topChoices(qs) {
   return out;
 }
 // Category <select> options with groups as <optgroup>s
+// One display order everywhere: families A–Z; inside a family its General category first, then A–Z; ungrouped last, A–Z
+const az = (x, y) => x.localeCompare(y, undefined, { sensitivity: 'base' });
+const isGeneralOf = (c, g) => /^general\b/i.test(c.name) || c.name === g;
+const catOrder = (a, b) => (!a.group - !b.group) || (a.group && b.group && az(a.group, b.group))
+  || (a.group && (isGeneralOf(b, b.group) - isGeneralOf(a, a.group))) || az(a.name, b.name);
+const sortedCats = () => [...data.categories].sort(catOrder);
+const sortedGroups = () => [...new Set(data.categories.filter(c => c.group).map(c => c.group))].sort(az);
 function catOptions() {
-  const ungrouped = data.categories.filter(c => !c.group), groups = [...new Set(data.categories.filter(c => c.group).map(c => c.group))];
-  return ungrouped.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('') +
-    groups.map(g => `<optgroup label="${esc(g)}">${data.categories.filter(c => c.group === g).map(c => `<option value="${c.id}">${esc(g)}: ${esc(c.name)}</option>`).join('')}</optgroup>`).join('');
+  const cats = sortedCats(), ungrouped = cats.filter(c => !c.group);
+  return sortedGroups().map(g => `<optgroup label="${esc(g)}">${cats.filter(c => c.group === g).map(c => `<option value="${c.id}">${esc(g)}: ${esc(c.name)}</option>`).join('')}</optgroup>`).join('') +
+    (ungrouped.length ? `<optgroup label="Other">${ungrouped.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}</optgroup>` : '');
 }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1600); }
@@ -1202,7 +1209,7 @@ function renderEditor() {
   fillSelect('qTier', data.tiers.map(t => `<option value="${t.id}">${esc(t.name)} (${t.points} pts)</option>`).join(''));
   fillSelect('qCat', `<option value="">Uncategorized</option>` + catOptions());
   fillSelect('qFilter', `<option value="">All tiers</option>` + data.tiers.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join(''));
-  const groups = [...new Set(data.categories.filter(c => c.group).map(c => c.group))];
+  const groups = sortedGroups();
   fillSelect('qCatFilter', `<option value="*">All categories</option><option value="">Uncategorized</option>` +
     (groups.length ? `<optgroup label="Whole groups">${groups.map(g => `<option value="g:${esc(g)}">All ${esc(g)}</option>`).join('')}</optgroup>` : '') + catOptions());
   // Open on Uncategorized the first time: quick to load, and shows questions that still need a category
@@ -1345,7 +1352,7 @@ function delTier(id) {
   save(); renderEditor();
 }
 function renderCats() {
-  document.getElementById('cTable').innerHTML = data.categories.map(c => {
+  document.getElementById('cTable').innerHTML = sortedCats().map(c => {
     const n = data.questions.filter(q => q.categoryId === c.id).length;
     return `<tr>
       <td><input value="${esc(c.group || '')}" placeholder="(none)" list="groupList" style="width:150px" onchange="updCat('${c.id}','group',this.value.trim())"></td>
@@ -1354,7 +1361,7 @@ function renderCats() {
       <td>${n}</td>
       <td><button class="small bad" onclick="delCat('${c.id}')">Delete</button></td></tr>`;
   }).join('') || `<tr><td colspan="5" class="muted">No categories yet.</td></tr>`;
-  document.getElementById('groupList').innerHTML = [...new Set(data.categories.map(c => c.group).filter(Boolean))].map(g => `<option value="${esc(g)}">`).join('');
+  document.getElementById('groupList').innerHTML = sortedGroups().map(g => `<option value="${esc(g)}">`).join('');
 }
 function updCat(id, key, val) { const c = catOf(id); if (key === 'group' && !val) delete c.group; else c[key] = val; save(); toast('Category saved'); renderEditor(); }
 function addCat() { data.categories.push({ id: uid(), name: 'New category', color: '#4da3ff' }); save(); renderEditor(); }
@@ -1435,14 +1442,14 @@ function renderCatPicker() {
   const chip = (c, n, label) => { const on = !off.includes(c.id);
     return `<button class="catToggle ${on ? 'on' : ''}" style="--c:${c.color}" onclick="toggleCat('${c.id}')">${on ? '✓' : '✕'} ${esc(label)} <small>${n}</small></button>`; };
   // Families are collapsible rows, A–Z; inside a family its own "General" category comes first, then A–Z
-  const top = topChoices(data.questions), az = (x, y) => x.localeCompare(y, undefined, { sensitivity: 'base' });
+  const top = topChoices(data.questions);
   const open = openGroups();
   const groups = top.filter(e => e.kind === 'group').sort((x, y) => az(x.group, y.group));
   const loose = top.filter(e => e.kind === 'cat').sort((x, y) => az(x.c.name, y.c.name));
-  const subOrder = (g, x) => (/^general\b/i.test(x.c.name) || x.c.name === g.group ? '0' : '1') + x.c.name;
+
   document.getElementById('catPicker').innerHTML = groups.map(g => {
     const onCount = g.cats.filter(x => !off.includes(x.c.id)).length, isOpen = open.has(g.group), gq = esc(g.group).replace(/'/g, "\\'");
-    const subs = [...g.cats].sort((x, y) => az(subOrder(g, x), subOrder(g, y)));
+    const subs = [...g.cats].sort((x, y) => catOrder(x.c, y.c));
     return `<div class="catGroup ${isOpen ? 'open' : ''}">
       <div class="catGroupRow">
         <button class="groupArrow" onclick="toggleGroupOpen('${gq}')" title="${isOpen ? 'Hide' : 'Show'} its categories" aria-expanded="${isOpen}"></button>

@@ -3,6 +3,9 @@
 All notable changes to Potato Quiz. Versions follow `major.minor.patch`:
 **minor** for new features or question batches, **patch** for fixes and small tweaks.
 
+## 2.0.1 — 2026-10-16
+- Edit Questions now lists categories in the same order as the setup screen: groups A–Z, each group's General category first, then A–Z. Ungrouped categories come last under "Other". This applies to the category filter, the question form, and the Categories tab.
+
 ## 2.0.0 — 2026-10-16
 - **New save format:** the question bank now lives in its own file, `questions.json`, and each browser saves only your changes (edited, deleted and added questions, plus settings, categories and tiers). A save is now about 15 KB instead of 1.5 MB, so the bank can keep growing without hitting the browser's storage limit.
 - New starter questions and fixes now reach everyone automatically. If you edited a question yourself, your version is kept.
