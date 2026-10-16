@@ -4,7 +4,7 @@ A team quiz game that runs entirely in the browser — no install, works on Wind
 
 **Play:** https://chenbisan.github.io/Potato-Quiz/
 
-- 5,300+ built-in questions across 101 categories (grouped into families like Pokémon, Video Games, Disney and Generations) and four difficulty tiers (Easy, Medium, Hard, Obscure)
+- 5,300+ built-in questions across 109 categories in 20 families (Pokémon, Video Games, Disney, Generations, General Knowledge…) and four difficulty tiers (Easy, Medium, Hard, Obscure)
 - Pick by difficulty or category, 🎲 Random (bonus point) or 🎰 Gamble (double or nothing)
 - 20+ streak items (Blue Shell, Exodia, Heist, Side Bet, Dodge the Bullet…), answer timer, sound effects
 - Edit questions, tiers and categories; add pictures or audio clips; export/import backups from Settings
