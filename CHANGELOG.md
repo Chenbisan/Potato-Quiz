@@ -3,6 +3,22 @@
 All notable changes to Potato Quiz. Versions follow `major.minor.patch`:
 **minor** for new features or question batches, **patch** for fixes and small tweaks.
 
+## 2.1.0 — 2026-10-16
+- **4,142 new questions**, so popular families repeat far less. The bank is now 10,671 questions. Each of these families now has about 1,000:
+
+  | Family | Before | Now |
+  |---|---|---|
+  | Anime | 214 | 980 |
+  | Food | 248 | 982 |
+  | Music | 364 | 991 |
+  | Pokémon | 365 | 985 |
+  | Video Games | 237 | 991 |
+  | Pop Culture | 343 | 984 |
+
+- Thin sub-categories got the most new questions: every Pokémon region now has about 100, and categories like Naruto, One Piece, Baking & Desserts and Hip-Hop & R&B grew several-fold.
+- Every new question has 5 wrong answers, so it works in 4-answer, 6-answer and no-choices games.
+- New questions arrive automatically. Your own edits, deletions and added questions are kept.
+
 ## 2.0.3 — 2026-10-16
 - **Question prizes reworked:** on a trailing player's turn, each difficulty (or category) button rolls the prize chance (20% by default) once. A button that wins shows a glowing 🎁 with the item's icon, so players can see the prize and choose that question. Pick it and answer correctly to keep the item. Never on Random, Gamble, locked turns or Exodia.
 - Moved 38 questions whose category gave away the answer. For example, Finding Nemo and Willy Wonka's dentist father are no longer under Dentistry, "Which sport is played at Wimbledon?" is no longer under Tennis, and "Which country…?" questions no longer sit in that country's own category.
