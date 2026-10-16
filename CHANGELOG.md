@@ -3,6 +3,9 @@
 All notable changes to Potato Quiz. Versions follow `major.minor.patch`:
 **minor** for new features or question batches, **patch** for fixes and small tweaks.
 
+## 2.1.1 — 2026-10-16
+- Question prizes now start only after the first **3 rounds**, so nobody gets items too early. Change it in Settings › Items › Question prizes › "Start after" (0 = from the first round).
+
 ## 2.1.0 — 2026-10-16
 - **4,142 new questions**, so popular families repeat far less. The bank is now 10,671 questions. Each of these families now has about 1,000:
 

@@ -545,6 +545,12 @@
       <div class="ctrl"><input type="number" id="rewardChance" min="0" max="100" style="width:90px"
         onchange="data.settings.items.rewardChance = Math.min(100, Math.max(0, parseInt(this.value) || 0)); save(); toast('Saved')"><span class="unit">%</span></div>
     </div>
+    <div class="setting" id="rewardRoundRow">
+      <div class="setName">Start after</div>
+      <div class="ctrl"><input type="number" id="rewardAfterRounds" min="0" max="50" style="width:90px"
+        onchange="data.settings.items.rewardAfterRounds = Math.min(50, Math.max(0, parseInt(this.value) || 0)); save(); toast('Saved')"><span class="unit">rounds (0 = from the first round)</span></div>
+      <div class="help">No prizes appear until this many rounds are finished, so nobody gets items too early.</div>
+    </div>
   </div>
   <div class="card itemsDep" data-stab="items">
     <h3 class="cardTitle">⭐ Rarity</h3>
@@ -595,7 +601,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '2.1.1';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -934,7 +940,7 @@ function upgrade(d) {
   d.settings.items.rarity ??= {}; for (const k in ITEMS) d.settings.items.rarity[k] ??= DEFAULT_RARITY[k] ?? 1;
   d.settings.items.rarityWeights ??= { 1: 60, 2: 30, 3: 10 };
   for (const k in ITEMS) d.settings.items.pools[k].reward ??= ITEMS[k].hot;
-  d.settings.items.rewardChance ??= 20; d.settings.items.rewards ??= true;
+  d.settings.items.rewardChance ??= 20; d.settings.items.rewards ??= true; d.settings.items.rewardAfterRounds ??= 3;
   delete d.deleted;
   return d;
 }
@@ -1110,6 +1116,9 @@ function renderItemSettings() {
   document.getElementById('rewardsOn').checked = st.rewards;
   document.getElementById('rewardChanceRow').style.opacity = st.rewards ? '' : '.45';
   document.getElementById('rewardChance').disabled = !st.rewards;
+  document.getElementById('rewardAfterRounds').value = st.rewardAfterRounds ?? 3;
+  document.getElementById('rewardAfterRounds').disabled = !st.rewards;
+  document.getElementById('rewardRoundRow').style.opacity = st.rewards ? '' : '.45';
   document.getElementById('rarityWeights').innerHTML = [1, 2, 3].map(r => `<div class="rarityCell">
     <span class="rarityTag" style="--rc:${RARITIES[r].color}">${RARITIES[r].stars} ${RARITIES[r].name}</span>
     <input type="number" min="0" max="100" value="${st.rarityWeights[r] ?? 0}"
@@ -1621,7 +1630,8 @@ const LOCK_TURNS = 2, BLUE_SHELL_POINTS = 10, BEGINNER_TURNS = 5, EXODIA_PIECES 
 const defaultItemSettings = () => ({
   enabled: true, streaks: [3, 5, 7],
   pools: Object.fromEntries(Object.entries(ITEMS).map(([k, it]) => [k, { hot: it.hot, cold: it.cold, reward: it.hot }])),
-  rewards: true, rewardChance: 20, // question prizes on/off, and the % chance that a question a trailing player picks carries an item prize
+  rewards: true, rewardChance: 20, rewardAfterRounds: 3, // prizes start once this many rounds are done (0 = from the start)
+  // question prizes on/off, and the % chance that a question a trailing player picks carries an item prize
   rarity: { ...DEFAULT_RARITY }, rarityWeights: { 1: 60, 2: 30, 3: 10 },
 });
 const itemsOn = () => data.settings.items.enabled;
@@ -1954,6 +1964,7 @@ function stakeBadge(p) {
 // on a question they pick (not Random or Gamble); they win it by getting the question right
 function rewardEligible(p) {
   if (!itemsOn() || !data.settings.items.rewards || players.length < 2 || !(data.settings.items.rewardChance > 0)) return false;
+  if (round <= (data.settings.items.rewardAfterRounds ?? 0)) return false; // too early in the game
   const scores = players.map(x => x.score).sort((a, b) => a - b), cutoff = scores[Math.floor(players.length / 2) - 1];
   return p.score <= cutoff && p.score < scores.at(-1);
 }
