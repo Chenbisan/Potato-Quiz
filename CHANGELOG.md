@@ -3,6 +3,14 @@
 All notable changes to Potato Quiz. Versions follow `major.minor.patch`:
 **minor** for new features or question batches, **patch** for fixes and small tweaks.
 
+## 2.0.0 — 2026-10-16
+- **New save format:** the question bank now lives in its own file, `questions.json`, and each browser saves only your changes (edited, deleted and added questions, plus settings, categories and tiers). A save is now about 15 KB instead of 1.5 MB, so the bank can keep growing without hitting the browser's storage limit.
+- New starter questions and fixes now reach everyone automatically. If you edited a question yourself, your version is kept.
+- Existing saves convert automatically the first time you open 2.0. Your edits, deletions and own questions are kept.
+- Settings › Data now has two reset buttons: **Reset settings** (settings only, questions untouched) and **Reset everything** (also undoes all question changes and deletes questions you added). Reset everything shows exactly what will change, offers a backup export first, and asks twice.
+- Setup screen: category families are now **collapsible rows in A–Z order** (each family's General category first, then its categories A–Z). Tap the arrow to show a family's categories, or use **Expand all / Collapse all**. Each row shows how many of its categories are on.
+- The game needs the website (or a local web server) to load questions. Opening the HTML file straight from your computer no longer works.
+
 ## 1.9.0 — 2026-10-16
 - **No-choices mode:** a third option on the setup screen hides all answers. Players say their answer out loud, then reveal it and mark it right or wrong.
 - Every starter question now has **5 wrong answers**, so 6-answer games use written options instead of auto-picked ones. Saved games pick them up automatically unless you changed that question's wrong answers.
