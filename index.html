@@ -180,6 +180,12 @@
   .tierPick .groupBtn { box-shadow: inset 0 -5px 0 rgba(0,0,0,.18); }
   .tierPick .groupBack { background: var(--panel2); color: var(--text); font-size: 1rem; grid-column: 1 / -1; padding: 10px; }
   .introGroup { font-size: 1rem; font-weight: 800; color: var(--text); margin-bottom: 6px; letter-spacing: 1px; }
+  .tierRow .dragHandle { cursor: grab; font-size: 1.3rem; color: var(--muted); padding: 0 6px; user-select: none; }
+  .tierRank { white-space: nowrap; }
+  .tierRank button { padding: 2px 6px; }
+  .tierRow.dragging { opacity: .4; }
+  .tierRow.dropAbove td { box-shadow: inset 0 3px 0 var(--accent); }
+  .tierRow.dropBelow td { box-shadow: inset 0 -3px 0 var(--accent); }
   .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--good); color: #04210f; padding: 10px 20px; border-radius: 10px; font-weight: 700; opacity: 0; transition: opacity .3s; pointer-events: none; }
   .toast.show { opacity: 1; }
   .confetti { position: fixed; top: -10px; width: 10px; height: 14px; animation: fall linear forwards; pointer-events: none; }
@@ -214,6 +220,11 @@
       <button class="small ghost" id="clearPlayersBtn" onclick="clearPlayers()">Clear all</button>
     </div>
     <button class="primary" style="margin-top:4px;font-size:1.2rem" onclick="startGame()">Start game →</button>
+  </div>
+  <div class="card">
+    <h3 style="margin:0">Difficulties in this game <span class="muted" style="font-size:.9rem;font-weight:400">— click to turn on/off</span></h3>
+    <div class="chips" id="tierPicker"></div>
+    <p class="muted" style="margin-bottom:0">Hard Lock, Exodia and Beginner's Luck only use the difficulties that are on.</p>
   </div>
   <div class="card">
     <div class="row" style="justify-content:space-between">
@@ -323,8 +334,10 @@
   <div id="edT" style="display:none">
     <div class="card">
       <h3 style="margin-top:0">Difficulty tiers & points</h3>
-      <p class="muted">Set how many points a correct answer is worth for each tier. <b>Bonus</b> tiers (like Obscure) are skipped by Hard Lock, so it stays on Hard. Exodia always climbs through every tier and finishes on the hardest one.</p>
-      <table><thead><tr><th>Name</th><th>Points</th><th>Colour</th><th title="Bonus tiers are skipped by Hard Lock">Bonus</th><th>Questions</th><th></th></tr></thead><tbody id="tTable"></tbody></table>
+      <p class="muted">Set how many points a correct answer is worth for each tier. Hard Lock always uses the hardest tier.
+        Drag the ⠿ handle (or use ▲▼) to rank them: <b>easiest at the top, hardest at the bottom</b>. The order — not the points —
+        decides difficulty for Exodia (which ends on the bottom tier), Hard Lock (bottom tier) and Beginner's Luck (top tier).</p>
+      <table><thead><tr><th></th><th>Name</th><th>Points</th><th>Colour</th><th>Questions</th><th></th></tr></thead><tbody id="tTable"></tbody></table>
       <button style="margin-top:14px" onclick="addTier()">+ Add tier</button>
     </div>
   </div>
@@ -432,15 +445,16 @@ for (const [oldKey, newKey] of [['teamQuizData_v1', KEY], ['teamQuizPlayers_v1',
   } catch (e) {}
 }
 // Starter question bank. Each row: [category, tier (1 easy, 2 medium, 3 hard), question, answer, wrong 1, wrong 2, wrong 3]
-const SEED_VERSION = 8; // 5: category groups; 6: more families + Disney+, Theme Parks, Generations; 7: every category in a family (General Knowledge, Cars, Pop Culture); 8: pre-1990 questions most players won't know moved to Obscure
+const SEED_VERSION = 9; // 5: category groups; 6: more families + Disney+, Theme Parks, Generations; 7: every category in a family (General Knowledge, Cars, Pop Culture); 8: pre-1990 questions most players won't know moved to Obscure; 9: regional culture families
 // How many questions each category had in starter bank version 2. Later rows in a category arrived in version 3,
 // so upgrades only add the new ones (and don't bring back starter questions the user deleted).
 const SEED_V2_COUNTS = {"science": 14, "anime": 13, "sports": 13, "dentistry": 13, "math": 14, "history": 14, "kpop": 13, "actors": 13, "tech": 13, "pokemon": 13, "gossip": 13, "geo": 14, "asian": 13, "games": 14, "cars": 13, "disney": 13, "millennial": 13, "genz": 13, "food": 13, "general": 13, "movies": 13, "tv": 13, "music": 13, "space": 13, "memes": 13, "body": 13};
 const SEED_V3_COUNTS = {"science": 143, "anime": 152, "sports": 151, "dentistry": 151, "math": 153, "history": 153, "kpop": 152, "actors": 153, "tech": 152, "pokemon": 153, "gossip": 148, "geo": 154, "asian": 152, "games": 145, "cars": 152, "disney": 152, "millennial": 142, "genz": 143, "food": 148, "general": 129, "movies": 140, "tv": 148, "music": 145, "space": 149, "memes": 131, "body": 136}; // per category, through version 3 (the ~150-per-category bank); later rows are the Obscure set
 const SEED_V5_COUNTS = {"science": 173, "anime": 184, "sports": 183, "dentistry": 183, "math": 185, "history": 185, "kpop": 185, "actors": 185, "tech": 183, "pokemon": 185, "gossip": 180, "geo": 186, "asian": 184, "games": 177, "cars": 184, "disney": 184, "millennial": 170, "genz": 168, "food": 180, "general": 161, "movies": 172, "tv": 180, "music": 177, "space": 181, "memes": 163, "body": 166}; // through version 5; later rows arrived in version 6
 const SEED_V7_COUNTS = {"science": 173, "anime": 214, "sports": 243, "dentistry": 183, "math": 185, "history": 185, "kpop": 185, "actors": 185, "tech": 183, "pokemon": 365, "gossip": 180, "geo": 214, "asian": 184, "games": 237, "cars": 184, "disney": 184, "millennial": 170, "genz": 168, "food": 239, "general": 161, "movies": 202, "tv": 210, "music": 177, "space": 181, "memes": 163, "body": 166, "disney_plus": 50, "disney_parks": 50, "gen_boomers": 50, "gen_genx": 50, "gen_alpha": 48}; // through version 7; later rows arrived in version 8
-// A bonus tier is skipped by Hard Lock (which keeps meaning "Hard"); Exodia still includes it
-const OBSCURE_TIER = { id: 't4', name: 'Obscure', points: 5, color: '#b36bff', bonus: true };
+const SEED_V8_COUNTS = {"science": 173, "anime": 214, "sports": 643, "dentistry": 183, "math": 185, "history": 185, "kpop": 185, "actors": 185, "tech": 183, "pokemon": 365, "gossip": 180, "geo": 214, "asian": 184, "games": 237, "cars": 184, "disney": 184, "millennial": 170, "genz": 168, "food": 239, "general": 161, "movies": 202, "tv": 210, "music": 177, "space": 181, "memes": 163, "body": 166, "disney_plus": 50, "disney_parks": 50, "gen_boomers": 50, "gen_genx": 50, "gen_alpha": 48}; // through version 8; later rows arrived in version 9
+// Tier difficulty is their order in the list (easiest first, hardest last); points only decide scoring
+const OBSCURE_TIER = { id: 't4', name: 'Obscure', points: 5, color: '#b36bff' };
 const SEED_CATEGORIES = [
   { id: 'cat_science', name: "General", color: '#c77dff', group: "Science", was: "Science", v: 5, split: true },
   { id: 'cat_science_biology', name: "Biology", color: '#913ffe', group: "Science" },
@@ -508,6 +522,38 @@ const SEED_CATEGORIES = [
   { id: 'cat_asian_china', name: "China", color: '#e75d62', group: "Asian Culture" },
   { id: 'cat_asian_india', name: "India & South Asia", color: '#eb7b77', group: "Asian Culture" },
   { id: 'cat_asian_sea', name: "Southeast Asia", color: '#ef9c92', group: "Asian Culture" },
+  { id: 'cat_euro', name: "General", color: '#19aae8', group: "European Culture" },
+  { id: 'cat_euro_uk', name: "UK & Ireland", color: '#2c9fea', group: "European Culture" },
+  { id: 'cat_euro_france', name: "France", color: '#3f98ec', group: "European Culture" },
+  { id: 'cat_euro_italy', name: "Italy", color: '#5194ee', group: "European Culture" },
+  { id: 'cat_euro_iberia', name: "Spain & Portugal", color: '#6493ef', group: "European Culture" },
+  { id: 'cat_euro_central', name: "Germany & Central Europe", color: '#7695f1', group: "European Culture" },
+  { id: 'cat_euro_nordic', name: "Nordic", color: '#899af3', group: "European Culture" },
+  { id: 'cat_euro_east', name: "Eastern Europe & Balkans", color: '#9ca2f5', group: "European Culture" },
+  { id: 'cat_africa', name: "General", color: '#ba5d1b', group: "African Culture" },
+  { id: 'cat_africa_north', name: "North Africa", color: '#cd761e', group: "African Culture" },
+  { id: 'cat_africa_west', name: "West Africa", color: '#e09830', group: "African Culture" },
+  { id: 'cat_africa_east', name: "East Africa", color: '#e4b44f', group: "African Culture" },
+  { id: 'cat_africa_south', name: "Southern Africa", color: '#e9cd6e', group: "African Culture" },
+  { id: 'cat_samerica', name: "General", color: '#35a052', group: "South American Culture" },
+  { id: 'cat_samerica_brazil', name: "Brazil", color: '#36a15c', group: "South American Culture" },
+  { id: 'cat_samerica_south', name: "Argentina & Southern Cone", color: '#45c07c', group: "South American Culture" },
+  { id: 'cat_samerica_andes', name: "Andean & Northern", color: '#69cc9e', group: "South American Culture" },
+  { id: 'cat_camerica', name: "General", color: '#ff1e08', group: "Central American & Caribbean Culture" },
+  { id: 'cat_camerica_mexico', name: "Mexico", color: '#ff5b38', group: "Central American & Caribbean Culture" },
+  { id: 'cat_camerica_central', name: "Central America", color: '#ff9067', group: "Central American & Caribbean Culture" },
+  { id: 'cat_camerica_caribbean', name: "The Caribbean", color: '#ffbc97', group: "Central American & Caribbean Culture" },
+  { id: 'cat_mideast', name: "General", color: '#c3663c', group: "Middle Eastern Culture" },
+  { id: 'cat_mideast_gulf', name: "Arabian Peninsula & Gulf", color: '#ce8d60', group: "Middle Eastern Culture" },
+  { id: 'cat_mideast_levant', name: "Levant & Egypt", color: '#d9ae85', group: "Middle Eastern Culture" },
+  { id: 'cat_mideast_turkiran', name: "Turkey & Iran", color: '#e4cca9', group: "Middle Eastern Culture" },
+  { id: 'cat_oceania', name: "General", color: '#28ad89', group: "Oceania & Pacific Culture" },
+  { id: 'cat_oceania_aus', name: "Australia", color: '#29b097', group: "Oceania & Pacific Culture" },
+  { id: 'cat_oceania_nz', name: "New Zealand & Māori", color: '#39d0c2', group: "Oceania & Pacific Culture" },
+  { id: 'cat_oceania_pacific', name: "Pacific Islands", color: '#5fd9d9', group: "Oceania & Pacific Culture" },
+  { id: 'cat_namerica', name: "General", color: '#af272c', group: "North American Culture" },
+  { id: 'cat_namerica_usa', name: "USA", color: '#c0322b', group: "North American Culture" },
+  { id: 'cat_namerica_canada', name: "Canada", color: '#d96a58', group: "North American Culture" },
   { id: 'cat_games', name: "General", color: '#9b8cff', group: "Video Games", was: "Video Games", v: 5, split: true },
   { id: 'cat_games_nintendo', name: "Nintendo", color: '#4e64ff', group: "Video Games" },
   { id: 'cat_games_zelda', name: "The Legend of Zelda", color: '#636aff', group: "Video Games" },
@@ -6371,6 +6417,798 @@ const SEED = [
   ["sports", 4, "Who beat Steve Davis on the final black in the 1985 World Snooker final?", "Dennis Taylor", "Alex Higgins", "Terry Griffiths", "Cliff Thorburn"],
   ["sports", 4, "Which 1980s darts champion was nicknamed \"The Crafty Cockney\"?", "Eric Bristow", "John Lowe", "Jocky Wilson", "Bob Anderson"],
   ["sports", 4, "In darts slang, being left on double 1 is called being in the what?", "Madhouse", "Basement", "Doghouse", "Cellar"],
+  // European Culture: General
+  ["euro", 1, "In Eurovision voting, what is the top score a jury or country can give a song?", "12 points (“douze points”)", "10 points", "15 points", "20 points"],
+  ["euro", 1, "How many gold stars are on the flag of the European Union?", "12", "15", "27", "10"],
+  ["euro", 1, "How many candles does a traditional Advent wreath have?", "4", "7", "12", "24"],
+  ["euro", 1, "Which country won Euro 2024?", "Spain", "England", "France", "Germany"],
+  ["euro", 1, "The EU's anthem, “Ode to Joy,” is a melody by which composer?", "Beethoven", "Mozart", "Bach", "Vivaldi"],
+  ["euro", 1, "By tradition, which country hosts the next year's Eurovision Song Contest?", "The previous year's winner", "The runner-up", "The oldest member", "The country with the most votes overall"],
+  ["euro", 2, "Nemo won Eurovision 2024 with “The Code,” representing which country?", "Switzerland", "Croatia", "Netherlands", "Ireland"],
+  ["euro", 2, "Which non-European country has competed in Eurovision since 2015?", "Australia", "Canada", "Japan", "USA"],
+  ["euro", 2, "In which year did euro banknotes and coins enter everyday use?", "2002", "1999", "1995", "2005"],
+  ["euro", 2, "The EU's Erasmus programme is best known for what?", "Student exchanges abroad", "Farm subsidies", "Border patrols", "Space research"],
+  ["euro", 2, "On which date do children in many European countries leave out shoes for St Nicholas?", "6 December", "24 December", "6 January", "1 December"],
+  ["euro", 2, "Which team won Women's Euro 2025?", "England", "Spain", "Germany", "France"],
+  ["euro", 3, "JJ won Eurovision 2025 with “Wasted Love,” representing which country?", "Austria", "Sweden", "Israel", "Estonia"],
+  ["euro", 3, "With which song did ABBA win Eurovision in 1974?", "Waterloo", "Dancing Queen", "Mamma Mia", "Fernando"],
+  ["euro", 3, "Which of these is one of Eurovision's “Big Five” automatic finalists?", "Germany", "Sweden", "Netherlands", "Ireland"],
+  ["euro", 3, "Euro 2028 is set to be hosted by which nations?", "The UK and Ireland", "Spain and Portugal", "Italy and Turkey", "Belgium and the Netherlands"],
+  ["euro", 3, "Walpurgis Night, marked with bonfires in Sweden, Germany and Czechia, falls on which date?", "30 April", "31 October", "21 June", "31 December"],
+  ["euro", 3, "What is the official motto of the European Union?", "United in diversity", "Strength in unity", "One Europe, one future", "Peace through trade"],
+  ["euro", 4, "The UEFA Champions League anthem is adapted from which Handel piece?", "Zadok the Priest", "Hallelujah", "Water Music", "Music for the Royal Fireworks"],
+  ["euro", 4, "The € symbol was inspired by which letter of the Greek alphabet?", "Epsilon", "Eta", "Sigma", "Omega"],
+  // European Culture: UK & Ireland
+  ["euro_uk", 1, "Bonfire Night in Britain remembers the failed 1605 plot of which man?", "Guy Fawkes", "Oliver Cromwell", "Robin Hood", "Thomas Becket"],
+  ["euro_uk", 1, "On which date is St Patrick's Day celebrated?", "17 March", "1 March", "23 April", "30 November"],
+  ["euro_uk", 1, "What is the Scottish name for the New Year's Eve celebration?", "Hogmanay", "Ceilidh", "Beltane", "Burns Night"],
+  ["euro_uk", 1, "Which fruit, served with cream, is the traditional snack at Wimbledon?", "Strawberries", "Raspberries", "Cherries", "Blueberries"],
+  ["euro_uk", 1, "In the UK, Shrove Tuesday is better known as what?", "Pancake Day", "Boxing Day", "Plough Monday", "Bank Holiday"],
+  ["euro_uk", 4, "In Ireland, “Wren Boys” traditionally parade in costume on which day?", "St Stephen's Day (26 December)", "Christmas Eve", "Halloween", "St Patrick's Day"],
+  ["euro_uk", 1, "What do Brits pull at Christmas dinner to find a paper crown and a joke inside?", "A Christmas cracker", "A wishbone", "A piñata", "A stocking"],
+  ["euro_uk", 1, "Which British singer's albums are titled with math symbols like ÷ and ×?", "Ed Sheeran", "Sam Smith", "Lewis Capaldi", "Harry Styles"],
+  ["euro_uk", 1, "Which three-leaved plant is the symbol worn on St Patrick's Day?", "Shamrock", "Thistle", "Daffodil", "Holly"],
+  ["euro_uk", 2, "Which saint's day, 23 April, is England's national day?", "St George", "St Andrew", "St David", "St Patrick"],
+  ["euro_uk", 2, "What is a ceilidh?", "A Scottish or Irish folk music and dance gathering", "A Welsh poetry contest", "A Highland sword", "A tartan kilt pin"],
+  ["euro_uk", 2, "Which ceremony with massed bands marks the British monarch's official birthday?", "Trooping the Colour", "Changing of the Guard", "State Opening of Parliament", "Royal Ascot"],
+  ["euro_uk", 2, "In Cockney rhyming slang, what does “apples and pears” mean?", "Stairs", "Shoes", "Teeth", "Money"],
+  ["euro_uk", 2, "Which Irish dance show began as the interval act of Eurovision 1994?", "Riverdance", "Lord of the Dance", "Feet of Flames", "Celtic Woman"],
+  ["euro_uk", 2, "Oasis's 1995 “Battle of Britpop” chart rivalry was with which band?", "Blur", "Pulp", "Suede", "The Verve"],
+  ["euro_uk", 2, "London's Notting Hill Carnival celebrates which community's culture?", "Caribbean", "Irish", "South Asian", "Polish"],
+  ["euro_uk", 2, "Adele's album titles (19, 21, 25, 30) refer to what?", "Her age", "Track counts", "Years of release", "Her lucky numbers"],
+  ["euro_uk", 2, "Which Highland Games event involves flipping a long wooden pole end over end?", "Caber toss", "Hammer throw", "Stone put", "Tug of war"],
+  ["euro_uk", 2, "Street artist Banksy is most associated with which English city's graffiti scene?", "Bristol", "Manchester", "Liverpool", "Leeds"],
+  ["euro_uk", 3, "Wales's great festival of music and poetry is called the what?", "Eisteddfod", "Ceilidh", "Hogmanay", "Fleadh"],
+  ["euro_uk", 3, "Which fast Irish stick-and-ball sport is played with a hurley and a sliotar?", "Hurling", "Shinty", "Lacrosse", "Gaelic football"],
+  ["euro_uk", 3, "The Irish Claddagh ring shows two hands holding what?", "A crowned heart", "A shamrock", "A harp", "A cross"],
+  ["euro_uk", 3, "In Welsh tradition, which carved wooden gift was a token of love?", "A lovespoon", "A love comb", "A love bowl", "A love box"],
+  ["euro_uk", 3, "In 2019, which grime artist headlined Glastonbury's Pyramid Stage?", "Stormzy", "Skepta", "Dave", "Kano"],
+  ["euro_uk", 4, "Shetland's Up Helly Aa fire festival ends with the burning of what?", "A Viking longship", "A giant wicker man", "A straw king", "A wooden castle"],
+  // European Culture: France
+  ["euro_france", 1, "What do the French say before a meal, meaning “enjoy your meal”?", "Bon appétit", "Bon voyage", "Bonne nuit", "Bon courage"],
+  ["euro_france", 1, "What color jersey does the overall leader of the Tour de France wear?", "Yellow", "Green", "White", "Red"],
+  ["euro_france", 1, "French electronic duo Daft Punk famously performed wearing what?", "Robot helmets", "Clown masks", "Animal heads", "Gas masks"],
+  ["euro_france", 1, "Kylian Mbappé joined which club in 2024?", "Real Madrid", "Barcelona", "Manchester City", "Liverpool"],
+  ["euro_france", 1, "Which comic hero and his friend Obelix resist the Romans in ancient Gaul?", "Asterix", "Tintin", "Lucky Luke", "Spirou"],
+  ["euro_france", 1, "Who plays the title role in Netflix's “Emily in Paris”?", "Lily Collins", "Lily James", "Emma Roberts", "Zendaya"],
+  ["euro_france", 1, "Complete France's national motto: “Liberté, égalité, ...”", "Fraternité", "Solidarité", "Unité", "Prospérité"],
+  ["euro_france", 1, "In which year did a fire badly damage Notre-Dame de Paris?", "2019", "2015", "2021", "2017"],
+  ["euro_france", 2, "On April Fools' Day, French children stick a paper what on people's backs?", "Fish", "Frog", "Snail", "Rooster"],
+  ["euro_france", 2, "The Cannes Film Festival's top prize, the Palme d'Or, is a golden what?", "Palm", "Lion", "Bear", "Shell"],
+  ["euro_france", 2, "In a French galette des rois, the person who finds the hidden charm becomes what?", "King or queen for the day", "The next host", "The one who pays", "Lucky for a year"],
+  ["euro_france", 2, "France's Fête de la Musique, with free concerts everywhere, is held on which date?", "21 June", "14 July", "1 May", "15 August"],
+  ["euro_france", 2, "Which actor stars as gentleman thief Assane Diop in Netflix's “Lupin” (2021)?", "Omar Sy", "Vincent Cassel", "Jean Dujardin", "Gad Elmaleh"],
+  ["euro_france", 2, "What is the French greeting of kissing on the cheeks called?", "La bise", "La fève", "La bourse", "Le salut"],
+  ["euro_france", 2, "Which female figure in a Phrygian cap personifies the French Republic?", "Marianne", "Britannia", "Germania", "Helvetia"],
+  ["euro_france", 2, "In the 2006 World Cup final, Zinedine Zidane was sent off for headbutting whom?", "Marco Materazzi", "Gianluigi Buffon", "Andrea Pirlo", "Fabio Cannavaro"],
+  ["euro_france", 2, "Which high-kicking dance is famous at Paris's Moulin Rouge?", "Cancan", "Tango", "Charleston", "Flamenco"],
+  ["euro_france", 3, "On 1 May, the French traditionally give each other sprigs of which flower?", "Lily of the valley", "Lavender", "Red rose", "Sunflower"],
+  ["euro_france", 3, "Impressionism got its name from a painting by which artist?", "Claude Monet", "Edgar Degas", "Pierre-Auguste Renoir", "Paul Cézanne"],
+  ["euro_france", 3, "The Paris 2024 Olympic mascots, the Phryges, were based on what?", "Phrygian caps", "Roosters", "Croissants", "Berets"],
+  ["euro_france", 3, "In 2022, UNESCO added the craft and culture of which French item to its heritage list?", "The baguette", "The beret", "The croissant", "The perfume bottle"],
+  ["euro_france", 3, "Which Édith Piaf song did Céline Dion sing from the Eiffel Tower at the Paris 2024 opening?", "Hymne à l'amour", "La Vie en rose", "Non, je ne regrette rien", "Padam, padam"],
+  ["euro_france", 3, "In pétanque, players aim their metal balls at a small wooden ball called the what?", "Cochonnet", "Boule", "Palet", "Quille"],
+  ["euro_france", 4, "Which singer nicknamed “the little sparrow” made “La Vie en rose” famous?", "Édith Piaf", "Juliette Gréco", "Dalida", "Françoise Hardy"],
+  ["euro_france", 4, "A Breton night-time folk dance party is called a what?", "Fest-noz", "Pardon", "Bal musette", "Kermesse"],
+  // European Culture: Italy
+  ["euro_italy", 1, "The Carnival of Venice is world-famous for what?", "Elaborate masks", "Tomato fights", "Bull runs", "Giant bonfires"],
+  ["euro_italy", 1, "Which Italian word is used both for “hello” and “goodbye”?", "Ciao", "Grazie", "Prego", "Basta"],
+  ["euro_italy", 1, "In Pixar's “Luca” (2021), Luca and Alberto are secretly what?", "Sea monsters", "Werewolves", "Ghosts", "Robots"],
+  ["euro_italy", 1, "Which blind Italian tenor sang “Con te partirò” (“Time to Say Goodbye”)?", "Andrea Bocelli", "Luciano Pavarotti", "Eros Ramazzotti", "Plácido Domingo"],
+  ["euro_italy", 1, "What is the nickname of Italy's national sports teams, after their blue shirts?", "Azzurri", "Les Bleus", "La Roja", "Oranje"],
+  ["euro_italy", 1, "Which animal appears on the Ferrari logo?", "A prancing horse", "A raging bull", "A lion", "An eagle"],
+  ["euro_italy", 1, "What does the Italian phrase “la dolce vita” mean?", "The sweet life", "The good food", "The slow day", "The long night"],
+  ["euro_italy", 1, "Which classic Italian scooter's name means “wasp”?", "Vespa", "Lambretta", "Ducati", "Aprilia"],
+  ["euro_italy", 2, "The Venice Film Festival's top prize is the Golden what?", "Lion", "Bear", "Palm", "Shell"],
+  ["euro_italy", 2, "Winning which Italian song festival usually earns the right to go to Eurovision?", "Sanremo", "Festivalbar", "Umbria Jazz", "Arena di Verona"],
+  ["euro_italy", 2, "Måneskin won Eurovision 2021 with which song?", "Zitti e buoni", "Beggin'", "Soldi", "Arcade"],
+  ["euro_italy", 2, "In Italian folklore, which kindly witch brings gifts on the eve of Epiphany?", "La Befana", "Krampus", "Baba Yaga", "Lucia"],
+  ["euro_italy", 2, "What kind of contest is Siena's Palio, held each summer?", "A bareback horse race", "A gondola race", "A bull run", "A cycling race"],
+  ["euro_italy", 2, "Italy won Euro 2020 (played in 2021) by beating which team in the final?", "England", "Spain", "Denmark", "Belgium"],
+  ["euro_italy", 2, "The Venetian island of Murano is famous for which craft?", "Glassmaking", "Lacemaking", "Violin making", "Mask carving"],
+  ["euro_italy", 2, "Which Italian MotoGP legend is nicknamed “The Doctor”?", "Valentino Rossi", "Max Biaggi", "Andrea Dovizioso", "Marco Simoncelli"],
+  ["euro_italy", 2, "Leonardo da Vinci's “The Last Supper” is in which city?", "Milan", "Florence", "Rome", "Venice"],
+  ["euro_italy", 3, "Calcio storico, a brutal mix of football, rugby and wrestling, is played in which city?", "Florence", "Naples", "Turin", "Genoa"],
+  ["euro_italy", 3, "Italy's midsummer holiday Ferragosto falls on which date?", "15 August", "24 June", "1 August", "2 June"],
+  ["euro_italy", 3, "Which commedia dell'arte character wears a diamond-patched costume?", "Harlequin", "Pulcinella", "Pantalone", "Pierrot"],
+  ["euro_italy", 3, "Who wrote the original Italian story of Pinocchio?", "Carlo Collodi", "Italo Calvino", "Umberto Eco", "Gianni Rodari"],
+  ["euro_italy", 3, "Pavarotti's “Nessun dorma” became the signature tune of which 1990 event?", "The FIFA World Cup", "The Olympics", "Eurovision", "The Tour de France"],
+  ["euro_italy", 3, "Which master violin maker made the city of Cremona famous?", "Antonio Stradivari", "Niccolò Paganini", "Antonio Vivaldi", "Giuseppe Verdi"],
+  ["euro_italy", 3, "What is the Italian tradition of a leisurely evening stroll through town called?", "Passeggiata", "Ferragosto", "Aperitivo", "Riposo"],
+  ["euro_italy", 4, "Who won a 1962 Oscar for “Two Women,” the first acting Oscar for a non-English role?", "Sophia Loren", "Anna Magnani", "Gina Lollobrigida", "Claudia Cardinale"],
+  // European Culture: Spain & Portugal
+  ["euro_iberia", 1, "At Spain's La Tomatina festival in Buñol, people throw what at each other?", "Tomatoes", "Oranges", "Flour", "Water balloons"],
+  ["euro_iberia", 1, "What do Spaniards traditionally eat at each stroke of midnight on New Year's Eve?", "Grapes", "Olives", "Almonds", "Cherries"],
+  ["euro_iberia", 1, "What is the Spanish word for a traditional afternoon nap?", "Siesta", "Fiesta", "Sobremesa", "Paseo"],
+  ["euro_iberia", 1, "Which two clubs contest Spanish football's “El Clásico”?", "Real Madrid and Barcelona", "Real Madrid and Atlético", "Barcelona and Valencia", "Sevilla and Betis"],
+  ["euro_iberia", 1, "In “Money Heist,” the robbers wear masks of which Spanish artist?", "Salvador Dalí", "Pablo Picasso", "Francisco Goya", "Joan Miró"],
+  ["euro_iberia", 1, "What does Cristiano Ronaldo famously shout in his goal celebration?", "Siuuu", "Vamos", "Olé", "Gooool"],
+  ["euro_iberia", 1, "Which Spanish singer, son of Julio, had a 2001 hit with “Hero”?", "Enrique Iglesias", "Alejandro Sanz", "David Bisbal", "Pablo Alborán"],
+  ["euro_iberia", 1, "Which word do Spanish crowds shout to cheer flamenco dancers?", "Olé", "Salud", "Hola", "Ándale"],
+  ["euro_iberia", 2, "Pamplona's famous running of the bulls is part of which festival?", "San Fermín", "Las Fallas", "La Mercè", "Semana Santa"],
+  ["euro_iberia", 2, "What happens to the giant sculptures of Valencia's Las Fallas on the final night?", "They are burned", "They are sunk at sea", "They are paraded to Madrid", "They are auctioned"],
+  ["euro_iberia", 2, "What is the name of Portugal's melancholy traditional singing style?", "Fado", "Flamenco", "Tango", "Bossa nova"],
+  ["euro_iberia", 2, "What are Portugal's famous painted ceramic tiles called?", "Azulejos", "Majolica", "Delftware", "Zellige"],
+  ["euro_iberia", 2, "What do Catalonia's castellers compete to build?", "Human towers", "Sandcastles", "Bonfires", "Flower carpets"],
+  ["euro_iberia", 2, "Rosalía released which album in 2022?", "Motomami", "El mal querer", "Los Ángeles", "Un Verano Sin Ti"],
+  ["euro_iberia", 2, "Portugal won Euro 2016 by beating which host nation in the final?", "France", "Germany", "Spain", "England"],
+  ["euro_iberia", 2, "Which country won the 2023 FIFA Women's World Cup?", "Spain", "England", "USA", "Sweden"],
+  ["euro_iberia", 2, "In Spain, who traditionally bring children presents on 6 January?", "The Three Kings", "Santa Claus", "La Befana", "St Nicholas"],
+  ["euro_iberia", 3, "Which Portuguese word means a deep, nostalgic longing for something absent?", "Saudade", "Desenrascanço", "Obrigado", "Cafuné"],
+  ["euro_iberia", 3, "On Catalonia's Sant Jordi Day (23 April), people traditionally exchange what?", "Books and roses", "Eggs and candles", "Coins and bread", "Rings and ribbons"],
+  ["euro_iberia", 3, "Penélope Cruz won her Oscar for which Woody Allen film?", "Vicky Cristina Barcelona", "Midnight in Paris", "Volver", "To Rome with Love"],
+  ["euro_iberia", 3, "What is the fast Basque ball game played with a curved wicker basket?", "Jai alai", "Pétanque", "Hurling", "Bocce"],
+  ["euro_iberia", 3, "Pilgrims on the Camino de Santiago traditionally carry which symbol?", "A scallop shell", "A key", "A white feather", "A clay bell"],
+  ["euro_iberia", 3, "The caganer, a figure in Catalan nativity scenes, is shown doing what?", "Pooping", "Sleeping", "Dancing", "Fishing"],
+  ["euro_iberia", 3, "Picasso's “Guernica” depicts a 1937 bombing during which war?", "The Spanish Civil War", "World War I", "The Peninsular War", "The Rif War"],
+  ["euro_iberia", 4, "During Lisbon's June Santo António festivities, sweethearts give each other potted what?", "Basil", "Rosemary", "Mint", "Lavender"],
+  // European Culture: Germany & Central Europe
+  ["euro_central", 1, "In which city is Oktoberfest held?", "Munich", "Berlin", "Vienna", "Hamburg"],
+  ["euro_central", 1, "In Alpine folklore, which horned creature punishes naughty children during Advent?", "Krampus", "Baba Yaga", "The Grinch", "A Yule Lad"],
+  ["euro_central", 1, "Which color do Dutch people wear to celebrate King's Day?", "Orange", "Red", "Blue", "Green"],
+  ["euro_central", 1, "What are the traditional Dutch wooden shoes called?", "Clogs", "Moccasins", "Espadrilles", "Sandals"],
+  ["euro_central", 1, "In which country did the Brothers Grimm collect their fairy tales?", "Germany", "Denmark", "Austria", "Switzerland"],
+  ["euro_central", 1, "What is the traditional women's dress worn at Oktoberfest called?", "Dirndl", "Lederhosen", "Kimono", "Sari"],
+  ["euro_central", 1, "Delftware, the famous blue-and-white pottery, comes from which country?", "Netherlands", "Belgium", "Portugal", "Denmark"],
+  ["euro_central", 2, "Oktoberfest traditionally begins in which month?", "September", "October", "August", "November"],
+  ["euro_central", 2, "Rembrandt's “The Night Watch” hangs in which Amsterdam museum?", "Rijksmuseum", "Van Gogh Museum", "Stedelijk Museum", "Anne Frank House"],
+  ["euro_central", 2, "Which long wooden horn is a symbol of Swiss Alpine culture?", "Alphorn", "Bagpipe", "Didgeridoo", "Shofar"],
+  ["euro_central", 2, "Which Belgian cartoonist created Tintin?", "Hergé", "Peyo", "Goscinny", "Uderzo"],
+  ["euro_central", 2, "Brussels' famous Manneken Pis statue shows a little boy doing what?", "Peeing", "Sleeping", "Reading", "Waving"],
+  ["euro_central", 2, "The huge Tomorrowland electronic music festival is held in which country?", "Belgium", "Netherlands", "Germany", "Spain"],
+  ["euro_central", 2, "What does the German word “Schadenfreude” mean?", "Pleasure at someone else's misfortune", "Fear of missing out", "Love of travel", "Cozy contentment"],
+  ["euro_central", 2, "Which club won the 2023–24 Bundesliga without losing a single game?", "Bayer Leverkusen", "Bayern Munich", "Borussia Dortmund", "RB Leipzig"],
+  ["euro_central", 2, "Which bearded drag performer won Eurovision 2014 for Austria?", "Conchita Wurst", "Lordi", "Verka Serduchka", "Dana International"],
+  ["euro_central", 3, "According to Dutch tradition, Sinterklaas arrives each November by steamboat from where?", "Spain", "Italy", "Lapland", "Greenland"],
+  ["euro_central", 3, "At the Vienna New Year's Concert, the audience claps along to which final encore?", "Radetzky March", "The Blue Danube", "Ode to Joy", "Eine kleine Nachtmusik"],
+  ["euro_central", 3, "The carol “Silent Night” was first performed in 1818 in which country?", "Austria", "Germany", "England", "Switzerland"],
+  ["euro_central", 3, "Singer Stromae, known for “Alors on danse” and “Papaoutai”, is from which country?", "Belgium", "France", "Switzerland", "Canada"],
+  ["euro_central", 3, "Which Berlin techno club is famous for its notoriously strict door policy?", "Berghain", "Fabric", "Amnesia", "Paradiso"],
+  ["euro_central", 3, "On Poland's Easter Monday tradition, Śmigus-dyngus, people do what?", "Splash each other with water", "Roll eggs downhill", "Burn a straw figure", "Ring church bells"],
+  ["euro_central", 3, "At Polish Christmas Eve dinner (Wigilia), an extra place is set for whom?", "An unexpected guest", "The priest", "The family dog", "St Nicholas"],
+  ["euro_central", 4, "The classic cartoon “Krtek” (The Little Mole) comes from which country?", "Czechoslovakia (Czechia)", "Poland", "Hungary", "Austria"],
+  ["euro_central", 4, "Which pioneering German electronic band released “Autobahn” in 1974?", "Kraftwerk", "Can", "Tangerine Dream", "Rammstein"],
+  // European Culture: Nordic
+  ["euro_nordic", 1, "During Swedish Midsummer, people dance around what?", "A maypole", "A bonfire", "A Christmas tree", "A well"],
+  ["euro_nordic", 1, "Which Danish word describes a cozy, contented feeling of warmth and comfort?", "Hygge", "Lagom", "Fika", "Sisu"],
+  ["euro_nordic", 1, "Sauna culture is central to everyday life in which country?", "Finland", "Italy", "Portugal", "Ireland"],
+  ["euro_nordic", 1, "Singer Björk comes from which country?", "Iceland", "Norway", "Denmark", "Finland"],
+  ["euro_nordic", 1, "Disney's kingdom of Arendelle in “Frozen” was inspired by which country?", "Norway", "Switzerland", "Canada", "Austria"],
+  ["euro_nordic", 1, "The furniture giant IKEA was founded in which country?", "Sweden", "Denmark", "Norway", "Finland"],
+  ["euro_nordic", 1, "The Sámi people of the far north are traditionally known for herding which animal?", "Reindeer", "Sheep", "Goats", "Yaks"],
+  ["euro_nordic", 2, "On St Lucia's Day in Sweden, the girl playing Lucia wears what on her head?", "A crown of candles", "A flower wreath", "A Viking helmet", "A silver tiara"],
+  ["euro_nordic", 2, "What is “fika” in Sweden?", "A coffee-and-pastry break", "A winter sauna", "A midsummer dance", "A sailing race"],
+  ["euro_nordic", 2, "The Wife Carrying World Championships are held in which country?", "Finland", "Sweden", "Iceland", "Norway"],
+  ["euro_nordic", 2, "Icelandic surnames usually end in “-son” or what?", "-dóttir", "-sen", "-sson", "-berg"],
+  ["euro_nordic", 2, "Iceland fans' famous “Viking clap” became a sensation at which tournament?", "Euro 2016", "2014 World Cup", "Euro 2012", "Euro 2020"],
+  ["euro_nordic", 2, "Norway's Constitution Day, celebrated with children's parades, falls on which date?", "17 May", "6 June", "1 May", "24 June"],
+  ["euro_nordic", 2, "In Norwegian folklore, what happens to trolls caught in sunlight?", "They turn to stone", "They become invisible", "They shrink to mice", "They melt into water"],
+  ["euro_nordic", 2, "Which Norwegian band had a 1985 hit with “Take On Me”?", "a-ha", "Europe", "Roxette", "The Cardigans"],
+  ["euro_nordic", 2, "Which Swedish singer won Eurovision twice, in 2012 and 2023?", "Loreen", "Måns Zelmerlöw", "Zara Larsson", "Tove Lo"],
+  ["euro_nordic", 2, "The Angry Birds game was created by a company from which country?", "Finland", "Sweden", "Denmark", "Estonia"],
+  ["euro_nordic", 3, "Which Swedish word means “just the right amount, not too much or too little”?", "Lagom", "Hygge", "Fika", "Mys"],
+  ["euro_nordic", 3, "Which Finnish word describes stubborn grit and perseverance?", "Sisu", "Hygge", "Lagom", "Koselig"],
+  ["euro_nordic", 3, "Iceland's “Jólabókaflóð” tradition involves giving what on Christmas Eve?", "Books", "Candles", "Socks", "Smoked lamb"],
+  ["euro_nordic", 3, "How many Yule Lads visit Icelandic children before Christmas?", "13", "12", "7", "24"],
+  ["euro_nordic", 3, "Graduating Norwegian high-schoolers celebrate as “russ” wearing what?", "Colored overalls", "Viking helmets", "Sailor suits", "Folk costumes"],
+  ["euro_nordic", 3, "On Christmas Eve, Danish families traditionally join hands and dance around what?", "The Christmas tree", "A bonfire", "The dinner table", "A maypole"],
+  ["euro_nordic", 3, "Who created the Moomins?", "Tove Jansson", "Astrid Lindgren", "Hans Christian Andersen", "Selma Lagerlöf"],
+  ["euro_nordic", 4, "Which Finnish national epic, compiled by Elias Lönnrot, influenced Tolkien?", "The Kalevala", "The Poetic Edda", "Beowulf", "The Saga of the Volsungs"],
+  // European Culture: Eastern Europe & Balkans
+  ["euro_east", 1, "Romania's Bran Castle is marketed as the home of which fictional character?", "Dracula", "Frankenstein", "The Phantom of the Opera", "Rumpelstiltskin"],
+  ["euro_east", 1, "At lively Greek celebrations, what is traditionally smashed on the floor?", "Plates", "Eggs", "Glasses of milk", "Pumpkins"],
+  ["euro_east", 1, "The blue eye-shaped charm popular in Greece is meant to protect against what?", "The evil eye", "Lightning", "Seasickness", "Bad weather"],
+  ["euro_east", 1, "What are Russian wooden nesting dolls called?", "Matryoshka", "Babushka", "Balalaika", "Kokoshnik"],
+  ["euro_east", 1, "Which NBA star is nicknamed “The Greek Freak”?", "Giannis Antetokounmpo", "Nikola Jokić", "Luka Dončić", "Kristaps Porziņģis"],
+  ["euro_east", 1, "Which Croatian city served as King's Landing in “Game of Thrones”?", "Dubrovnik", "Split", "Zagreb", "Zadar"],
+  ["euro_east", 2, "What are Ukrainian pysanky?", "Decorated Easter eggs", "Christmas dumplings", "Embroidered shirts", "Wooden flutes"],
+  ["euro_east", 2, "Kalush Orchestra won Eurovision 2022 for Ukraine with which song?", "Stefania", "Shum", "1944", "Dancing Lasha Tumbai"],
+  ["euro_east", 2, "Many Greeks celebrate the feast of the saint they're named after. What is it called?", "A name day", "A blessing day", "A family day", "A wish day"],
+  ["euro_east", 2, "NBA star Nikola Jokić comes from which country?", "Serbia", "Croatia", "Slovenia", "Greece"],
+  ["euro_east", 2, "In 2018, which Croatian midfielder won the Ballon d'Or?", "Luka Modrić", "Ivan Rakitić", "Mario Mandžukić", "Ivan Perišić"],
+  ["euro_east", 2, "Which sport is often called Lithuania's “second religion”?", "Basketball", "Ice hockey", "Football", "Volleyball"],
+  ["euro_east", 2, "In Bulgaria, a nod of the head traditionally means what?", "No", "Yes", "Hello", "Thank you"],
+  ["euro_east", 2, "In Slavic folklore, the witch Baba Yaga lives in a hut standing on what?", "Chicken legs", "Stilts of bone", "A giant turtle", "A floating cloud"],
+  ["euro_east", 2, "Which Russian composer wrote the ballet “Swan Lake”?", "Pyotr Ilyich Tchaikovsky", "Igor Stravinsky", "Sergei Rachmaninoff", "Modest Mussorgsky"],
+  ["euro_east", 2, "The Rubik's Cube was invented in which country?", "Hungary", "Japan", "Czechoslovakia", "Poland"],
+  ["euro_east", 3, "On 1 March, Romanians give a red-and-white string token called what?", "Mărțișor", "Pysanka", "Vyshyvanka", "Slava"],
+  ["euro_east", 3, "“Carol of the Bells” is based on “Shchedryk,” a folk chant from which country?", "Ukraine", "Russia", "Poland", "Czechia"],
+  ["euro_east", 3, "At Greek Easter, people play a game tapping together eggs dyed which color?", "Red", "Gold", "Blue", "Green"],
+  ["euro_east", 3, "The word “cravat,” for a necktie, comes from 17th-century soldiers from which country?", "Croatia", "Hungary", "Poland", "Serbia"],
+  ["euro_east", 3, "Skype's software was originally developed by engineers in which country?", "Estonia", "Finland", "Latvia", "Sweden"],
+  ["euro_east", 3, "In Hungary, personal names are traditionally written in which order?", "Family name first", "Given name first", "Mother's name first", "Middle name first"],
+  ["euro_east", 3, "In Serbian Orthodox tradition, a family's yearly feast for its patron saint is called a what?", "Slava", "Kolo", "Pomen", "Badnjak"],
+  ["euro_east", 4, "At Hungary's Busójárás carnival in Mohács, masked men try to scare away what?", "Winter", "Wolves", "Wild boars", "Tax collectors"],
+  // African Culture: General
+  ["africa", 1, "“Hakuna matata”, made famous by “The Lion King”, comes from which language?", "Swahili", "Zulu", "Yoruba", "Amharic"],
+  ["africa", 1, "In Swahili, what does the name “Simba” mean?", "Lion", "King", "Brave", "Sun"],
+  ["africa", 1, "In 2010, which country became the first African nation to host the FIFA World Cup?", "South Africa", "Nigeria", "Egypt", "Morocco"],
+  ["africa", 1, "Anansi, the trickster of West African and Caribbean folktales, is what kind of animal?", "Spider", "Tortoise", "Hare", "Monkey"],
+  ["africa", 1, "Samuel Eto'o starred for which national football team?", "Cameroon", "Nigeria", "Côte d'Ivoire", "Senegal"],
+  ["africa", 1, "In Swahili, what does “asante sana” mean?", "Thank you very much", "Good morning", "See you soon", "Welcome home"],
+  ["africa", 2, "As of 2026, which country has won the most Africa Cup of Nations titles?", "Egypt", "Cameroon", "Ghana", "Nigeria"],
+  ["africa", 2, "In Swahili, what does the name “Rafiki” mean?", "Friend", "Wise", "Monkey", "Elder"],
+  ["africa", 2, "Kwanzaa, a celebration created in the US in 1966, takes its name from which language?", "Swahili", "Yoruba", "Zulu", "Twi"],
+  ["africa", 2, "Which host nation won the 2023 Africa Cup of Nations, played in early 2024?", "Côte d'Ivoire", "Nigeria", "Senegal", "Morocco"],
+  ["africa", 2, "In which city is the headquarters of the African Union?", "Addis Ababa", "Johannesburg", "Nairobi", "Cairo"],
+  ["africa", 2, "A dashiki is what kind of garment?", "A loose, colourful shirt", "A wrap skirt", "A head tie", "A beaded collar"],
+  ["africa", 3, "The opening chant of “Circle of Life” in “The Lion King” is sung in which language?", "Zulu", "Swahili", "Xhosa", "Shona"],
+  ["africa", 3, "Which real language do the Wakandans speak in “Black Panther” (2018)?", "Xhosa", "Swahili", "Yoruba", "Amharic"],
+  ["africa", 3, "As of 2025, who is the only African player to have won the Ballon d'Or?", "George Weah", "Didier Drogba", "Samuel Eto'o", "Mohamed Salah"],
+  ["africa", 3, "The red, gold and green used on many African flags were inspired by which country's flag?", "Ethiopia", "Ghana", "Egypt", "Liberia"],
+  ["africa", 3, "Africa Day, marking the founding of the Organisation of African Unity, is celebrated on which date?", "25 May", "1 January", "27 April", "12 October"],
+  ["africa", 3, "The NBA co-launched which professional league in 2021?", "Basketball Africa League", "African Hoops League", "Pan-African Basketball Cup", "NBA Africa Series"],
+  ["africa", 3, "In 2021, Congolese rumba was added to UNESCO's heritage list after a joint bid by DR Congo and which country?", "Republic of the Congo", "Angola", "Cameroon", "Gabon"],
+  ["africa", 4, "Cameroon's Roger Milla became famous for his corner-flag dance celebrations at which World Cup?", "1990", "1982", "1986", "1998"],
+  // African Culture: North Africa
+  ["africa_north", 1, "In 2022, which country became the first African nation to reach a men's World Cup semi-final?", "Morocco", "Senegal", "Cameroon", "Ghana"],
+  ["africa_north", 1, "Which Egyptian forward won the 2017–18 Premier League Golden Boot in his first Liverpool season?", "Mohamed Salah", "Mohamed Elneny", "Ahmed Hegazi", "Omar Marmoush"],
+  ["africa_north", 1, "In Morocco, guests are traditionally welcomed with which sweet drink?", "Mint tea", "Hibiscus juice", "Cardamom coffee", "Lemon soda"],
+  ["africa_north", 1, "In North Africa, what is a souk?", "A traditional market", "A steam bath", "A courtyard house", "A desert camp"],
+  ["africa_north", 1, "In North African tradition, what plant dye is used to paint designs on a bride's hands?", "Henna", "Indigo", "Saffron", "Turmeric"],
+  ["africa_north", 1, "Zinedine Zidane's parents moved to France from which country?", "Algeria", "Morocco", "Tunisia", "Egypt"],
+  ["africa_north", 1, "Tunisia's Matmata cave homes were filmed as Luke Skywalker's childhood home in which franchise?", "Star Wars", "Indiana Jones", "Dune", "The Mummy"],
+  ["africa_north", 1, "Which Algerian winger won the 2015–16 Premier League title with Leicester City?", "Riyad Mahrez", "Yacine Brahimi", "Sofiane Feghouli", "Ismaël Bennacer"],
+  ["africa_north", 2, "Raï, the music style made world-famous by Khaled, originated in which country?", "Algeria", "Morocco", "Egypt", "Libya"],
+  ["africa_north", 2, "Pop superstar Amr Diab, famous for “Habibi Ya Nour El Ain” (1996), is from which country?", "Egypt", "Morocco", "Tunisia", "Algeria"],
+  ["africa_north", 2, "Tunisian Ons Jabeur became the first Arab woman to reach a Grand Slam singles final at which 2022 tournament?", "Wimbledon", "US Open", "French Open", "Australian Open"],
+  ["africa_north", 2, "Morocco will co-host the 2030 FIFA World Cup with Spain and which other country?", "Portugal", "France", "Italy", "Algeria"],
+  ["africa_north", 2, "What is the name of the long, hooded robe traditionally worn in Morocco?", "Djellaba", "Dashiki", "Boubou", "Kanzu"],
+  ["africa_north", 2, "The felt fez hat takes its name from a city in which country?", "Morocco", "Turkey", "Egypt", "Tunisia"],
+  ["africa_north", 2, "Djemaa el-Fna, the square famous for storytellers, musicians and food stalls, is in which city?", "Marrakech", "Casablanca", "Tunis", "Algiers"],
+  ["africa_north", 2, "In Egypt, colourful “fanous” lanterns are a classic symbol of which time of year?", "Ramadan", "Christmas", "New Year", "Harvest season"],
+  ["africa_north", 2, "Moroccan full-back Achraf Hakimi won the 2025 Champions League with which club?", "Paris Saint-Germain", "Real Madrid", "Inter Milan", "Bayern Munich"],
+  ["africa_north", 2, "In North Africa, what is a hammam?", "A public steam bath", "A spice market", "A mint tea house", "A camel race"],
+  ["africa_north", 3, "Gnawa music, played with the guembri lute and iron qraqeb castanets, is most associated with which country?", "Morocco", "Egypt", "Libya", "Sudan"],
+  ["africa_north", 3, "Mahraganat, a loud electronic street-music genre, emerged from the working-class neighbourhoods of which city?", "Cairo", "Casablanca", "Tunis", "Tripoli"],
+  ["africa_north", 3, "Zellige is a famous Moroccan craft of what kind?", "Mosaic tilework", "Leather tanning", "Carpet weaving", "Silver jewellery"],
+  ["africa_north", 3, "Yennayer is the New Year celebration of which people?", "Amazigh (Berbers)", "Copts", "Nubians", "Bedouins"],
+  ["africa_north", 3, "Tifinagh is a script used to write which languages?", "Amazigh (Berber)", "Coptic", "Nubian", "Hausa"],
+  ["africa_north", 3, "Egypt's spring festival Sham el-Nessim falls on the Monday after which holiday?", "Coptic Easter", "Eid al-Fitr", "Coptic Christmas", "The Prophet's Birthday"],
+  ["africa_north", 4, "Which Egyptian writer won the 1988 Nobel Prize in Literature?", "Naguib Mahfouz", "Taha Hussein", "Tawfiq al-Hakim", "Alaa Al Aswany"],
+  // African Culture: West Africa
+  ["africa_west", 1, "Nigeria's booming film industry is known by which nickname?", "Nollywood", "Lagoswood", "Afriwood", "Naijawood"],
+  ["africa_west", 1, "Which Nigerian singer's hit “Calm Down” got a 2022 remix with Selena Gomez?", "Rema", "Burna Boy", "Wizkid", "Davido"],
+  ["africa_west", 1, "Brightly woven kente cloth comes from which country?", "Ghana", "Kenya", "Senegal", "Cameroon"],
+  ["africa_west", 1, "Didier Drogba captained which national football team?", "Côte d'Ivoire", "Ghana", "Cameroon", "Senegal"],
+  ["africa_west", 1, "The friendly “Jollof wars” rivalry is mainly between Nigeria and which country?", "Ghana", "Kenya", "South Africa", "Egypt"],
+  ["africa_west", 1, "Which Nigerian singer featured on Drake's 2016 hit “One Dance”?", "Wizkid", "Burna Boy", "Davido", "Tems"],
+  ["africa_west", 1, "Which Nigerian star won the 2021 Grammy for Best Global Music Album with “Twice as Tall”?", "Burna Boy", "Wizkid", "Davido", "Rema"],
+  ["africa_west", 1, "Which Nigerian singer's “Love Nwantiti” went viral on TikTok in 2021?", "CKay", "Fireboy DML", "Omah Lay", "Joeboy"],
+  ["africa_west", 2, "Which singer featured on Wizkid's 2020 smash “Essence”?", "Tems", "Ayra Starr", "Tiwa Savage", "Yemi Alade"],
+  ["africa_west", 2, "Beyoncé's 2013 song “***Flawless” samples a speech by which Nigerian author?", "Chimamanda Ngozi Adichie", "Wole Soyinka", "Ben Okri", "Buchi Emecheta"],
+  ["africa_west", 2, "Highlife music originated in which country?", "Ghana", "Senegal", "Mali", "Kenya"],
+  ["africa_west", 2, "Bògòlanfini, or mudcloth, is a traditional textile from which country?", "Mali", "Ghana", "Nigeria", "Kenya"],
+  ["africa_west", 2, "In West African tradition, what is a griot?", "A hereditary storyteller and musician", "A village chief", "A herbal healer", "A royal blacksmith"],
+  ["africa_west", 2, "The kora, played by Mandinka griots, is what kind of instrument?", "A stringed harp-lute", "A drum", "A flute", "A xylophone"],
+  ["africa_west", 2, "Which West African drum can be squeezed to mimic the tones of speech?", "Talking drum", "Djembe", "Conga", "Bongo"],
+  ["africa_west", 2, "Which country's football team is nicknamed the Black Stars?", "Ghana", "Nigeria", "Cameroon", "Senegal"],
+  ["africa_west", 2, "Multi-Grammy-winning singer Angélique Kidjo is from which country?", "Benin", "Mali", "Senegal", "Ghana"],
+  ["africa_west", 2, "At Nigerian weddings, what do guests traditionally “spray” over the dancing couple?", "Banknotes", "Perfume", "Rice", "Flower petals"],
+  ["africa_west", 3, "In Wolof, what does the Senegalese word “teranga” mean?", "Hospitality", "Courage", "Freedom", "Victory"],
+  ["africa_west", 3, "Laamb, a hugely popular sport in Senegal, is a form of what?", "Wrestling", "Horse racing", "Boxing", "Canoe racing"],
+  ["africa_west", 3, "Coupé-décalé, a party dance-music style of the 2000s, is associated with which country?", "Côte d'Ivoire", "Senegal", "Mali", "Ghana"],
+  ["africa_west", 3, "At Yoruba celebrations, what is “aso ebi”?", "Matching outfits worn by guests", "A wedding cake", "A dowry payment", "A talking drum rhythm"],
+  ["africa_west", 3, "The Osun-Osogbo festival in Nigeria honours a river goddess of which people?", "Yoruba", "Igbo", "Hausa", "Akan"],
+  ["africa_west", 3, "Which country hosts FESPACO, Africa's largest film festival?", "Burkina Faso", "Nigeria", "Senegal", "Ghana"],
+  ["africa_west", 4, "Nigerian legend Fela Kuti pioneered which genre?", "Afrobeat", "Highlife", "Jùjú", "Mbalax"],
+  // African Culture: East Africa
+  ["africa_east", 1, "Queen frontman Freddie Mercury was born on which East African island?", "Zanzibar", "Madagascar", "Mauritius", "Réunion"],
+  ["africa_east", 1, "The Weeknd's parents emigrated to Canada from which country?", "Ethiopia", "Kenya", "Somalia", "Uganda"],
+  ["africa_east", 1, "Lupita Nyong'o, who grew up in Kenya, won an Oscar for which film?", "12 Years a Slave", "Black Panther", "Us", "The Woman King"],
+  ["africa_east", 1, "Somali-Canadian rapper K'naan is best known for which 2010 World Cup anthem?", "Wavin' Flag", "Waka Waka", "Hayya Hayya", "The Cup of Life"],
+  ["africa_east", 1, "The Maasai adumu dance is famous for young men doing what?", "Jumping straight up high", "Spinning on one foot", "Walking on stilts", "Balancing pots"],
+  ["africa_east", 1, "Bongo Flava superstar Diamond Platnumz is from which country?", "Tanzania", "Kenya", "Uganda", "Rwanda"],
+  ["africa_east", 1, "Long-distance running legend Haile Gebrselassie represented which country?", "Ethiopia", "Kenya", "Eritrea", "Uganda"],
+  ["africa_east", 1, "How many months are there in the Ethiopian calendar?", "13", "12", "10", "14"],
+  ["africa_east", 2, "In Kenya, what is a “matatu”?", "A shared minibus taxi", "A market stall", "A street dance", "A cattle ranch"],
+  ["africa_east", 2, "The Maasai shuka cloth is most famously which colour?", "Red", "Yellow", "Green", "White"],
+  ["africa_east", 2, "Ethiopia's traditional coffee ceremony usually serves how many rounds?", "Three", "One", "Five", "Seven"],
+  ["africa_east", 2, "Uganda's Joshua Cheptegei won Olympic gold at Paris 2024 in which event?", "10,000m", "Marathon", "1500m", "3000m steeplechase"],
+  ["africa_east", 2, "Eddy Kenzo's viral 2014 dance video “Sitya Loss” came out of which country?", "Uganda", "Kenya", "Tanzania", "Rwanda"],
+  ["africa_east", 2, "Kenya's national motto “Harambee” means what?", "Let's all pull together", "No worries", "Welcome, friend", "Peace and freedom"],
+  ["africa_east", 2, "Ethiopia's Lalibela is famous for medieval churches carved from what?", "Solid rock", "Ice", "Wood", "Mud brick"],
+  ["africa_east", 2, "Faith Kipyegon won Olympic gold in 2016, 2021 and 2024 in which event?", "1500m", "800m", "5000m", "Marathon"],
+  ["africa_east", 3, "Sauti Sol, the Afropop band behind “Suzanna”, is from which country?", "Kenya", "Tanzania", "Uganda", "Ethiopia"],
+  ["africa_east", 3, "'Wakaliwood', home of the cult action film “Who Killed Captain Alex?”, is in which country?", "Uganda", "Kenya", "Rwanda", "Tanzania"],
+  ["africa_east", 3, "Somalia is often described as a “nation of” what?", "Poets", "Sailors", "Painters", "Dancers"],
+  ["africa_east", 3, "Rwanda's monthly “Umuganda” is a national day of what?", "Community service", "Fasting", "Drumming", "Football"],
+  ["africa_east", 3, "Rwanda's Kwita Izina ceremony gives names to which animals?", "Baby gorillas", "Lion cubs", "Baby elephants", "Rhino calves"],
+  ["africa_east", 3, "Ethiopia's Timkat festival celebrates which event?", "Epiphany (Jesus's baptism)", "Christmas", "Easter", "New Year"],
+  ["africa_east", 3, "Eskista, a traditional Ethiopian dance, is centred on movements of which body part?", "Shoulders", "Feet", "Hips", "Hands"],
+  ["africa_east", 3, "The colourful East African kanga cloth traditionally carries a printed what?", "Swahili saying", "Family name", "Map", "Calendar"],
+  ["africa_east", 4, "Rwanda's geometric imigongo art is traditionally made using what?", "Cow dung", "Banana leaves", "Coffee grounds", "Seashells"],
+  // African Culture: Southern Africa
+  ["africa_south", 1, "Which South African singer won the first-ever Grammy for Best African Music Performance in 2024 with “Water”?", "Tyla", "Nomcebo Zikode", "Ayra Starr", "Tems"],
+  ["africa_south", 1, "Amapiano, the log-drum-heavy dance music, originated in which country?", "South Africa", "Nigeria", "Ghana", "Kenya"],
+  ["africa_south", 1, "Which South African producer's “Jerusalema” sparked a global dance challenge in 2020?", "Master KG", "Black Coffee", "DJ Maphorisa", "Kabza De Small"],
+  ["africa_south", 1, "Which loud plastic horn became the signature sound of the 2010 World Cup in South Africa?", "Vuvuzela", "Kazoo", "Didgeridoo", "Shofar"],
+  ["africa_south", 1, "Comedian Trevor Noah's 2016 memoir about growing up in South Africa is titled what?", "Born a Crime", "Long Walk to Freedom", "Becoming", "Dreams from My Father"],
+  ["africa_south", 1, "Which South African-born actress won the Best Actress Oscar for “Monster”?", "Charlize Theron", "Nicole Kidman", "Cate Blanchett", "Naomi Watts"],
+  ["africa_south", 1, "In South Africa, what is a “braai”?", "A barbecue", "A minibus taxi", "A township dance", "A rugby match"],
+  ["africa_south", 1, "In South African slang, what is a “robot”?", "A traffic light", "A security guard", "An ATM", "A vending machine"],
+  ["africa_south", 2, "South Africa's men's national football team is nicknamed what?", "Bafana Bafana", "Black Stars", "Super Eagles", "Indomitable Lions"],
+  ["africa_south", 2, "South Africa's Heritage Day, 24 September, is popularly nicknamed what?", "National Braai Day", "Rainbow Day", "Ubuntu Day", "Springbok Day"],
+  ["africa_south", 2, "Which phrase, popularised by Desmond Tutu, describes post-1994 South Africa's diversity?", "Rainbow Nation", "Land of Ubuntu", "Proud Nation", "Golden Republic"],
+  ["africa_south", 2, "The Afrikaans word “lekker” means what?", "Nice or great", "Lazy", "Expensive", "Slow"],
+  ["africa_south", 2, "The philosophy of “ubuntu”, often summed up as “I am because we are”, comes from which language group?", "Nguni (e.g. Zulu, Xhosa)", "Afrikaans", "Swahili", "Yoruba"],
+  ["africa_south", 2, "The mbira, central to Shona music in Zimbabwe, is often called what in English?", "Thumb piano", "Talking drum", "Mouth harp", "Hand flute"],
+  ["africa_south", 2, "Alexander McCall Smith's “The No. 1 Ladies' Detective Agency” is set in which country?", "Botswana", "Zimbabwe", "Namibia", "Zambia"],
+  ["africa_south", 2, "What is the popular slang name South Africans use for their own country?", "Mzansi", "Mzungu", "Jozi", "Kasi"],
+  ["africa_south", 3, "Botswana's Letsile Tebogo won Olympic gold at Paris 2024 in which event?", "200m", "100m", "400m", "800m"],
+  ["africa_south", 3, "Gqom, a raw electronic dance genre, originated in which South African city?", "Durban", "Cape Town", "Pretoria", "Bloemfontein"],
+  ["africa_south", 3, "South African DJ Black Coffee won a 2022 Grammy in which category?", "Best Dance/Electronic Album", "Best Global Music Album", "Best New Artist", "Best Rap Album"],
+  ["africa_south", 3, "South Africa's gumboot dance originated among workers in which industry?", "Gold mining", "Fishing", "Sugar farming", "Railway building"],
+  ["africa_south", 3, "Esther Mahlangu, famous for painting a BMW art car, works in the art style of which people?", "Ndebele", "Zulu", "Himba", "San"],
+  ["africa_south", 3, "Which club plays Orlando Pirates in the famous Soweto Derby?", "Kaizer Chiefs", "Mamelodi Sundowns", "SuperSport United", "AmaZulu"],
+  ["africa_south", 3, "Lesotho's national flag features which traditional item?", "A Basotho straw hat", "A shield and spear", "A drum", "A cattle horn"],
+  ["africa_south", 3, "Namibia's Himba women traditionally coat their skin and hair with otjize, made with what?", "Red ochre and butterfat", "Charcoal and oil", "White clay and water", "Indigo and honey"],
+  ["africa_south", 4, "Ladysmith Black Mambazo rose to global fame on which 1986 Paul Simon album?", "Graceland", "Rhythm of the Saints", "Still Crazy After All These Years", "Hearts and Bones"],
+  // South American Culture: General
+  ["samerica", 1, "What is South America's top club football competition, its version of the Champions League?", "Copa Libertadores", "Copa del Rey", "Gold Cup", "Copa Centenario"],
+  ["samerica", 1, "In much of Latin America, a girl's big coming-of-age party is held on which birthday?", "15th", "13th", "16th", "18th"],
+  ["samerica", 1, "In Argentina, Chile and Uruguay, Christmas falls in which season?", "Summer", "Winter", "Autumn", "Spring"],
+  ["samerica", 1, "What is the Holy Week before Easter called in Spanish?", "Semana Santa", "Nochebuena", "Cuaresma", "Fiesta Mayor"],
+  ["samerica", 1, "Besides Brazil and Argentina, which South American country has won the men's World Cup?", "Uruguay", "Chile", "Colombia", "Paraguay"],
+  ["samerica", 2, "As of 2024, which country has won the most Copa América titles?", "Argentina", "Uruguay", "Brazil", "Chile"],
+  ["samerica", 2, "Which country hosted the 2024 Copa América?", "United States", "Brazil", "Argentina", "Ecuador"],
+  ["samerica", 2, "Dutch is the official language of which South American country?", "Suriname", "Guyana", "Ecuador", "Venezuela"],
+  ["samerica", 2, "Which Colombian singer's 2017 hit “Mi Gente” got a remix featuring Beyoncé?", "J Balvin", "Maluma", "Juanes", "Sebastián Yatra"],
+  ["samerica", 2, "Shakira's record-breaking 2023 “Music Session #53” was made with which Argentine producer?", "Bizarrap", "Tini", "Duki", "Paulo Londra"],
+  ["samerica", 3, "Which country beat Argentina on penalties in the Copa América finals of both 2015 and 2016?", "Chile", "Brazil", "Uruguay", "Colombia"],
+  ["samerica", 3, "English is the official language of which South American country?", "Guyana", "Suriname", "Paraguay", "Venezuela"],
+  ["samerica", 3, "What is the informal mix of Portuguese and Spanish heard along Brazil's borders called?", "Portuñol", "Spanglish", "Ladino", "Creole"],
+  ["samerica", 3, "The 2030 World Cup will open with centenary matches in Uruguay, Argentina and which other country?", "Paraguay", "Chile", "Brazil", "Colombia"],
+  ["samerica", 3, "Which South American city hosted the 2019 Pan American Games?", "Lima", "Santiago", "Bogotá", "Buenos Aires"],
+  ["samerica", 3, "Which famous off-road race was held in South America from 2009 to 2019?", "Dakar Rally", "Baja 1000", "Monte Carlo Rally", "Paris–Roubaix"],
+  ["samerica", 4, "Which South American city hosted the 2018 Summer Youth Olympic Games?", "Buenos Aires", "Rio de Janeiro", "Lima", "Santiago"],
+  ["samerica", 4, "In which year were the first Latin Grammy Awards held?", "2000", "1995", "2005", "1990"],
+  // South American Culture: Brazil
+  ["samerica_brazil", 1, "What is the official language of Brazil?", "Portuguese", "Spanish", "French", "Italian"],
+  ["samerica_brazil", 1, "Capoeira is a Brazilian art form that blends martial arts with what?", "Dance", "Painting", "Poetry", "Juggling"],
+  ["samerica_brazil", 1, "Supermodel Gisele Bündchen was born in which country?", "Brazil", "Argentina", "Portugal", "Colombia"],
+  ["samerica_brazil", 1, "Many Brazilians dress in which color on New Year's Eve for peace and good luck?", "White", "Black", "Purple", "Brown"],
+  ["samerica_brazil", 1, "In 2017, which Brazilian joined PSG from Barcelona for a world-record transfer fee?", "Neymar", "Vinícius Júnior", "Philippe Coutinho", "Gabriel Jesus"],
+  ["samerica_brazil", 1, "At the 2014 World Cup, Brazil lost a semi-final 7–1 to which team?", "Germany", "Netherlands", "Argentina", "Spain"],
+  ["samerica_brazil", 1, "Brazil's Carnival takes place in the days just before which Christian season?", "Lent", "Advent", "Pentecost", "Christmas"],
+  ["samerica_brazil", 1, "Which brand of rubber flip-flops is a famous Brazilian icon?", "Havaianas", "Crocs", "Birkenstock", "Teva"],
+  ["samerica_brazil", 2, "Rio's top samba school parades take place in which purpose-built venue?", "Sambadrome", "Maracanã", "Copacabana Fort", "Lapa Arches"],
+  ["samerica_brazil", 2, "Which one-string musical bow with a gourd leads the music in capoeira?", "Berimbau", "Cavaquinho", "Cuíca", "Agogô"],
+  ["samerica_brazil", 2, "Which Brazilian playmaker, famous for his smile and tricks, won the 2005 Ballon d'Or?", "Ronaldinho", "Kaká", "Rivaldo", "Neymar"],
+  ["samerica_brazil", 2, "In 2022, which Brazilian pop star topped Spotify's global daily chart with “Envolver”?", "Anitta", "Ludmilla", "Pabllo Vittar", "Iza"],
+  ["samerica_brazil", 2, "Which Brazilian TV network is famous for producing the country's most-watched telenovelas?", "TV Globo", "Televisa", "Telemundo", "Univision"],
+  ["samerica_brazil", 2, "Which Portuguese word, central to Brazilian songs, means a deep nostalgic longing?", "Saudade", "Cafuné", "Malandragem", "Jeitinho"],
+  ["samerica_brazil", 2, "Mangueira, Portela and Beija-Flor are famous Rio examples of what?", "Samba schools", "Beaches", "Football clubs", "Radio stations"],
+  ["samerica_brazil", 2, "Which Brazilian has won FIFA's women's World Player of the Year a record six times?", "Marta", "Formiga", "Cristiane", "Debinha"],
+  ["samerica_brazil", 2, "Sertanejo, one of Brazil's most-streamed genres, is Brazil's version of which style?", "Country music", "Heavy metal", "Jazz", "Techno"],
+  ["samerica_brazil", 3, "Brazil's festas juninas feature which folk square dance?", "Quadrilha", "Frevo", "Lambada", "Maxixe"],
+  ["samerica_brazil", 3, "What is the drum section of a samba school called?", "Bateria", "Bloco", "Ala", "Cordão"],
+  ["samerica_brazil", 3, "Frevo, an acrobatic carnival dance done with small umbrellas, comes from which Brazilian state?", "Pernambuco", "Rio Grande do Sul", "Amazonas", "Minas Gerais"],
+  ["samerica_brazil", 3, "By tradition, how many waves do Brazilians jump over at the beach on New Year's Eve?", "Seven", "Three", "Five", "Twelve"],
+  ["samerica_brazil", 3, "Which Brazilian was named The Best FIFA Men's Player for 2024?", "Vinícius Júnior", "Rodrygo", "Raphinha", "Endrick"],
+  ["samerica_brazil", 3, "In 2025, which film won Brazil its first Oscar for Best International Feature?", "I'm Still Here", "City of God", "Central Station", "Bacurau"],
+  ["samerica_brazil", 4, "Who composed the bossa nova classic “The Girl from Ipanema”?", "Antônio Carlos Jobim", "Caetano Veloso", "Gilberto Gil", "Chico Buarque"],
+  ["samerica_brazil", 4, "The Amazon's Parintins Festival pits the boi team Garantido against which rival?", "Caprichoso", "Mangueira", "Beija-Flor", "Estrela"],
+  // South American Culture: Argentina & Southern Cone
+  ["samerica_south", 1, "In Argentina and Uruguay, which herbal drink is shared from a single gourd passed around a group?", "Yerba mate", "Hibiscus tea", "Horchata", "Coffee"],
+  ["samerica_south", 1, "What are the traditional horsemen of the Argentine pampas called?", "Gauchos", "Vaqueros", "Charros", "Cowpokes"],
+  ["samerica_south", 1, "Pope Francis, elected in 2013, came from which country?", "Argentina", "Chile", "Uruguay", "Paraguay"],
+  ["samerica_south", 1, "In 2023, Lionel Messi joined which Major League Soccer club?", "Inter Miami", "LA Galaxy", "New York City FC", "Orlando City"],
+  ["samerica_south", 1, "Argentina's Superclásico is the football rivalry between River Plate and which club?", "Boca Juniors", "Racing Club", "Independiente", "San Lorenzo"],
+  ["samerica_south", 1, "Argentina's football nickname “La Albiceleste” refers to which shirt colors?", "Sky blue and white", "Red and white", "Blue and gold", "Green and white"],
+  ["samerica_south", 2, "Which accordion-like instrument is the signature sound of tango?", "Bandoneón", "Charango", "Harmonica", "Quena"],
+  ["samerica_south", 2, "Which handkerchief-waving couple dance is the national dance of Chile?", "Cueca", "Tango", "Samba", "Cumbia"],
+  ["samerica_south", 2, "Besides Spanish, which Indigenous language is official and spoken by most Paraguayans?", "Guaraní", "Quechua", "Aymara", "Mapudungun"],
+  ["samerica_south", 2, "As of 2025, how many Ballon d'Or awards has Lionel Messi won?", "8", "6", "7", "5"],
+  ["samerica_south", 2, "Which word, roughly “hey, mate”, is so typical of Argentines that it became a nickname?", "Che", "Güey", "Parce", "Pana"],
+  ["samerica_south", 2, "Instead of “tú”, Argentines and Uruguayans use which word for an informal “you”?", "Vos", "Vosotros", "Usted", "Ustedes"],
+  ["samerica_south", 2, "In 2021, Argentina won the Copa América by beating which host nation in the final?", "Brazil", "Colombia", "Chile", "Uruguay"],
+  ["samerica_south", 2, "What is the nickname of Argentina's national rugby team?", "Los Pumas", "Los Cóndores", "Los Teros", "Los Toros"],
+  ["samerica_south", 3, "Tango was born in the late 1800s in port neighborhoods on which river estuary?", "Río de la Plata", "Amazon", "Orinoco", "Magdalena"],
+  ["samerica_south", 3, "What is the traditional Chilean cowboy called?", "Huaso", "Llanero", "Charro", "Jinete"],
+  ["samerica_south", 3, "Candombe, a drumming tradition with African roots, is a cultural symbol of which country?", "Uruguay", "Paraguay", "Chile", "Bolivia"],
+  ["samerica_south", 3, "Boca Juniors' famously steep stadium is nicknamed what?", "La Bombonera", "El Monumental", "El Cilindro", "El Centenario"],
+  ["samerica_south", 3, "The 2018 Copa Libertadores final between River Plate and Boca Juniors was played in which city?", "Madrid", "Buenos Aires", "Miami", "Montevideo"],
+  ["samerica_south", 3, "What do Paraguayans call yerba mate served ice-cold?", "Tereré", "Chimarrão", "Mate cocido", "Horchata"],
+  ["samerica_south", 4, "Mafalda, the beloved comic-strip girl who hates soup, was created in which country?", "Argentina", "Spain", "Mexico", "Chile"],
+  ["samerica_south", 3, "How many cheek kisses do friends typically give each other when greeting in Argentina?", "One", "Two", "Three", "Four"],
+  ["samerica_south", 4, "Ñandutí, a delicate spiderweb-like lace, is a traditional craft of which country?", "Paraguay", "Chile", "Uruguay", "Venezuela"],
+  ["samerica_south", 4, "Which Chilean poet became the first Latin American to win the Nobel Prize in Literature, in 1945?", "Gabriela Mistral", "Pablo Neruda", "Isabel Allende", "Jorge Luis Borges"],
+  ["samerica_south", 4, "Chile's Viña del Mar song festival awards trophies shaped like which bird?", "Seagull", "Condor", "Pelican", "Hummingbird"],
+  // South American Culture: Andean & Northern
+  ["samerica_andes", 1, "Which Indigenous language, spoken by millions in Peru and Bolivia, was the main language of the Inca Empire?", "Quechua", "Guaraní", "Nahuatl", "Mapudungun"],
+  ["samerica_andes", 1, "Pop superstar Shakira was born in which country?", "Colombia", "Venezuela", "Peru", "Ecuador"],
+  ["samerica_andes", 1, "“Modern Family” star Sofía Vergara is from which country?", "Colombia", "Venezuela", "Argentina", "Chile"],
+  ["samerica_andes", 1, "Paddington Bear originally comes from which country?", "Peru", "Bolivia", "Colombia", "Ecuador"],
+  ["samerica_andes", 2, "Inti Raymi, the Inca Festival of the Sun, is re-enacted each June in which city?", "Cusco", "Lima", "La Paz", "Quito"],
+  ["samerica_andes", 2, "Shakira's hometown hosts one of the world's biggest carnivals. Which city is it?", "Barranquilla", "Cartagena", "Cali", "Bogotá"],
+  ["samerica_andes", 2, "The cumbia rhythm originated on the Caribbean coast of which country?", "Colombia", "Mexico", "Cuba", "Venezuela"],
+  ["samerica_andes", 2, "Which instrument leads the melody in Colombian vallenato music?", "Accordion", "Harp", "Steel drum", "Saxophone"],
+  ["samerica_andes", 2, "Reggaeton stars J Balvin, Maluma and Karol G all come from which Colombian city?", "Medellín", "Bogotá", "Cali", "Barranquilla"],
+  ["samerica_andes", 2, "Netflix's 2024 series “One Hundred Years of Solitude” adapts a novel by which Colombian author?", "Gabriel García Márquez", "Mario Vargas Llosa", "Isabel Allende", "Jorge Luis Borges"],
+  ["samerica_andes", 2, "Despite its name, the “Panama hat” traditionally comes from which country?", "Ecuador", "Peru", "Colombia", "Bolivia"],
+  ["samerica_andes", 2, "Which South American country has won the Miss Universe pageant the most times (7 as of 2025)?", "Venezuela", "Colombia", "Brazil", "Peru"],
+  ["samerica_andes", 2, "In Andean tradition, who is Pachamama?", "Mother Earth", "The sun god", "The moon goddess", "The god of thunder"],
+  ["samerica_andes", 2, "Who won the Golden Boot as top scorer at the 2014 World Cup?", "James Rodríguez", "Thomas Müller", "Lionel Messi", "Neymar"],
+  ["samerica_andes", 2, "The US series “Ugly Betty” (2006) was based on a telenovela from which country?", "Colombia", "Mexico", "Venezuela", "Argentina"],
+  ["samerica_andes", 3, "The Carnival of Oruro in Bolivia is famous for which masked dance?", "Diablada", "Marinera", "Cueca", "Joropo"],
+  ["samerica_andes", 3, "In 2023, whose “Mañana Será Bonito” became the first Spanish-language album by a woman to top the Billboard 200?", "Karol G", "Shakira", "Becky G", "Rosalía"],
+  ["samerica_andes", 3, "Which Colombian artist was famous for painting and sculpting plump, voluminous figures?", "Fernando Botero", "Oswaldo Guayasamín", "Diego Rivera", "Frida Kahlo"],
+  ["samerica_andes", 3, "Which small Andean string instrument was traditionally made from an armadillo shell?", "Charango", "Cuatro", "Quena", "Bandoneón"],
+  ["samerica_andes", 3, "Bolivia's Aymara “cholitas” are famous for wearing what kind of hat?", "Bowler hat", "Sombrero", "Beret", "Fedora"],
+  ["samerica_andes", 3, "Joropo, played with harp, cuatro and maracas, is the national dance of which country?", "Venezuela", "Peru", "Bolivia", "Ecuador"],
+  ["samerica_andes", 3, "On New Year's Eve, Ecuadorians traditionally burn what?", "Effigies of the old year", "Christmas trees", "Old shoes", "Paper lanterns"],
+  ["samerica_andes", 3, "In 2019, which Colombian became the first Latin American to win the Tour de France?", "Egan Bernal", "Nairo Quintana", "Rigoberto Urán", "Richard Carapaz"],
+  ["samerica_andes", 3, "Colombia's national sport “tejo” involves throwing metal discs at targets loaded with what?", "Gunpowder", "Water balloons", "Glass bottles", "Coins"],
+  ["samerica_andes", 4, "At La Paz's Alasitas fair, people buy miniatures of things they wish for, honoring which god of abundance?", "Ekeko", "Inti", "Viracocha", "Supay"],
+  // Central American & Caribbean Culture: General
+  ["camerica", 1, "Carnival in Latin America and the Caribbean is traditionally held just before which Christian season?", "Lent", "Advent", "Pentecost", "Christmastide"],
+  ["camerica", 1, "What do players traditionally wear over their eyes when swinging at a piñata?", "A blindfold", "Sunglasses", "A mask", "Goggles"],
+  ["camerica", 1, "Which pair of shaken rattles, traditionally made from gourds, is a staple of Latin music?", "Maracas", "Bongos", "Claves", "Castanets"],
+  ["camerica", 1, "The 2012 “end of the world” hype stemmed from which civilization's calendar?", "Maya", "Aztec", "Inca", "Olmec"],
+  ["camerica", 2, "Which Puerto Rican singer wrote and recorded the 1970 holiday classic “Feliz Navidad”?", "José Feliciano", "Marc Anthony", "Tito Puente", "Ricky Martin"],
+  ["camerica", 2, "The word “sombrero” comes from the Spanish word for what?", "Shade", "Sun", "Head", "Wind"],
+  ["camerica", 2, "Players from Jamaica, Barbados and Trinidad compete together in international cricket as which team?", "West Indies", "Caribbean XI", "Antilles United", "Windward Stars"],
+  ["camerica", 2, "Which confederation runs the Gold Cup for North American, Central American and Caribbean soccer?", "CONCACAF", "CONMEBOL", "UEFA", "CAF"],
+  ["camerica", 2, "The ancient Mesoamerican ballgame was played with a heavy ball made of what?", "Rubber", "Leather", "Wood", "Stone"],
+  ["camerica", 2, "Which ridged gourd percussion instrument is played by scraping it with a stick?", "Güiro", "Cajón", "Timbal", "Maraca"],
+  ["camerica", 3, "Which English weather word comes from the Taíno language of the Caribbean?", "Hurricane", "Tornado", "Typhoon", "Monsoon"],
+  ["camerica", 3, "The word “avocado” ultimately comes from which Indigenous language?", "Nahuatl", "Taíno", "Quechua", "Guaraní"],
+  ["camerica", 3, "What did the Maya and Aztecs famously use as a form of money?", "Cacao beans", "Coffee beans", "Copper coins", "Sugar cubes"],
+  ["camerica", 3, "Which pleated, multi-pocketed men's shirt is a classic in Cuba, Mexico and across the Caribbean?", "Guayabera", "Huipil", "Poncho", "Dashiki"],
+  ["camerica", 3, "On the eve of Three Kings' Day, children in Puerto Rico traditionally leave boxes of grass for whom?", "The Kings' camels", "Santa's reindeer", "The Christmas donkey", "Their pet rabbits"],
+  ["camerica", 3, "In salsa, the key rhythmic pattern, also the name of two wooden sticks, is called what?", "Clave", "Güiro", "Conga", "Bongó"],
+  ["camerica", 3, "The Caribbean Series (Serie del Caribe) is an annual championship in which sport?", "Baseball", "Soccer", "Cricket", "Basketball"],
+  ["camerica", 4, "Danzón, a beloved ballroom dance in Veracruz, Mexico, originated in which country?", "Cuba", "Spain", "Colombia", "Argentina"],
+  ["camerica", 4, "Panamanian artist El General is often called a pioneer of which genre?", "Reggaeton", "Bachata", "Salsa", "Merengue"],
+  // Central American & Caribbean Culture: Mexico
+  ["camerica_mexico", 1, "Which bright orange flower traditionally decorates Día de los Muertos altars?", "Marigold", "Rose", "Sunflower", "Tulip"],
+  ["camerica_mexico", 1, "What is the home altar of offerings built for Día de los Muertos called?", "Ofrenda", "Piñata", "Sarape", "Rebozo"],
+  ["camerica_mexico", 1, "Día de los Muertos is celebrated mainly on which dates?", "November 1–2", "October 30–31", "December 24–25", "September 15–16"],
+  ["camerica_mexico", 1, "A quinceañera celebrates a girl's which birthday?", "15th", "13th", "16th", "18th"],
+  ["camerica_mexico", 1, "What are lucha libre wrestlers called?", "Luchadores", "Toreros", "Charros", "Gauchos"],
+  ["camerica_mexico", 1, "Which 2017 Pixar film is set during Día de los Muertos?", "Coco", "Encanto", "Luca", "Elemental"],
+  ["camerica_mexico", 1, "Which weeping ghost of Mexican folklore wanders searching for her lost children?", "La Llorona", "La Catrina", "La Malinche", "La Adelita"],
+  ["camerica_mexico", 1, "Which Mexican painter is famous for her bold self-portraits and unibrow?", "Frida Kahlo", "Remedios Varo", "Leonora Carrington", "María Izquierdo"],
+  ["camerica_mexico", 2, "What Spanish word for “skull” names the decorated sugar treats of Día de los Muertos?", "Calavera", "Cabeza", "Corazón", "Catrina"],
+  ["camerica_mexico", 2, "What is the name of the elegant skeleton lady who became a Día de los Muertos icon?", "La Catrina", "La Llorona", "La Sirena", "La Dama Azul"],
+  ["camerica_mexico", 2, "Which famous muralist was married to Frida Kahlo?", "Diego Rivera", "José Clemente Orozco", "Rufino Tamayo", "David Alfaro Siqueiros"],
+  ["camerica_mexico", 2, "What are the brightly painted fantastical creature figures of Mexican folk art called?", "Alebrijes", "Calacas", "Judas", "Milagros"],
+  ["camerica_mexico", 2, "What are the colorful banners of cut tissue paper strung up at Mexican fiestas called?", "Papel picado", "Cascarones", "Sarapes", "Huipiles"],
+  ["camerica_mexico", 2, "Which nine-night pre-Christmas tradition reenacts Mary and Joseph's search for lodging?", "Las Posadas", "Las Mañanitas", "La Guelaguetza", "Los Reyes"],
+  ["camerica_mexico", 2, "Peso Pluma rose to global fame in 2023 with which regional Mexican style?", "Corridos tumbados", "Son jarocho", "Cumbia sonidera", "Huapango"],
+  ["camerica_mexico", 2, "Which Mexican driver won Formula 1's Monaco Grand Prix in 2022?", "Sergio Pérez", "Esteban Gutiérrez", "Pato O'Ward", "Daniel Suárez"],
+  ["camerica_mexico", 2, "Which Mexican slang word is used much like “dude”?", "Güey", "Parce", "Tío", "Pana"],
+  ["camerica_mexico", 3, "On Día de los Muertos, which departed souls are traditionally honored on November 1?", "Children", "Soldiers", "Musicians", "Pets"],
+  ["camerica_mexico", 3, "On the night of September 15, Mexico's president reenacts which independence cry from a balcony?", "El Grito", "El Pregón", "La Mañanita", "La Posada"],
+  ["camerica_mexico", 3, "In Mexico, whoever finds the baby figure in the Rosca de Reyes traditionally hosts a tamale party on which day?", "Día de la Candelaria", "Día de los Muertos", "Día de la Independencia", "Día de San Valentín"],
+  ["camerica_mexico", 3, "Performers in the Danza de los Voladores descend from a tall pole in what way?", "Spinning upside down on ropes", "Sliding down a greased pole", "Leaping onto a net", "Climbing down with torches"],
+  ["camerica_mexico", 3, "The Guelaguetza, a huge July festival of Indigenous dance, is held in which Mexican state?", "Oaxaca", "Jalisco", "Sonora", "Yucatán"],
+  ["camerica_mexico", 3, "In “Coco,” Dante the dog belongs to which hairless Mexican breed?", "Xoloitzcuintli", "Chihuahua", "Chinese Crested", "Peruvian Inca Orchid"],
+  ["camerica_mexico", 3, "The points on a traditional star-shaped Mexican piñata are said to represent what?", "The seven deadly sins", "The twelve apostles", "The days of the week", "The Three Kings"],
+  ["camerica_mexico", 4, "Which comedian created and starred in the classic sitcom “El Chavo del Ocho”?", "Roberto Gómez Bolaños", "Cantinflas", "Eugenio Derbez", "Héctor Suárez"],
+  // Central American & Caribbean Culture: Central America
+  ["camerica_central", 1, "Which phrase, meaning “pure life,” is Costa Rica's famous everyday motto?", "Pura vida", "Hakuna matata", "Dolce vita", "Mi casa es su casa"],
+  ["camerica_central", 1, "Guatemala's currency and its national bird share which name?", "Quetzal", "Toucan", "Macaw", "Condor"],
+  ["camerica_central", 1, "Which is the official language of Belize, unique among Central American countries?", "English", "Spanish", "French", "Dutch"],
+  ["camerica_central", 1, "Descendants of which ancient civilization make up a large share of Guatemala's population today?", "Maya", "Inca", "Aztec", "Olmec"],
+  ["camerica_central", 1, "Tiny handmade figures that Guatemalan children tell their troubles to at bedtime are called what?", "Worry dolls", "Kachina dolls", "Nesting dolls", "Corn husk dolls"],
+  ["camerica_central", 2, "What nickname do Costa Ricans proudly use for themselves?", "Ticos", "Chapines", "Catrachos", "Guanacos"],
+  ["camerica_central", 2, "Which wooden percussion instrument is Guatemala's national instrument?", "Marimba", "Steelpan", "Bongos", "Cajón"],
+  ["camerica_central", 2, "Yankees closer Mariano Rivera, baseball's first unanimous Hall of Famer (2019), is from which country?", "Panama", "Nicaragua", "Honduras", "Costa Rica"],
+  ["camerica_central", 2, "Goalkeeper Keylor Navas, a three-time Champions League winner with Real Madrid, is from which country?", "Costa Rica", "Panama", "Honduras", "Guatemala"],
+  ["camerica_central", 2, "What is the traditional hand-woven blouse worn by Maya women in Guatemala called?", "Huipil", "Poncho", "Rebozo", "Guayabera"],
+  ["camerica_central", 2, "Despite its name, the classic straw Panama hat originated in which country?", "Ecuador", "Panama", "Cuba", "Colombia"],
+  ["camerica_central", 2, "El Salvador holds a National Day each November celebrating which stuffed corn flatbread?", "Pupusa", "Arepa", "Gordita", "Baleada"],
+  ["camerica_central", 2, "In Costa Rica, what does the everyday slang word “mae” mean?", "Dude", "Mom", "Money", "Beach"],
+  ["camerica_central", 3, "Hondurans proudly call themselves by which nickname?", "Catrachos", "Ticos", "Chapines", "Nicas"],
+  ["camerica_central", 3, "On November 1, the Guatemalan town of Sumpango is famous for flying what?", "Giant kites", "Paper lanterns", "Hot-air balloons", "Prayer flags"],
+  ["camerica_central", 3, "During Holy Week in Antigua Guatemala, processions walk over street carpets made mainly of what?", "Dyed sawdust", "Woven wool", "Glass beads", "Paper confetti"],
+  ["camerica_central", 3, "Punta is a music and dance tradition of which Afro-Indigenous people of Belize and Honduras?", "Garifuna", "Miskito", "Lenca", "Maroons"],
+  ["camerica_central", 3, "What is the K'iche' Maya sacred book that tells of the creation of the world and the Hero Twins?", "Popol Vuh", "Codex Mendoza", "Florentine Codex", "Kalevala"],
+  ["camerica_central", 3, "Costa Rica's UNESCO-listed folk art tradition centers on brightly painted what?", "Ox carts", "Canoes", "Masks", "Bicycles"],
+  ["camerica_central", 3, "Molas, layered reverse-appliqué textile panels, are made by which Indigenous people of Panama?", "Guna", "Garifuna", "K'iche'", "Miskito"],
+  ["camerica_central", 3, "Which cold, many-ingredient salad do Guatemalan families traditionally eat on November 1?", "Fiambre", "Ceviche", "Curtido", "Gallo pinto"],
+  ["camerica_central", 3, "Panama made its first-ever men's World Cup appearance at which tournament?", "Russia 2018", "Brazil 2014", "Qatar 2022", "Germany 2006"],
+  ["camerica_central", 3, "Nicaraguans commonly call themselves by which short nickname?", "Nicas", "Ticos", "Guanacos", "Catrachos"],
+  ["camerica_central", 4, "Which Nicaraguan poet is called the father of the Spanish-language Modernismo movement?", "Rubén Darío", "Pablo Neruda", "Octavio Paz", "Gabriela Mistral"],
+  ["camerica_central", 4, "Linguists study a sign language created spontaneously by deaf schoolchildren in the 1970s–80s in which country?", "Nicaragua", "Costa Rica", "Honduras", "Panama"],
+  // Central American & Caribbean Culture: The Caribbean
+  ["camerica_caribbean", 1, "Bachata music and dance originated in which country?", "Dominican Republic", "Cuba", "Puerto Rico", "Colombia"],
+  ["camerica_caribbean", 1, "Who released the 2004 reggaeton anthem “Gasolina”?", "Daddy Yankee", "Don Omar", "Wisin & Yandel", "Pitbull"],
+  ["camerica_caribbean", 1, "Which Puerto Rican star headlined the Super Bowl LX halftime show in February 2026?", "Bad Bunny", "Daddy Yankee", "Ozuna", "Ricky Martin"],
+  ["camerica_caribbean", 1, "Pop superstar Rihanna is from which Caribbean island nation?", "Barbados", "Jamaica", "Trinidad and Tobago", "The Bahamas"],
+  ["camerica_caribbean", 1, "Which Jamaican dancehall star scored hits with “Get Busy” and “Temperature”?", "Sean Paul", "Shaggy", "Vybz Kartel", "Damian Marley"],
+  ["camerica_caribbean", 1, "Which Jamaican-born singer had a 2000 hit with “It Wasn't Me”?", "Shaggy", "Sean Paul", "Beenie Man", "Sean Kingston"],
+  ["camerica_caribbean", 1, "Which Puerto Rican singer had a 1999 smash with “Livin' la Vida Loca”?", "Ricky Martin", "Enrique Iglesias", "Chayanne", "Marc Anthony"],
+  ["camerica_caribbean", 2, "Which fast-paced dance is considered the national dance of the Dominican Republic?", "Merengue", "Salsa", "Rumba", "Cumbia"],
+  ["camerica_caribbean", 2, "Romeo Santos, the “King of Bachata,” first found fame as lead singer of which group?", "Aventura", "Menudo", "CNCO", "Calle 13"],
+  ["camerica_caribbean", 2, "Rapper Nicki Minaj was born in which Caribbean country?", "Trinidad and Tobago", "Jamaica", "Barbados", "Haiti"],
+  ["camerica_caribbean", 2, "“Havana” singer Camila Cabello was born in which country?", "Cuba", "Mexico", "Puerto Rico", "Venezuela"],
+  ["camerica_caribbean", 2, "Alongside French, what is the other official language of Haiti?", "Haitian Creole", "Spanish", "English", "Papiamento"],
+  ["camerica_caribbean", 2, "Which word, from the Taíno name for the island, do Puerto Ricans use to describe themselves?", "Boricua", "Tico", "Quisqueyano", "Criollo"],
+  ["camerica_caribbean", 2, "The cha-cha-chá dance originated in which country?", "Cuba", "Brazil", "Argentina", "Spain"],
+  ["camerica_caribbean", 2, "In Jamaican Patois, what does “Wah gwaan?” mean?", "What's going on?", "Thank you", "Good night", "Come here"],
+  ["camerica_caribbean", 2, "Bob Marley was a devoted follower of which faith?", "Rastafari", "Santería", "Vodou", "Sufism"],
+  ["camerica_caribbean", 3, "What is Bad Bunny's real first name?", "Benito", "Bernardo", "Bruno", "Benjamín"],
+  ["camerica_caribbean", 3, "In 2021, Barbados officially named Rihanna what?", "A National Hero", "Prime Minister", "Queen of Carnival", "Governor-General"],
+  ["camerica_caribbean", 3, "Trinidad Carnival kicks off before dawn with which messy celebration of mud, paint and powder?", "J'ouvert", "Junkanoo", "Kadooment", "Panorama"],
+  ["camerica_caribbean", 3, "Which Barbados festival began as a celebration of the end of the sugarcane harvest?", "Crop Over", "Junkanoo", "J'ouvert", "Reggae Sumfest"],
+  ["camerica_caribbean", 3, "Junkanoo, a Boxing Day and New Year's street parade, is the signature festival of which country?", "The Bahamas", "Jamaica", "Cuba", "Barbados"],
+  ["camerica_caribbean", 3, "In 2020, who became the youngest artist and first woman to win the Grammy for Best Reggae Album?", "Koffee", "Spice", "Shenseea", "Lila Iké"],
+  ["camerica_caribbean", 3, "Which Cuban-born “Queen of Salsa” was famous for shouting “¡Azúcar!”?", "Celia Cruz", "Gloria Estefan", "La Lupe", "Olga Tañón"],
+  ["camerica_caribbean", 3, "Which dance music genre, popularized in the 1950s, is Haiti's signature sound?", "Kompa", "Soca", "Mento", "Bachata"],
+  ["camerica_caribbean", 4, "Which Dominican city is nicknamed the “cradle of shortstops” for producing so many MLB players?", "San Pedro de Macorís", "Santiago", "La Romana", "Puerto Plata"],
+  // Middle Eastern Culture: General
+  ["mideast", 1, "During Ramadan, observant Muslims fast between which times each day?", "Dawn to sunset", "Noon to midnight", "Sunset to dawn", "Sunrise to noon"],
+  ["mideast", 1, "Which holiday marks the end of Ramadan?", "Eid al-Fitr", "Eid al-Adha", "Nowruz", "Mawlid"],
+  ["mideast", 1, "In which direction is Arabic script written?", "Right to left", "Left to right", "Top to bottom", "Bottom to top"],
+  ["mideast", 1, "What does the common Arabic word “yalla” mean?", "Let's go", "Goodbye", "Slow down", "Cheers"],
+  ["mideast", 1, "What does the Arabic word “shukran” mean?", "Thank you", "Hello", "Sorry", "Good night"],
+  ["mideast", 1, "In Egypt and the Gulf, the hookah water pipe is commonly called what?", "Shisha", "Dallah", "Fanous", "Mabkhara"],
+  ["mideast", 1, "In “One Thousand and One Nights”, who tells the stories to the king?", "Scheherazade", "Jasmine", "Sinbad", "Aladdin"],
+  ["mideast", 2, "What is the pre-dawn meal eaten during Ramadan called?", "Suhoor", "Iftar", "Mezze", "Mansaf"],
+  ["mideast", 2, "By tradition, the daily Ramadan fast is first broken with what?", "Dates and water", "Bread and salt", "Coffee and cake", "Olives and cheese"],
+  ["mideast", 2, "What is “Eidiya” (or Eidi)?", "Money given to children at Eid", "A Ramadan lantern", "A festival hat", "A prayer rug"],
+  ["mideast", 2, "Why does Ramadan start about 11 days earlier each year?", "It follows the lunar calendar", "It follows the solar calendar", "It is tied to the harvest", "It is tied to the equinox"],
+  ["mideast", 2, "How many letters are in the Arabic alphabet?", "28", "22", "26", "32"],
+  ["mideast", 2, "Which math term comes from the Arabic “al-jabr”?", "Algebra", "Geometry", "Calculus", "Trigonometry"],
+  ["mideast", 2, "The oud, central to Middle Eastern music, is what type of instrument?", "A fretless lute", "A reed flute", "A hand drum", "A hammered dulcimer"],
+  ["mideast", 2, "What is the goblet-shaped hand drum common across the Middle East called?", "Darbuka", "Tabla", "Bongo", "Cajón"],
+  ["mideast", 2, "In 2022, which became the first Arab nation to reach a men's World Cup semi-final?", "Morocco", "Saudi Arabia", "Tunisia", "Egypt"],
+  ["mideast", 3, "Which Middle Eastern instrument is a large trapezoid zither plucked on the lap?", "Qanun", "Ney", "Riq", "Darbuka"],
+  ["mideast", 3, "Which angular style is among the oldest forms of Arabic calligraphy?", "Kufic", "Nastaliq", "Diwani", "Ruq'ah"],
+  ["mideast", 3, "During Ramadan, the “musaharati” is known for doing what?", "Drumming in the streets to wake people for suhoor", "Lighting the city's lanterns", "Selling dates at the market", "Leading dancing at Eid"],
+  ["mideast", 3, "Which spooky English word comes from the name of an Arabic desert demon?", "Ghoul", "Goblin", "Zombie", "Vampire"],
+  // Middle Eastern Culture: Arabian Peninsula & Gulf
+  ["mideast_gulf", 1, "The Burj Khalifa, the world's tallest building since 2010, stands in which city?", "Dubai", "Doha", "Riyadh", "Kuwait City"],
+  ["mideast_gulf", 1, "Which spice most commonly flavors traditional Gulf Arabic coffee?", "Cardamom", "Black pepper", "Cumin", "Paprika"],
+  ["mideast_gulf", 1, "In Gulf hospitality, what is traditionally served alongside Arabic coffee?", "Dates", "Popcorn", "Cheese", "Pretzels"],
+  ["mideast_gulf", 1, "What is the loose black over-garment worn by many women in the Gulf called?", "Abaya", "Sari", "Kimono", "Poncho"],
+  ["mideast_gulf", 1, "Which bird of prey is the national bird of the UAE?", "Falcon", "Owl", "Vulture", "Kite"],
+  ["mideast_gulf", 1, "What is the ankle-length robe traditionally worn by men in Saudi Arabia called?", "Thobe", "Toga", "Dashiki", "Hanbok"],
+  ["mideast_gulf", 1, "Which Saudi club did Cristiano Ronaldo join in 2023?", "Al Nassr", "Al Hilal", "Al Ittihad", "Al Ahli"],
+  ["mideast_gulf", 2, "What is traditional Arabic coffee called in Arabic?", "Gahwa", "Karak", "Sahlab", "Shai"],
+  ["mideast_gulf", 2, "In Gulf coffee etiquette, how does a guest politely signal they want no more?", "Gently shake the cup", "Tap the cup on the table", "Place the cup on the floor", "Blow across the cup"],
+  ["mideast_gulf", 2, "What is the long-spouted pot used to pour Arabic coffee called?", "Dallah", "Cezve", "Samovar", "Tagine"],
+  ["mideast_gulf", 2, "Which famous museum opened a branch in Abu Dhabi in 2017?", "The Louvre", "The Prado", "The Uffizi", "The Met"],
+  ["mideast_gulf", 2, "Expo 2020, held from October 2021 to March 2022, took place in which city?", "Dubai", "Doha", "Riyadh", "Muscat"],
+  ["mideast_gulf", 2, "At the 2022 World Cup trophy ceremony, Lionel Messi was draped in which traditional Arab cloak?", "Bisht", "Sari", "Kimono", "Djellaba"],
+  ["mideast_gulf", 2, "Which team stunned eventual champions Argentina 2–1 in their opening match of the 2022 World Cup?", "Saudi Arabia", "Mexico", "Poland", "Australia"],
+  ["mideast_gulf", 2, "The 2022 World Cup in Qatar was the first played in which months?", "November–December", "January–February", "March–April", "September–October"],
+  ["mideast_gulf", 2, "In Gulf camel racing, what replaced child jockeys from the mid-2000s?", "Robot jockeys", "Trained monkeys", "Remote-control reins", "Riderless racing"],
+  ["mideast_gulf", 2, "Before oil, which industry was central to life in Bahrain and Kuwait?", "Pearl diving", "Silk weaving", "Whaling", "Tin mining"],
+  ["mideast_gulf", 2, "In Gulf culture, what is the traditional sitting room where guests are received called?", "Majlis", "Souq", "Hammam", "Riad"],
+  ["mideast_gulf", 3, "What was the name of the official mascot of the 2022 World Cup in Qatar?", "La'eeb", "Zabivaka", "Zakumi", "Fuleco"],
+  ["mideast_gulf", 3, "In 2004, which country hosted the first Formula 1 Grand Prix in the Middle East?", "Bahrain", "UAE", "Qatar", "Saudi Arabia"],
+  ["mideast_gulf", 3, "What is the curved dagger traditionally worn at the waist by Omani men called?", "Khanjar", "Kukri", "Kris", "Stiletto"],
+  ["mideast_gulf", 3, "In the UAE, falcons can be issued what official document so they can travel?", "Passports", "Driving licences", "Library cards", "Work permits"],
+  ["mideast_gulf", 3, "UAE National Day, marking the country's 1971 union, is celebrated on which date?", "2 December", "23 September", "18 December", "25 February"],
+  ["mideast_gulf", 3, "Garangao (Gergean) is a mid-Ramadan Gulf tradition in which children do what?", "Collect sweets door to door", "Fly kites", "Light bonfires", "Release lanterns"],
+  ["mideast_gulf", 4, "Which UAE and Oman folk performance features rows of men swaying thin canes to drums?", "Al-Ayyala", "Dabke", "Tanoura", "Sema"],
+  // Middle Eastern Culture: Levant & Egypt
+  ["mideast_levant", 1, "Dabke, performed at weddings across the Levant, is what kind of dance?", "A stomping line dance", "A solo sword dance", "A couples' waltz", "A whirling solo dance"],
+  ["mideast_levant", 1, "Egyptian star Mohamed Salah joined which English club in 2017?", "Liverpool", "Arsenal", "Manchester City", "Tottenham"],
+  ["mideast_levant", 1, "Which actor of Egyptian descent won the 2019 Best Actor Oscar for playing Freddie Mercury?", "Rami Malek", "Mena Massoud", "Riz Ahmed", "Dev Patel"],
+  ["mideast_levant", 1, "Gal Gadot, star of “Wonder Woman” (2017), is from which country?", "Israel", "Lebanon", "Egypt", "Jordan"],
+  ["mideast_levant", 1, "Shakira's father's family has its roots in which country?", "Lebanon", "Egypt", "Jordan", "Syria"],
+  ["mideast_levant", 2, "Pop superstar Amr Diab, famed for the 1996 hit “Nour El Ain”, is from which country?", "Egypt", "Lebanon", "Jordan", "Syria"],
+  ["mideast_levant", 2, "Mena Massoud, who played Aladdin in the 2019 live-action film, was born in which country?", "Egypt", "Lebanon", "Jordan", "Morocco"],
+  ["mideast_levant", 2, "The colorful “fanous” lantern is a Ramadan symbol especially associated with which country?", "Egypt", "Oman", "Turkey", "Iran"],
+  ["mideast_levant", 2, "Damask, a reversible patterned fabric, is named after which city?", "Damascus", "Baghdad", "Cairo", "Beirut"],
+  ["mideast_levant", 2, "Sham el-Nessim, celebrated by Egyptians with outdoor picnics, welcomes which season?", "Spring", "Summer", "Autumn", "Winter"],
+  ["mideast_levant", 2, "Egypt's largest Christian community is known as what?", "Copts", "Maronites", "Druze", "Armenians"],
+  ["mideast_levant", 2, "Belly dance is called “raqs sharqi” in Arabic. What does that mean?", "Eastern dance", "Desert dance", "Moon dance", "Wedding dance"],
+  ["mideast_levant", 3, "Which Hollywood star was born in Beirut, Lebanon, in 1964?", "Keanu Reeves", "Tom Hanks", "Brad Pitt", "Johnny Depp"],
+  ["mideast_levant", 3, "Pop star Nancy Ajram, known for “Ah W Noss” (2004), is from which country?", "Lebanon", "Egypt", "Jordan", "Syria"],
+  ["mideast_levant", 3, "Lebanon's Baalbek International Festival is staged among the ruins of which civilization's temples?", "Roman", "Egyptian", "Persian", "Ottoman"],
+  ["mideast_levant", 3, "Egypt's tanoura dancers are known for spinning in what?", "Colorful layered skirts", "Wooden masks", "Tall stilts", "Feathered capes"],
+  ["mideast_levant", 3, "Tatreez is the traditional Palestinian art of what?", "Cross-stitch embroidery", "Glassblowing", "Pottery", "Calligraphy"],
+  ["mideast_levant", 3, "Alongside olive oil, which oil gives traditional Aleppo soap its scent?", "Laurel oil", "Coconut oil", "Rose oil", "Argan oil"],
+  ["mideast_levant", 3, "In Jordan, the traditional men's shemagh headscarf is usually patterned in which colors?", "Red and white", "Blue and yellow", "Green and black", "Purple and gold"],
+  ["mideast_levant", 3, "Twice a year, sunlight reaches the inner sanctuary of which Egyptian temple, drawing festival crowds?", "Abu Simbel", "Karnak", "Luxor Temple", "Philae"],
+  ["mideast_levant", 4, "Legendary singer Fairuz is from which country?", "Lebanon", "Egypt", "Syria", "Jordan"],
+  ["mideast_levant", 4, "Which Egyptian singer was nicknamed “Kawkab al-Sharq” (Star of the East)?", "Umm Kulthum", "Fairuz", "Warda", "Sabah"],
+  ["mideast_levant", 4, "Which Egyptian became the first Arabic-language writer to win the Nobel Prize in Literature, in 1988?", "Naguib Mahfouz", "Khalil Gibran", "Taha Hussein", "Nizar Qabbani"],
+  ["mideast_levant", 4, "Zajal, a Lebanese tradition, is what kind of performance?", "Improvised sung poetry", "Shadow puppetry", "Sword dancing", "Drum circles"],
+  // Middle Eastern Culture: Turkey & Iran
+  ["mideast_turkiran", 1, "Nowruz, the Persian New Year, begins at which seasonal moment?", "The spring equinox", "The winter solstice", "The summer solstice", "The autumn equinox"],
+  ["mideast_turkiran", 1, "What color is the classic Turkish nazar evil-eye bead?", "Blue", "Red", "Green", "Yellow"],
+  ["mideast_turkiran", 1, "After drinking Turkish coffee, what is traditionally “read” to tell fortunes?", "The grounds in the cup", "The steam", "The saucer's pattern", "The sugar cubes"],
+  ["mideast_turkiran", 1, "What is a Turkish hammam?", "A steam bathhouse", "A spice market", "A tea house", "A shadow theater"],
+  ["mideast_turkiran", 1, "What do native speakers call the Persian language?", "Farsi", "Pashto", "Urdu", "Kurdish"],
+  ["mideast_turkiran", 1, "Iranian cities like Tabriz, Kashan and Isfahan are world-famous for producing what?", "Hand-knotted carpets", "Porcelain", "Silk ties", "Glass beads"],
+  ["mideast_turkiran", 2, "The Nowruz “haft-sin” table displays seven items whose Persian names start with which letter?", "S", "A", "H", "N"],
+  ["mideast_turkiran", 2, "On Chaharshanbe Suri, just before Nowruz, Iranians traditionally do what?", "Jump over bonfires", "Throw colored powder", "Float lanterns on rivers", "Bury a time capsule"],
+  ["mideast_turkiran", 2, "Whirling dervishes belong to the Mevlevi order, inspired by which poet?", "Rumi", "Hafez", "Omar Khayyam", "Ferdowsi"],
+  ["mideast_turkiran", 2, "What is the small long-handled pot used to brew Turkish coffee called?", "Cezve", "Dallah", "Samovar", "Moka pot"],
+  ["mideast_turkiran", 2, "The hit Turkish drama “Magnificent Century” (2011–2014) centers on which sultan?", "Suleiman the Magnificent", "Mehmed II", "Selim I", "Osman I"],
+  ["mideast_turkiran", 2, "Turkish folk humorist Nasreddin Hodja is often pictured riding what, backwards?", "A donkey", "A camel", "A horse", "A goat"],
+  ["mideast_turkiran", 2, "At Turkey's Kırkpınar wrestling festival, wrestlers douse themselves in what?", "Olive oil", "Mud", "Sand", "Chalk"],
+  ["mideast_turkiran", 2, "Yalda Night, when Iranians stay up eating pomegranates and reading Hafez, marks what?", "The longest night of the year", "The first day of spring", "The shortest night of the year", "The first full moon of summer"],
+  ["mideast_turkiran", 3, "The tomb of the poet Rumi is in which Turkish city?", "Konya", "Bursa", "Izmir", "Antalya"],
+  ["mideast_turkiran", 3, "What is the whirling dervishes' ceremony called?", "Sema", "Dabke", "Halay", "Zurna"],
+  ["mideast_turkiran", 3, "In Iran, “Fal-e Hafez” means opening a book of Hafez's poems to do what?", "Tell your fortune", "Settle a debt", "Name a street", "Cure a cold"],
+  ["mideast_turkiran", 3, "Ferdowsi's “Shahnameh”, Iran's national epic, translates as what?", "Book of Kings", "Book of Roses", "Song of the Desert", "Garden of Stars"],
+  ["mideast_turkiran", 3, "A Turkish proverb says one cup of coffee is remembered for how many years?", "40", "7", "10", "100"],
+  ["mideast_turkiran", 3, "Ertuğrul, hero of the Turkish series “Diriliş: Ertuğrul”, was the father of the founder of which empire?", "Ottoman", "Seljuk", "Mughal", "Safavid"],
+  ["mideast_turkiran", 3, "Which Iranian film won the Oscar for Best Foreign Language Film in 2012?", "A Separation", "Children of Heaven", "Taste of Cherry", "Persepolis"],
+  ["mideast_turkiran", 3, "In Iran, “taarof” refers to what?", "Ritual politeness, like refusing offers at first", "A New Year's dance", "A wedding dessert", "A type of carpet"],
+  ["mideast_turkiran", 3, "In Turkish shadow theater, Karagöz's comic partner is named what?", "Hacivat", "Nasreddin", "Keloğlan", "Hayri"],
+  ["mideast_turkiran", 3, "Sertab Erener's “Everyway That I Can” won Eurovision 2003 for which country?", "Turkey", "Greece", "Israel", "Azerbaijan"],
+  ["mideast_turkiran", 4, "In 1928, Turkey replaced the Arabic-based script with which alphabet?", "Latin", "Cyrillic", "Greek", "Armenian"],
+  // Oceania & Pacific Culture: General
+  ["oceania", 2, "Hōkūleʻa, the famous replica Polynesian voyaging canoe, is based in which place?", "Hawaii", "New Zealand", "Fiji", "Samoa"],
+  ["oceania", 4, "On its famous 1976 voyage, Hōkūleʻa sailed from Hawaii to which island using only traditional navigation?", "Tahiti", "Fiji", "Rapa Nui", "Guam"],
+  ["oceania", 3, "Between 2014 and 2017, the voyaging canoe Hōkūleʻa completed which feat?", "A voyage around the world", "A voyage to Antarctica", "A non-stop Pacific crossing", "A retracing of Cook's route"],
+  ["oceania", 4, "Mau Piailug, the master navigator who guided Hōkūleʻa in 1976, came from which Micronesian island?", "Satawal", "Guam", "Palau", "Tarawa"],
+  ["oceania", 2, "Besides stars and ocean swells, traditional Polynesian navigators watched which living clue to find land?", "Seabirds", "Whale songs", "Jellyfish", "Sea turtles"],
+  ["oceania", 3, "What did traditional Marshall Islands stick charts map?", "Ocean swell patterns", "Star positions", "Family lineages", "Fishing seasons"],
+  ["oceania", 1, "The Polynesian Triangle's corners are Hawaii, New Zealand and which island?", "Rapa Nui (Easter Island)", "Tahiti", "Fiji", "Guam"],
+  ["oceania", 1, "The giant moai statues were carved by the people of which island?", "Rapa Nui (Easter Island)", "Tahiti", "Samoa", "Tonga"],
+  ["oceania", 1, "In Polynesian legend, what did the demigod Māui use to pull islands up from the sea?", "A magic fishhook", "A woven net", "A spear", "A canoe paddle"],
+  ["oceania", 1, "In Polynesian legend, what did Māui snare to make it move more slowly across the sky?", "The sun", "The moon", "The wind", "A comet"],
+  ["oceania", 3, "In Māori and wider Polynesian tradition, what is Hawaiki?", "The ancestral homeland", "A sea monster", "A war god", "The first canoe"],
+  ["oceania", 3, "In Māori tradition, which navigator was the first to discover Aotearoa?", "Kupe", "Tangaroa", "Hotu Matuʻa", "Rongo"],
+  ["oceania", 4, "The Lapita culture, ancestors of the Polynesians, is best known for distinctive what?", "Decorated pottery", "Stone statues", "Bronze tools", "Cave paintings"],
+  ["oceania", 2, "Tapa cloth, made across the Pacific, is traditionally made from what?", "Tree bark", "Coconut fibre", "Pandanus leaves", "Banana leaves"],
+  ["oceania", 4, "Which country hosted the 2023 Pacific Games?", "Solomon Islands", "Fiji", "Samoa", "Papua New Guinea"],
+  ["oceania", 4, "Where was the 2024 Festival of Pacific Arts and Culture held?", "Hawaii", "Fiji", "New Zealand", "Tahiti"],
+  ["oceania", 3, "Across the Pacific Islands, what is the “coconut wireless”?", "The gossip grapevine", "A local radio station", "A satellite phone", "Free island Wi-Fi"],
+  ["oceania", 1, "In Polynesian cultures, what does “mana” refer to?", "Spiritual power and prestige", "Sacred food", "A family tree", "An ocean spirit"],
+  ["oceania", 2, "The English word “taboo” was borrowed from which language?", "Tongan", "Hindi", "Arabic", "Malay"],
+  ["oceania", 3, "All Blacks legend Jonah Lomu was born in Auckland to parents from which country?", "Tonga", "Samoa", "Fiji", "Cook Islands"],
+  // Oceania & Pacific Culture: Australia
+  ["oceania_aus", 1, "In Australian slang, what is the “arvo”?", "The afternoon", "An avocado", "A barbecue", "An armchair"],
+  ["oceania_aus", 1, "In Australia, what are “thongs”?", "Flip-flops", "Swimsuits", "Sunglasses", "Sun hats"],
+  ["oceania_aus", 2, "The classic jingle “We're happy little …” advertises which Australian spread?", "Vegemite", "Milo", "Nutella", "Marmite"],
+  ["oceania_aus", 2, "On which date is ANZAC Day commemorated each year?", "25 April", "11 November", "26 January", "1 May"],
+  ["oceania_aus", 2, "ANZAC Day marks the anniversary of the 1915 landing at which place?", "Gallipoli", "Normandy", "The Somme", "Crete"],
+  ["oceania_aus", 3, "Which coin-tossing game is traditionally played in Australian pubs on ANZAC Day?", "Two-up", "Keno", "Pokies", "Bingo"],
+  ["oceania_aus", 1, "On which date is Australia Day held?", "26 January", "1 January", "25 April", "4 July"],
+  ["oceania_aus", 3, "Many Aboriginal and Torres Strait Islander people call 26 January by which name?", "Invasion Day", "Sorry Day", "Reconciliation Day", "Dreaming Day"],
+  ["oceania_aus", 2, "At which stadium is the AFL Grand Final traditionally played?", "The MCG", "Adelaide Oval", "Optus Stadium", "The SCG"],
+  ["oceania_aus", 3, "The AFL's Brownlow Medal is awarded to whom?", "The season's fairest and best player", "The Grand Final's best player", "The season's top goalkicker", "The best first-year player"],
+  ["oceania_aus", 4, "The Aboriginal dot-painting art movement began in 1971 at which Central Australian community?", "Papunya", "Yirrkala", "Hermannsburg", "Maningrida"],
+  ["oceania_aus", 3, "The Torres Strait Islander flag features a white dhari. What is a dhari?", "A traditional headdress", "A war shield", "An outrigger canoe", "A ceremonial drum"],
+  ["oceania_aus", 2, "What are the three colours of the Australian Aboriginal flag?", "Black, red and yellow", "Black, red and green", "Green, gold and black", "Red, white and blue"],
+  ["oceania_aus", 2, "Which English term is commonly used for Aboriginal Australians' creation era and ancestral stories?", "The Dreaming", "The Awakening", "The Great Voyage", "The Long Sleep"],
+  ["oceania_aus", 3, "In Aboriginal tradition, what are the routes across the land recorded in songs and stories?", "Songlines", "Ley lines", "Sky roads", "Story stones"],
+  ["oceania_aus", 2, "Which Aboriginal athlete lit the Olympic cauldron at Sydney 2000, then won 400m gold?", "Cathy Freeman", "Sally Pearson", "Evonne Goolagong", "Nova Peris"],
+  ["oceania_aus", 3, "Which annual week in July celebrates Aboriginal and Torres Strait Islander history and culture?", "NAIDOC Week", "Reconciliation Week", "Harmony Week", "Heritage Week"],
+  ["oceania_aus", 2, "In which Australian city is the cartoon “Bluey” set?", "Brisbane", "Sydney", "Melbourne", "Perth"],
+  ["oceania_aus", 1, "In “Bluey”, what is the name of Bluey's mum?", "Chilli", "Pepper", "Ginger", "Rosie"],
+  ["oceania_aus", 3, "Which extended 2024 “Bluey” episode centres on a family wedding?", "The Sign", "Keepy Uppy", "Sleepytime", "Cricket"],
+  ["oceania_aus", 1, "Which Australian children's group is known for red, yellow, purple and blue skivvies?", "The Wiggles", "Hi-5", "Bananas in Pyjamas", "Teletubbies"],
+  ["oceania_aus", 1, "What was “Crocodile Hunter” Steve Irwin's famous catchphrase?", "Crikey!", "Strewth!", "Bonzer!", "Fair dinkum!"],
+  ["oceania_aus", 2, "In Australia, what is a “democracy sausage”?", "A sausage sold at polling places on election day", "A sausage served at Parliament House", "A free sausage given to new citizens", "A sausage eaten on Australia Day"],
+  ["oceania_aus", 2, "Which Australian act, led by Kevin Parker, released the 2015 album “Currents”?", "Tame Impala", "Empire of the Sun", "The Temper Trap", "Cut Copy"],
+  ["oceania_aus", 1, "Which Australian artist had a huge 2019 global hit with “Dance Monkey”?", "Tones and I", "Sia", "Kylie Minogue", "Vance Joy"],
+  // Oceania & Pacific Culture: New Zealand & Māori
+  ["oceania_nz", 1, "What does the te reo Māori greeting “kia ora” most commonly mean?", "Hello", "Good night", "Excuse me", "I'm sorry"],
+  ["oceania_nz", 1, "“Aotearoa”, the Māori name for New Zealand, is often translated as what?", "Land of the long white cloud", "Land of the rising sun", "Land of fire and ice", "Land of the silver fern"],
+  ["oceania_nz", 1, "What does the te reo Māori word “whānau” mean?", "Family", "Friend", "Village", "Feast"],
+  ["oceania_nz", 1, "What does the te reo Māori word “kai” mean?", "Food", "Water", "Sleep", "Friend"],
+  ["oceania_nz", 2, "In Māori culture, what is a marae?", "A communal meeting ground", "A war canoe", "A greenstone pendant", "A war dance"],
+  ["oceania_nz", 2, "What is the hongi?", "A Māori greeting pressing noses and foreheads", "A Māori funeral song", "A Māori feast cooked underground", "A Māori carved meeting house"],
+  ["oceania_nz", 2, "What is tā moko?", "Traditional Māori tattooing", "Traditional Māori weaving", "Traditional Māori wood carving", "Traditional Māori chanting"],
+  ["oceania_nz", 3, "Pounamu, a treasured taonga in Māori culture, is a type of what?", "Greenstone", "Shell", "Whalebone", "Feather cloak"],
+  ["oceania_nz", 2, "Matariki, the Māori New Year, is marked by the rising of which star cluster?", "The Pleiades", "Orion's Belt", "The Southern Cross", "The Big Dipper"],
+  ["oceania_nz", 3, "In which year was Matariki first celebrated as an official New Zealand public holiday?", "2022", "2016", "2019", "2024"],
+  ["oceania_nz", 2, "Waitangi Day, New Zealand's national day, falls on which date?", "6 February", "26 January", "25 April", "1 March"],
+  ["oceania_nz", 3, "“Ka Mate”, the best-known haka, is credited to which Māori chief?", "Te Rauparaha", "Hone Heke", "Te Kooti", "Tāwhiao"],
+  ["oceania_nz", 4, "What is the name of the alternative haka the All Blacks introduced in 2005?", "Kapa o Pango", "Ka Mate", "Haka Pōwhiri", "Tika Tonu"],
+  ["oceania_nz", 1, "In Kiwi slang, what are “jandals”?", "Flip-flops", "Sandwiches", "Rain boots", "Swim shorts"],
+  ["oceania_nz", 1, "If a Kiwi says “sweet as”, what do they mean?", "Great, no problem", "Very sugary", "That's rude", "Too expensive"],
+  ["oceania_nz", 2, "In New Zealand, what kind of shop is a “dairy”?", "A corner convenience store", "A butcher", "A liquor store", "A hardware store"],
+  ["oceania_nz", 3, "The Hobbiton movie set from “The Lord of the Rings” is near which New Zealand town?", "Matamata", "Rotorua", "Queenstown", "Napier"],
+  ["oceania_nz", 2, "What was the title of Lorde's 2013 debut album?", "Pure Heroine", "Melodrama", "Solar Power", "Virgin"],
+  ["oceania_nz", 1, "Which Lorde song won the Grammy for Song of the Year in 2014?", "Royals", "Team", "Green Light", "Tennis Court"],
+  ["oceania_nz", 2, "Which 2019 Taika Waititi film won him the Oscar for Best Adapted Screenplay?", "Jojo Rabbit", "Thor: Ragnarok", "Hunt for the Wilderpeople", "What We Do in the Shadows"],
+  ["oceania_nz", 3, "Comedy duo Flight of the Conchords is Bret McKenzie and which other New Zealander?", "Jemaine Clement", "Rhys Darby", "Taika Waititi", "Karl Urban"],
+  ["oceania_nz", 2, "Which New Zealand singer featured on Gotye's 2011 hit “Somebody That I Used to Know”?", "Kimbra", "Lorde", "Benee", "Bic Runga"],
+  ["oceania_nz", 3, "Which New Zealand singer had a viral TikTok hit in 2020 with “Supalonely”?", "Benee", "Kimbra", "Aldous Harding", "Bic Runga"],
+  ["oceania_nz", 2, "What is the nickname of New Zealand's national netball team?", "Silver Ferns", "Black Ferns", "Tall Blacks", "Black Caps"],
+  ["oceania_nz", 2, "In Māori performing arts, what are poi?", "Light balls on cords swung rhythmically", "Carved wooden flutes", "Woven flax skirts", "Hollow log drums"],
+  // Oceania & Pacific Culture: Pacific Islands
+  ["oceania_pacific", 1, "Which Hawaiian word is used for both “hello” and “goodbye”?", "Aloha", "Mahalo", "ʻOhana", "Kapu"],
+  ["oceania_pacific", 1, "What does the Hawaiian word “mahalo” mean?", "Thank you", "Welcome", "Family", "Delicious"],
+  ["oceania_pacific", 1, "What does the Hawaiian word “ʻohana” mean?", "Family", "Friendship", "Home", "Island"],
+  ["oceania_pacific", 3, "In Hawaii, what is celebrated each year on 1 May?", "Lei Day", "Kamehameha Day", "Hula Day", "Aloha Day"],
+  ["oceania_pacific", 2, "Hawaii's Merrie Monarch Festival is a world-famous competition in what?", "Hula", "Surfing", "Ukulele", "Outrigger canoe racing"],
+  ["oceania_pacific", 4, "What is “hula kahiko”?", "Ancient-style hula with chant and percussion", "Modern hula with guitar and ukulele", "Hula performed with fire", "Hula performed only at weddings"],
+  ["oceania_pacific", 4, "Which Hawaiian queen composed the song “Aloha ʻOe”?", "Liliʻuokalani", "Kaʻahumanu", "Emma", "Kapiʻolani"],
+  ["oceania_pacific", 2, "Which Hawaiian singer's ukulele medley “Somewhere Over the Rainbow/What a Wonderful World” became a worldwide favourite?", "Israel Kamakawiwoʻole", "Jake Shimabukuro", "Jack Johnson", "Don Ho"],
+  ["oceania_pacific", 1, "Which pop star was born and raised in Honolulu?", "Bruno Mars", "Jason Derulo", "Shawn Mendes", "Charlie Puth"],
+  ["oceania_pacific", 3, "The ukulele was developed in Hawaii from instruments brought by immigrants from which country?", "Portugal", "Spain", "Japan", "Mexico"],
+  ["oceania_pacific", 3, "The ʻokina in written Hawaiian represents which sound?", "A glottal stop", "A long vowel", "A silent letter", "A rolled r"],
+  ["oceania_pacific", 4, "What is the traditional Samoan male tattoo, covering the body from waist to knees?", "Peʻa", "Malu", "Moko", "Kākau"],
+  ["oceania_pacific", 2, "The English word “tattoo” comes from the languages of which region?", "Polynesia", "Japan", "Arabia", "Scandinavia"],
+  ["oceania_pacific", 2, "The fire knife dance (siva afi) originates from which island nation?", "Samoa", "Fiji", "Tonga", "Tahiti"],
+  ["oceania_pacific", 3, "What is the name of the war dance performed by Tonga's national rugby team?", "Sipi Tau", "Cibi", "Siva Tau", "Ka Mate"],
+  ["oceania_pacific", 2, "Flag-bearer Pita Taufatofua went viral shirtless and oiled at Rio 2016 for which country?", "Tonga", "Samoa", "Fiji", "Vanuatu"],
+  ["oceania_pacific", 3, "Kava, shared in ceremonies in Fiji, Tonga and Samoa, is made from what?", "The root of a pepper plant", "Fermented coconut", "Sugarcane juice", "Taro leaves"],
+  ["oceania_pacific", 2, "What is the everyday greeting in Fiji?", "Bula", "Talofa", "Mālō e lelei", "Ia ora na"],
+  ["oceania_pacific", 3, "Roughly how many languages are spoken in Papua New Guinea?", "Over 800", "About 20", "About 150", "Over 3,000"],
+  ["oceania_pacific", 3, "What is the English-based creole widely spoken across Papua New Guinea?", "Tok Pisin", "Bislama", "Hiri Motu", "Pijin"],
+  ["oceania_pacific", 3, "In Papua New Guinea, what is a “sing-sing”?", "A gathering with traditional song and dance", "A wedding gift of shells", "A canoe race", "A funeral feast"],
+  ["oceania_pacific", 2, "Who voiced the title character in Disney's “Moana” (2016)?", "Auliʻi Cravalho", "Rachel House", "Nicole Scherzinger", "Hailee Steinfeld"],
+  ["oceania_pacific", 1, "Which Aquaman actor, born in Honolulu, is of Native Hawaiian descent?", "Jason Momoa", "Dwayne Johnson", "Henry Cavill", "Chris Hemsworth"],
+  ["oceania_pacific", 1, "Dwayne “The Rock” Johnson's mother's family comes from which Pacific nation?", "Samoa", "Tonga", "Fiji", "Tahiti"],
+  ["oceania_pacific", 3, "In Tonga, which day is kept sacred by the constitution, with most business banned?", "Sunday", "Friday", "Saturday", "Monday"],
+  // North American Culture: General
+  ["namerica", 1, "What phrase do children traditionally say at doors on Halloween?", "Trick or treat!", "Happy harvest!", "Boo to you!", "Ghosts and gold!"],
+  ["namerica", 1, "At Mexican parties, what candy-filled figure do blindfolded children hit with a stick?", "Piñata", "Maraca", "Sombrero", "Tamale"],
+  ["namerica", 1, "A quinceañera celebrates a girl's birthday at what age?", "15", "13", "16", "18"],
+  ["namerica", 1, "Mexican lucha libre wrestlers are famous for wearing colorful what?", "Masks", "Kilts", "Sombreros", "Ponchos"],
+  ["namerica", 1, "How do Canadians typically spell the word Americans write as “color”?", "Colour", "Culler", "Colur", "Kolor"],
+  ["namerica", 1, "In both the US and Canada, Labour Day falls on the first Monday of which month?", "September", "May", "June", "October"],
+  ["namerica", 2, "Which orange flower traditionally decorates Day of the Dead altars?", "Marigold", "Rose", "Tulip", "Sunflower"],
+  ["namerica", 2, "Cinco de Mayo commemorates which event?", "Mexico's victory at the Battle of Puebla", "Mexico's independence from Spain", "The start of the Mexican Revolution", "The founding of Mexico City"],
+  ["namerica", 2, "What is the other name for Bigfoot, taken from a word in a Salish language?", "Sasquatch", "Wendigo", "Yeti", "Chupacabra"],
+  ["namerica", 2, "In North American folklore, what is the name of lumberjack Paul Bunyan's blue ox?", "Babe", "Bessie", "Daisy", "Duke"],
+  ["namerica", 2, "Which December 26 holiday is a statutory holiday in Canada but not in the US?", "Boxing Day", "Epiphany", "Hogmanay", "St. Lucia's Day"],
+  ["namerica", 2, "November 11 is Remembrance Day in Canada. What is it called in the US?", "Veterans Day", "Memorial Day", "Flag Day", "Patriots' Day"],
+  ["namerica", 2, "What are northerners who spend the winter in Florida or Arizona nicknamed?", "Snowbirds", "Sunchasers", "Polar bears", "Southerners"],
+  ["namerica", 3, "Wiarton Willie is Canada's famous weather-predicting what?", "Groundhog", "Beaver", "Moose", "Polar bear"],
+  ["namerica", 3, "Las Posadas, held on the nine nights before Christmas, reenacts what?", "Mary and Joseph's search for lodging", "The arrival of the Three Kings", "The founding of Mexico City", "The Virgin of Guadalupe's appearance"],
+  ["namerica", 3, "Mariachi music originated in which Mexican state?", "Jalisco", "Yucatán", "Chihuahua", "Oaxaca"],
+  ["namerica", 3, "The dreamcatcher comes from the traditions of which people, whose lands span the US–Canada border?", "Ojibwe", "Navajo", "Inuit", "Aztec"],
+  ["namerica", 3, "The word “Cajun” comes from “Acadian”. Where was Acadia?", "Canada's Maritime region", "Southern Quebec", "Northern Florida", "The Ohio Valley"],
+  ["namerica", 3, "How many downs does a team get to advance the ball in Canadian football?", "Three", "Two", "Four", "Five"],
+  ["namerica", 3, "Lord Stanley, who donated the Stanley Cup in 1892, was the Governor General of which country?", "Canada", "Australia", "India", "New Zealand"],
+  // North American Culture: USA
+  ["namerica_usa", 1, "On which day is Thanksgiving celebrated in the United States?", "Fourth Thursday in November", "Last Friday in November", "First Monday in November", "Third Sunday in October"],
+  ["namerica_usa", 1, "On Groundhog Day, what does it mean if the groundhog sees its shadow?", "Six more weeks of winter", "An early spring", "A rainy summer", "A snowstorm the next day"],
+  ["namerica_usa", 1, "What is lowered in New York's Times Square at midnight on New Year's Eve?", "A giant ball", "A giant star", "A giant snowflake", "A giant bell"],
+  ["namerica_usa", 1, "What do Mardi Gras parade riders in New Orleans famously toss to the crowds?", "Bead necklaces", "Flower petals", "Paper lanterns", "Rubber ducks"],
+  ["namerica_usa", 1, "Which song is the national anthem of the United States?", "The Star-Spangled Banner", "America the Beautiful", "God Bless America", "My Country, 'Tis of Thee"],
+  ["namerica_usa", 1, "Each Thanksgiving, the US president traditionally “pardons” which animal?", "A turkey", "A pig", "A goose", "A deer"],
+  ["namerica_usa", 1, "Which city is widely considered the birthplace of jazz?", "New Orleans", "Chicago", "Nashville", "Memphis"],
+  ["namerica_usa", 1, "What is the US custom of picnicking from parked cars outside a stadium before a game called?", "Tailgating", "Carpooling", "Bumpering", "Curbsiding"],
+  ["namerica_usa", 2, "What are the traditional colors of Mardi Gras?", "Purple, green and gold", "Red, white and blue", "Black, orange and silver", "Pink, teal and white"],
+  ["namerica_usa", 2, "What small item is traditionally hidden inside a New Orleans king cake?", "A plastic baby", "A tiny key", "A marble", "A toy car"],
+  ["namerica_usa", 2, "Juneteenth marks the day in 1865 when news of emancipation reached enslaved people in which state?", "Texas", "Georgia", "Alabama", "Virginia"],
+  ["namerica_usa", 2, "The Grand Ole Opry, a long-running country music show, is based in which city?", "Nashville", "Memphis", "Austin", "Atlanta"],
+  ["namerica_usa", 2, "Hip-hop was born at block parties in the 1970s in which New York City borough?", "The Bronx", "Staten Island", "Queens", "Manhattan"],
+  ["namerica_usa", 2, "In Boston slang, what does “wicked” usually mean, as in “wicked good”?", "Very", "Not", "Slightly", "Secretly"],
+  ["namerica_usa", 2, "Philadelphians traditionally call a long submarine sandwich a what?", "Hoagie", "Grinder", "Po' boy", "Hero"],
+  ["namerica_usa", 2, "The Iowa State Fair is famous for a life-size cow sculpted from what?", "Butter", "Cheese", "Ice", "Corn"],
+  ["namerica_usa", 3, "Kwanzaa, celebrated from December 26 to January 1, lasts how many days?", "Seven", "Three", "Ten", "Twelve"],
+  ["namerica_usa", 3, "Which instrument is a staple of zydeco, the Creole music of Louisiana?", "Accordion", "Sitar", "Bagpipes", "Harp"],
+  ["namerica_usa", 3, "Big Tex, a giant talking cowboy statue, greets visitors at which state's fair?", "Texas", "Oklahoma", "Wyoming", "Montana"],
+  ["namerica_usa", 3, "Carved katsina (kachina) dolls are a tradition of which Arizona people?", "Hopi", "Inuit", "Cherokee", "Seminole"],
+  ["namerica_usa", 3, "Rumspringa is a teenage coming-of-age period in which community?", "The Amish", "The Quakers", "The Mormons", "The Shakers"],
+  ["namerica_usa", 3, "Which cocktail is the traditional drink of the Kentucky Derby?", "Mint julep", "Mai tai", "Cosmopolitan", "Margarita"],
+  ["namerica_usa", 3, "The “shaka” hand sign, thumb and pinky extended, is most associated with which US state?", "Hawaii", "Alaska", "Texas", "Maine"],
+  ["namerica_usa", 4, "In New Orleans, what is the crowd of dancers that follows a brass band in a parade called?", "The second line", "The cakewalk", "The conga line", "The bayou march"],
+  ["namerica_usa", 4, "Bluegrass music takes its name from the band of which musician, its “father”?", "Bill Monroe", "Johnny Cash", "Hank Williams", "Roy Acuff"],
+  // North American Culture: Canada
+  ["namerica_canada", 1, "On which date is Canada Day celebrated?", "July 1", "July 4", "May 24", "November 11"],
+  ["namerica_canada", 1, "What are Canada's two official languages?", "English and French", "English and Inuktitut", "French and Cree", "English and Spanish"],
+  ["namerica_canada", 1, "In which province did poutine originate?", "Quebec", "Ontario", "Nova Scotia", "Manitoba"],
+  ["namerica_canada", 1, "What is Canada's two-dollar coin nicknamed?", "Toonie", "Loonie", "Deuce", "Moosie"],
+  ["namerica_canada", 1, "What do Canadians call a knitted winter hat?", "Toque", "Chesterfield", "Parka", "Mukluk"],
+  ["namerica_canada", 1, "Which little word are Canadians famous for adding to the end of sentences?", "Eh", "Mate", "Innit", "Y'all"],
+  ["namerica_canada", 1, "At Tim Hortons, what are Timbits?", "Doughnut holes", "Mini muffins", "Sugar cookies", "Coffee pods"],
+  ["namerica_canada", 1, "Which city hosts the Stampede, a huge annual rodeo festival?", "Calgary", "Edmonton", "Winnipeg", "Regina"],
+  ["namerica_canada", 2, "On which day is Thanksgiving celebrated in Canada?", "Second Monday in October", "Fourth Thursday in November", "First Monday in September", "Last Friday in October"],
+  ["namerica_canada", 2, "At Tim Hortons, what is a “double-double”?", "Coffee with two creams and two sugars", "Two shots of espresso", "Two doughnuts and a coffee", "A double-size iced cap"],
+  ["namerica_canada", 2, "At a Quebec sugar shack, maple taffy is made by pouring hot syrup onto what?", "Snow", "Pancakes", "Bread", "Hot stones"],
+  ["namerica_canada", 2, "Canada's signature Caesar cocktail is made with which juice?", "Clamato", "Cranberry", "Grapefruit", "Pineapple"],
+  ["namerica_canada", 2, "Nanaimo bars, a no-bake layered dessert, are named after a city in which province?", "British Columbia", "Alberta", "Manitoba", "Nova Scotia"],
+  ["namerica_canada", 2, "The Vancouver 2010 Winter Olympics emblem was based on which Inuit stone landmark?", "Inuksuk", "Totem pole", "Igloo", "Dreamcatcher"],
+  ["namerica_canada", 2, "“In Flanders Fields”, the poem behind the remembrance poppy, was written by a soldier from which country?", "Canada", "Australia", "New Zealand", "United States"],
+  ["namerica_canada", 2, "In Canadian slang, what is a “two-four”?", "A case of 24 beers", "A 24-hour diner", "A four-day weekend", "A tied hockey score"],
+  ["namerica_canada", 2, "Under a 1994 law, what is Canada's national summer sport?", "Lacrosse", "Baseball", "Canadian football", "Soccer"],
+  ["namerica_canada", 2, "The mockumentary “Trailer Park Boys” is set in which province?", "Nova Scotia", "Ontario", "Manitoba", "Saskatchewan"],
+  ["namerica_canada", 3, "Bonhomme, a snowman in a red tuque, is the mascot of which festival?", "Quebec Winter Carnival", "Winterlude", "Calgary Stampede", "Montreal Jazz Festival"],
+  ["namerica_canada", 3, "Montreal-style bagels are boiled in water sweetened with what before baking?", "Honey", "Maple syrup", "Beer", "Milk"],
+  ["namerica_canada", 3, "Katajjaq is a traditional form of throat singing of which people?", "Inuit", "Haida", "Cree", "Mohawk"],
+  ["namerica_canada", 3, "In Newfoundland's “screech-in” ceremony, newcomers traditionally kiss what?", "A cod", "A moose", "A lobster", "A puffin"],
+  ["namerica_canada", 3, "Which band, often called “Canada's band”, played a famous farewell concert in Kingston in 2016?", "The Tragically Hip", "Rush", "Nickelback", "Arcade Fire"],
+  ["namerica_canada", 3, "In Quebec, what is a “dépanneur” (or “dep”)?", "A convenience store", "A hockey arena", "A sugar shack", "A snowplow"],
+  ["namerica_canada", 4, "The Red River jig is a traditional fiddle dance of which people?", "Métis", "Inuit", "Haida", "Acadians"],
 ];
 // Which sub-category each starter question in a split family belongs to (by its number within the family); the
 // rest stay in the family's General category. Question ids don't change, so saved edits and deletions still match.
@@ -6384,7 +7222,7 @@ const seedQuestions = () => {
   const n = {};
   return SEED.map(([cat, tier, text, answer, ...wrong]) =>
     ({ id: `seed_${cat}_${n[cat] = (n[cat] ?? 0) + 1}`, categoryId: seedHome(cat, seedSubOf(cat, n[cat])), tierId: `t${tier}`, text, answer, wrong,
-       since: n[cat] <= (SEED_V2_COUNTS[cat] ?? 0) ? 2 : n[cat] <= (SEED_V3_COUNTS[cat] ?? 0) ? 3 : n[cat] <= (SEED_V5_COUNTS[cat] ?? 0) ? 4 : n[cat] <= (SEED_V7_COUNTS[cat] ?? 0) ? 6 : 8 }));
+       since: n[cat] <= (SEED_V2_COUNTS[cat] ?? 0) ? 2 : n[cat] <= (SEED_V3_COUNTS[cat] ?? 0) ? 3 : n[cat] <= (SEED_V5_COUNTS[cat] ?? 0) ? 4 : n[cat] <= (SEED_V7_COUNTS[cat] ?? 0) ? 6 : n[cat] <= (SEED_V8_COUNTS[cat] ?? 0) ? 8 : 9 }));
 };
 const DEFAULT = {
   seedVersion: SEED_VERSION,
@@ -6426,12 +7264,12 @@ function upgrade(d) {
     for (const c of SEED_CATEGORIES) if (!d.categories.some(x => x.id === c.id)) { const { was, v, split, ...copy } = c; d.categories.push(structuredClone(copy)); }
     if (fromVersion < 8) {
       // Re-tier: starter questions the user hasn't edited move to the Obscure tier (or their hardest tier if Obscure is gone)
-      const target = d.tiers.some(t => t.id === 't4') ? 't4' : [...d.tiers].sort((a, b) => b.points - a.points)[0]?.id;
+      const target = d.tiers.some(t => t.id === 't4') ? 't4' : d.tiers.at(-1)?.id;
       const seedText = new Map(seedQuestions().map(q => [q.id, q.text]));
       const ids = new Set(Object.entries(SEED_RETIER).flatMap(([f, nums]) => nums.split(',').map(n => `seed_${f}_${n}`)));
       if (target) d.questions.forEach(q => { if (ids.has(q.id) && q.text === seedText.get(q.id)) q.tierId = target; });
     }
-    if (fromVersion < 8) {
+    if (fromVersion < 9) {
       // Families: an old category joins its group and is renamed (only if the user hadn't renamed it). For split
       // families it becomes the General category and starter questions still in it move to their new sub-category.
       for (const sc of SEED_CATEGORIES.filter(c => c.was && c.v > fromVersion)) {
@@ -6461,9 +7299,14 @@ function upgrade(d) {
       if (match || !d.questions.some(q => q.categoryId === oldId)) d.categories = d.categories.filter(c => c.id !== oldId);
     }
     if (fromVersion < 4 && !d.tiers.some(t => t.id === OBSCURE_TIER.id)) d.tiers.push(structuredClone(OBSCURE_TIER));
+    if (fromVersion < 9) {
+      // Tiers became a ranked list (order = difficulty). Keep the old meaning by ordering existing tiers by points once.
+      d.tiers = d.tiers.map((t, i) => [t, i]).sort((x, y) => x[0].points - y[0].points || x[1] - y[1]).map(x => x[0]);
+      d.tiers.forEach(t => delete t.bonus);
+    }
     if (fromVersion < 4 && d.settings.targetPoints === 10) d.settings.targetPoints = 30; // old default → new default
     // If the user deleted or renamed tiers, map seed tiers onto theirs by difficulty rank
-    const ranked = [...d.tiers].sort((a, b) => a.points - b.points);
+    const ranked = d.tiers; // already in difficulty order (see the version-9 step)
     const have = new Set(d.questions.map(x => x.id));
     for (const { since, ...q } of seedQuestions()) {
       if (since <= fromVersion || have.has(q.id)) continue;
@@ -6767,13 +7610,17 @@ function deleteQuestion(id) {
   removeQuestions(q => q.id === id); save(); renderQuestions(); renderTiers();
 }
 function renderTiers() {
-  document.getElementById('tTable').innerHTML = data.tiers.map(t => {
+  const last = data.tiers.length - 1;
+  document.getElementById('tTable').innerHTML = data.tiers.map((t, i) => {
     const n = data.questions.filter(q => q.tierId === t.id).length;
-    return `<tr>
+    return `<tr class="tierRow" draggable="true" data-i="${i}" ondragstart="tierDragStart(event)" ondragover="tierDragOver(event)" ondragleave="this.classList.remove('dropAbove','dropBelow')" ondrop="tierDrop(event)" ondragend="tierDragEnd()">
+      <td class="tierRank"><span class="dragHandle" title="Drag to reorder">⠿</span>
+        <button class="small ghost" ${i === 0 ? 'disabled' : ''} onclick="moveTier(${i}, -1)" title="Easier">▲</button>
+        <button class="small ghost" ${i === last ? 'disabled' : ''} onclick="moveTier(${i}, 1)" title="Harder">▼</button>
+        <small class="muted">${i === 0 ? 'easiest' : i === last ? 'hardest' : ''}</small></td>
       <td><input value="${esc(t.name)}" onchange="updTier('${t.id}','name',this.value)"></td>
       <td><input type="number" min="0" style="width:90px" value="${t.points}" onchange="updTier('${t.id}','points',this.value)"></td>
       <td><input type="color" value="${t.color}" style="padding:2px;width:50px;height:38px" onchange="updTier('${t.id}','color',this.value)"></td>
-      <td><input type="checkbox" ${t.bonus ? 'checked' : ''} title="Skipped by Hard Lock" onchange="updTier('${t.id}','bonus',this.checked)"></td>
       <td>${n}</td>
       <td><button class="small bad" onclick="delTier('${t.id}')">Delete</button></td></tr>`;
   }).join('');
@@ -6783,6 +7630,26 @@ function updTier(id, key, val) {
   t[key] = key === 'points' ? Math.max(0, parseInt(val) || 0) : val;
   save(); toast('Tier saved'); renderEditor();
 }
+// Re-ranking tiers: move one from index `from` to index `to`
+function placeTier(from, to) {
+  if (from === to || to < 0 || to >= data.tiers.length) return;
+  const [t] = data.tiers.splice(from, 1); data.tiers.splice(to, 0, t);
+  save(); toast('Tier order saved'); renderEditor();
+}
+const moveTier = (i, step) => placeTier(i, i + step);
+let tierDragFrom = null;
+function tierDragStart(e) { tierDragFrom = +e.currentTarget.dataset.i; e.currentTarget.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
+function tierDragOver(e) {
+  e.preventDefault(); const row = e.currentTarget, r = row.getBoundingClientRect(), below = e.clientY > r.top + r.height / 2;
+  row.classList.toggle('dropBelow', below); row.classList.toggle('dropAbove', !below);
+}
+function tierDrop(e) {
+  e.preventDefault(); const row = e.currentTarget, i = +row.dataset.i, below = row.classList.contains('dropBelow');
+  if (tierDragFrom === null) return;
+  let to = below ? i + 1 : i; if (tierDragFrom < to) to--;
+  placeTier(tierDragFrom, to); tierDragFrom = null;
+}
+function tierDragEnd() { tierDragFrom = null; document.querySelectorAll('.tierRow').forEach(r => r.classList.remove('dragging', 'dropAbove', 'dropBelow')); }
 function addTier() {
   data.tiers.push({ id: uid(), name: 'New tier', points: 5, color: '#4da3ff' }); save(); renderEditor();
 }
@@ -6826,7 +7693,21 @@ function loadRoster() {
 }
 // Categories switched off for the game (remembered for next time). '' = Uncategorized.
 const offCats = () => roster.offCats ??= [];
-const gameQs = () => data.questions.filter(q => !offCats().includes(q.categoryId || ''));
+// Difficulty tiers switched off for the game (remembered for next time)
+const offTiers = () => roster.offTiers ??= [];
+const gameQs = () => data.questions.filter(q => !offCats().includes(q.categoryId || '') && !offTiers().includes(q.tierId));
+function toggleTier(id) {
+  const off = offTiers(), i = off.indexOf(id);
+  i >= 0 ? off.splice(i, 1) : off.push(id);
+  saveRoster(); renderCatPicker();
+}
+function renderTierPicker() {
+  const off = offTiers();
+  document.getElementById('tierPicker').innerHTML = data.tiers.map(t => {
+    const on = !off.includes(t.id), n = data.questions.filter(q => q.tierId === t.id).length;
+    return `<button class="catToggle ${on ? 'on' : ''}" style="--c:${t.color}" onclick="toggleTier('${t.id}')">${on ? '✓' : '✕'} ${esc(t.name)} <small>${t.points} pt${t.points == 1 ? '' : 's'} · ${n}</small></button>`;
+  }).join('');
+}
 function toggleCat(id) {
   const off = offCats(), i = off.indexOf(id);
   i >= 0 ? off.splice(i, 1) : off.push(id);
@@ -6845,6 +7726,7 @@ function allCatsOff() {
 }
 function allCatsOn() { roster.offCats = []; saveRoster(); renderCatPicker(); }
 function renderCatPicker() {
+  renderTierPicker();
   const off = offCats();
   const chip = (c, n, label) => { const on = !off.includes(c.id);
     return `<button class="catToggle ${on ? 'on' : ''}" style="--c:${c.color}" onclick="toggleCat('${c.id}')">${on ? '✓' : '✕'} ${esc(label)} <small>${n}</small></button>`; };
@@ -6859,7 +7741,7 @@ function renderCatPicker() {
     }).join('');
   const total = gameQs().length;
   document.getElementById('catPickerInfo').textContent = total
-    ? `${total} of ${data.questions.length} questions in play.` : 'No questions in play — turn a category back on.';
+    ? `${total} of ${data.questions.length} questions in play.` : 'No questions in play — turn a category or difficulty back on.';
   document.getElementById('allCatsBtn').style.display = off.length ? '' : 'none';
   document.getElementById('allCatsOffBtn').style.display = total ? '' : 'none';
 }
@@ -6941,20 +7823,16 @@ const defaultItemSettings = () => ({
 const itemsOn = () => data.settings.items.enabled;
 const rand = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
 function randomItem(kind) {
-  const pool = Object.keys(ITEMS).filter(k => data.settings.items.pools[k]?.[kind] && (!ITEMS[k].needsTimer || data.settings.timer.enabled));
+  const multiTier = rankedTiers().length > 1; // Hard Lock / Beginner's Luck do nothing with a single difficulty in play
+  const pool = Object.keys(ITEMS).filter(k => data.settings.items.pools[k]?.[kind] && (!ITEMS[k].needsTimer || data.settings.timer.enabled)
+    && (multiTier || !['hardlock', 'beginner'].includes(k)));
   return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
 }
 // The hardest tier that actually has questions
-// Tiers with questions in this game, leaving out bonus tiers (like Obscure) unless nothing else is left
-function ladderTiers() {
-  const ts = data.tiers.filter(t => gameQs().some(q => q.tierId === t.id));
-  const regular = ts.filter(t => !t.bonus);
-  return regular.length ? regular : ts;
-}
-function hardestTierId() {
-  const ts = ladderTiers();
-  return ts.sort((a, b) => b.points - a.points)[0]?.id;
-}
+// Tiers that have questions in this game, in difficulty order (the order set in the editor: easiest first)
+const rankedTiers = () => data.tiers.filter(t => gameQs().some(q => q.tierId === t.id));
+// The hardest tier (last in the list) — used by Hard Lock and as Exodia's finale
+function hardestTierId() { return rankedTiers().at(-1)?.id; }
 // Exodia's 5 pieces as tier names, e.g. "Easy → Medium → Medium → Hard → Hard"
 function exodiaPath(path = exodiaSequence()) {
   return path.map(id => tierOf(id)?.name || '?').join(' → ');
@@ -6966,22 +7844,17 @@ function itemDesc(k) {
     : ITEMS[k].desc;
 }
 // The easiest tier that actually has questions
-function easiestTierId() {
-  const ts = data.tiers.filter(t => gameQs().some(q => q.tierId === t.id));
-  return ts.sort((a, b) => a.points - b.points)[0]?.id;
-}
-// Exodia's question ladder: every difficulty tier from easiest to hardest, ending on the hardest. It has at least
-// 5 pieces; spare pieces lean hard — they go to the hardest regular tier first, then the next one down — while bonus
-// tiers (like Obscure) appear only once. So 3 tiers → Easy, Medium, Medium, Hard, Hard and
-// Easy/Medium/Hard + Obscure → Easy, Medium, Hard, Hard, Obscure. With more than 5 tiers it has one piece per tier.
+function easiestTierId() { return rankedTiers()[0]?.id; }
+// Exodia's question ladder: every tier from easiest to hardest (in the editor's order), finishing once on the hardest.
+// It has at least 5 pieces; spare pieces lean hard — they go to the second-hardest tier first, then the next one down —
+// so Easy/Medium/Hard/Obscure → Easy, Medium, Hard, Hard, Obscure. With more than 5 tiers it has one piece per tier.
 function exodiaSequence() {
-  const ts = data.tiers.filter(t => gameQs().some(q => q.tierId === t.id)).sort((a, b) => a.points - b.points);
+  const ts = rankedTiers();
   if (!ts.length) return [];
   const counts = ts.map(() => 1);
-  // tiers that can take spare pieces, hardest first: not the easiest, and not bonus tiers (unless nothing else is left)
-  const above = ts.map((t, i) => i).slice(1).reverse();
-  let pool = above.filter(i => !ts[i].bonus);
-  if (!pool.length) pool = above.length ? above : [0];
+  // tiers that take spare pieces, hardest first: everything between the easiest and the finale (or the last tier if none)
+  let pool = ts.map((t, i) => i).slice(1, -1).reverse();
+  if (!pool.length) pool = [ts.length - 1];
   for (let extra = EXODIA_PIECES - ts.length, i = 0; extra > 0; extra--, i++) counts[pool[i % pool.length]]++;
   return ts.flatMap((t, i) => Array(counts[i]).fill(t.id));
 }
@@ -7014,7 +7887,7 @@ let pickGroup = null; // category group opened on the pick screen (category mode
 function startGame() {
   if (!players.length) return alert('Add at least one player.');
   if (!data.questions.length) return alert('Add some questions first (Edit Questions).');
-  if (!gameQs().length) return alert("All categories are turned off for this game — turn at least one back on.");
+  if (!gameQs().length) return alert("No questions are in play — turn at least one category and one difficulty back on.");
   rememberPlayers();
   players.forEach(p => Object.assign(p, { score: 0, items: [], streak: { kind: null, count: 0 }, skip: 0, hardLock: 0, catLock: null, boost: null, halfTime: false, halfGain: false, beginner: 0, helper: null, tax: null, dodge: false, exodia: null, turnsPlayed: 0, lastGamble: -Infinity }));
   bets = [];
