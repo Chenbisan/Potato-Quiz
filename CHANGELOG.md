@@ -3,6 +3,13 @@
 All notable changes to Potato Quiz. Versions follow `major.minor.patch`:
 **minor** for new features or question batches, **patch** for fixes and small tweaks.
 
+## 1.7.0 — 2026-10-16
+- **Points doubled** so scores stay even: Easy 2, Medium 4, Hard 6, Obscure 10. Default win target is now **60**.
+- Items doubled to match: Pickpocket steals 2/4/6, Heist 6/8/10, Blue Shell −10; Random bonus is +2.
+- Saved settings still on the old defaults switch over automatically; custom values are kept.
+- New Gamble setting (on by default): after a Gamble, a player must get a regular question right before gambling again.
+- Edit Questions now opens filtered to **Uncategorized**, so it loads instantly and shows questions that still need a category.
+
 ## 1.6.1 — 2026-10-16
 - The game now shows its version number on the main menu, with a link to this changelog.
 - Added this changelog.

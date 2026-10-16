@@ -409,6 +409,8 @@
     <div class="row" style="gap:24px">
       <div><label>🎰 Gamble cooldown — each player can Gamble once every</label>
         <input type="number" id="gambleCd" min="1" max="20" style="width:90px" onchange="saveChoiceSettings()"> <span class="muted">turns (1 = no cooldown)</span></div>
+      <div><label class="switch" style="margin-top:22px"><input type="checkbox" id="gambleNeedsWin" onchange="saveChoiceSettings()">
+        After a Gamble, a player must get a regular question right before gambling again</label></div>
       <div><label>🎲 Random bonus — extra points for getting a Random question right</label>
         <input type="number" id="randomBonus" min="0" max="20" style="width:90px" onchange="saveChoiceSettings()"> <span class="muted">points (0 = off)</span></div>
     </div>
@@ -478,7 +480,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '1.6.1';
+const APP_VERSION = '1.7.0';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -498,7 +500,7 @@ const SEED_V5_COUNTS = {"science": 173, "anime": 184, "sports": 183, "dentistry"
 const SEED_V7_COUNTS = {"science": 173, "anime": 214, "sports": 243, "dentistry": 183, "math": 185, "history": 185, "kpop": 185, "actors": 185, "tech": 183, "pokemon": 365, "gossip": 180, "geo": 214, "asian": 184, "games": 237, "cars": 184, "disney": 184, "millennial": 170, "genz": 168, "food": 239, "general": 161, "movies": 202, "tv": 210, "music": 177, "space": 181, "memes": 163, "body": 166, "disney_plus": 50, "disney_parks": 50, "gen_boomers": 50, "gen_genx": 50, "gen_alpha": 48}; // through version 7; later rows arrived in version 8
 const SEED_V8_COUNTS = {"science": 173, "anime": 214, "sports": 643, "dentistry": 183, "math": 185, "history": 185, "kpop": 185, "actors": 185, "tech": 183, "pokemon": 365, "gossip": 180, "geo": 214, "asian": 184, "games": 237, "cars": 184, "disney": 184, "millennial": 170, "genz": 168, "food": 239, "general": 161, "movies": 202, "tv": 210, "music": 177, "space": 181, "memes": 163, "body": 166, "disney_plus": 50, "disney_parks": 50, "gen_boomers": 50, "gen_genx": 50, "gen_alpha": 48}; // through version 8; later rows arrived in version 9
 // Tier difficulty is their order in the list (easiest first, hardest last); points only decide scoring
-const OBSCURE_TIER = { id: 't4', name: 'Obscure', points: 5, color: '#b36bff' };
+const OBSCURE_TIER = { id: 't4', name: 'Obscure', points: 10, color: '#b36bff' };
 const SEED_CATEGORIES = [
   { id: 'cat_science', name: "General", color: '#c77dff', group: "Science", was: "Science", v: 5, split: true },
   { id: 'cat_science_biology', name: "Biology", color: '#913ffe', group: "Science" },
@@ -7270,12 +7272,12 @@ const seedQuestions = () => {
 };
 const DEFAULT = {
   seedVersion: SEED_VERSION,
-  settings: { targetPoints: 30, pickMode: 'tier' },
+  settings: { targetPoints: 60, pickMode: 'tier' },
   categories: SEED_CATEGORIES.map(({ was, v, split, ...c }) => c),
   tiers: [
-    { id: 't1', name: 'Easy',   points: 1, color: '#2ecc71' },
-    { id: 't2', name: 'Medium', points: 2, color: '#ffcc33' },
-    { id: 't3', name: 'Hard',   points: 3, color: '#ff5e5e' },
+    { id: 't1', name: 'Easy',   points: 2, color: '#2ecc71' },
+    { id: 't2', name: 'Medium', points: 4, color: '#ffcc33' },
+    { id: 't3', name: 'Hard',   points: 6, color: '#ff5e5e' },
     OBSCURE_TIER,
   ],
   questions: seedQuestions().map(({ since, ...q }) => q),
@@ -7287,15 +7289,24 @@ function load() {
 }
 // Fill in fields added in later versions so older saved data keeps working
 function upgrade(d) {
-  d.settings ??= {}; d.settings.targetPoints ??= 30; d.settings.pickMode ??= 'tier'; d.settings.gamble ??= true;
+  d.settings ??= {}; d.settings.targetPoints ??= 60; d.settings.pickMode ??= 'tier'; d.settings.gamble ??= true;
   d.settings.timer ??= { enabled: true, seconds: 30, sound: true };
   d.settings.introSeconds ??= 2.5;
   d.settings.fx ??= true;  // animations: screen transitions, flying points
   d.settings.sfx ??= true; // sound effects
   d.settings.gambleCooldown ??= 2; // a player can Gamble at most once every N of their turns
-  d.settings.randomBonus ??= 1;    // extra points for a correct answer on a 🎲 Random question
+  d.settings.randomBonus ??= 2;    // extra points for a correct answer on a 🎲 Random question
+  d.settings.gambleNeedsWin ??= true; // after a Gamble, a player must get a regular question right before gambling again
   // Saved settings still on an earlier default preview time move to the current default (2.5 s); custom values are kept
   if ((d.settings.rev ?? 1) < 3) { if ([2, 3].includes(d.settings.introSeconds)) d.settings.introSeconds = 2.5; d.settings.rev = 3; }
+  if (d.settings.rev < 4) {
+    // Points doubled so scores stay even: only values still on the old defaults change
+    const old = { t1: 1, t2: 2, t3: 3, t4: 5 };
+    (d.tiers || []).forEach(t => { if (old[t.id] === t.points) t.points *= 2; });
+    if (d.settings.targetPoints === 30) d.settings.targetPoints = 60;
+    if (d.settings.randomBonus === 1) d.settings.randomBonus = 2;
+    d.settings.rev = 4;
+  }
   if (!d.categories) {
     d.categories = structuredClone(DEFAULT.categories);
     d.questions.forEach(q => q.categoryId ??= DEFAULT.questions.find(x => x.id === q.id)?.categoryId || '');
@@ -7476,6 +7487,7 @@ function renderSettings() {
   document.getElementById('fxOn').checked = data.settings.fx;
   document.getElementById('sfxOn').checked = data.settings.sfx;
   document.getElementById('gambleCd').value = data.settings.gambleCooldown;
+  document.getElementById('gambleNeedsWin').checked = data.settings.gambleNeedsWin;
   document.getElementById('randomBonus').value = data.settings.randomBonus;
   const tm = data.settings.timer;
   document.getElementById('timerOn').checked = tm.enabled;
@@ -7504,6 +7516,7 @@ function saveItemSettings() {
 function saveChoiceSettings() {
   const cd = parseInt(document.getElementById('gambleCd').value), rb = parseInt(document.getElementById('randomBonus').value);
   if (cd >= 1) data.settings.gambleCooldown = Math.min(20, cd);
+  data.settings.gambleNeedsWin = document.getElementById('gambleNeedsWin').checked;
   if (rb >= 0) data.settings.randomBonus = Math.min(20, rb);
   save(); renderSettings(); toast('Saved');
 }
@@ -7583,8 +7596,11 @@ function renderEditor() {
   const groups = [...new Set(data.categories.filter(c => c.group).map(c => c.group))];
   fillSelect('qCatFilter', `<option value="*">All categories</option><option value="">Uncategorized</option>` +
     (groups.length ? `<optgroup label="Whole groups">${groups.map(g => `<option value="g:${esc(g)}">All ${esc(g)}</option>`).join('')}</optgroup>` : '') + catOptions());
+  // Open on Uncategorized the first time: quick to load, and shows questions that still need a category
+  if (!catFilterSet) { document.getElementById('qCatFilter').value = ''; catFilterSet = true; }
   renderQuestions(); renderTiers(); renderCats();
 }
+let catFilterSet = false;
 let qSort = { key: null, dir: -1 }; // question list sort by 'seen'; dir 1 = ascending, -1 = descending
 function sortQuestions(key) {
   qSort = qSort.key === key ? { key, dir: -qSort.dir } : { key, dir: -1 };
@@ -7611,7 +7627,9 @@ function renderQuestions() {
       <td>${seenCount(q.id)}</td>
       <td style="white-space:nowrap"><button class="small" onclick="editQuestion('${q.id}')">Edit</button>
       <button class="small bad" onclick="deleteQuestion('${q.id}')">Delete</button></td></tr>`;
-  }).join('') || `<tr><td colspan="6" class="muted">No questions here yet — add one above.</td></tr>`;
+  }).join('') || `<tr><td colspan="6" class="muted">${cf === ''
+      ? 'No uncategorized questions — every question has a category. Pick a category above to browse.'
+      : 'No questions here yet — add one above.'}</td></tr>`;
 }
 // Media attached in the form: { type, name, id } for an already-saved file, or { type, name, blob } for a new one
 let formMedia = null;
@@ -7705,7 +7723,7 @@ function tierDrop(e) {
 }
 function tierDragEnd() { tierDragFrom = null; document.querySelectorAll('.tierRow').forEach(r => r.classList.remove('dragging', 'dropAbove', 'dropBelow')); }
 function addTier() {
-  data.tiers.push({ id: uid(), name: 'New tier', points: 5, color: '#4da3ff' }); save(); renderEditor();
+  data.tiers.push({ id: uid(), name: 'New tier', points: 8, color: '#4da3ff' }); save(); renderEditor();
 }
 function delTier(id) {
   const n = data.questions.filter(q => q.tierId === id).length;
@@ -7902,8 +7920,8 @@ function removePlayer(i) { players.splice(i, 1); renderSetup(); }
 // ---------- Items ----------
 // hot = earned on a streak of correct answers, cold = earned on a streak of wrong answers (stronger, to help catch up)
 const ITEMS = {
-  pickpocket: { icon: '🧤', name: 'Pickpocket',    target: true,  hot: true,  cold: false, desc: 'Steal 1–3 points (random) from a player you choose.' },
-  heist:      { icon: '💰', name: 'Heist',         target: true,  hot: false, cold: true,  desc: 'Steal 3–5 points (random) from a player you choose.' },
+  pickpocket: { icon: '🧤', name: 'Pickpocket',    target: true,  hot: true,  cold: false, desc: 'Steal 2, 4 or 6 points (random) from a player you choose.' },
+  heist:      { icon: '💰', name: 'Heist',         target: true,  hot: false, cold: true,  desc: 'Steal 6, 8 or 10 points (random) from a player you choose.' },
   skip:       { icon: '⏭️', name: 'Skip Turn',     target: true,  hot: true,  cold: true,  desc: 'Make a player miss their next turn.' },
   hardlock:   { icon: '🔒', name: 'Hard Lock',     target: true,  hot: false, cold: true,  desc: 'Force a player onto the hardest questions for their next 2 turns.' },
   catlock:    { icon: '🎯', name: 'Category Lock', target: true,  hot: false, cold: true,  desc: 'Lock a player to a category you pick for their next 2 turns.' },
@@ -7920,10 +7938,10 @@ const ITEMS = {
   nuke:       { icon: '☢️', name: 'Nuke',          target: false, hot: false, cold: true,  desc: "Everyone's score (yours included) becomes the average of all scores, rounded." },
   exodia:     { icon: '🃏', name: 'Exodia',        target: false, hot: true,  cold: true,  desc: 'Get your next 5 questions right, climbing the difficulty ladder, and win instantly. One wrong answer and you lose all your points.' },
   catchup:    { icon: '🪜', name: 'Catch Up',      target: false, hot: false, cold: true,  desc: 'Jump up to match the score of the player just ahead of you.' },
-  blueshell:  { icon: '🐢', name: 'Blue Shell',    target: false, hot: false, cold: true,  desc: 'Hits the leader (not you) for −5 points. Ties are all hit. No choosing needed.' },
+  blueshell:  { icon: '🐢', name: 'Blue Shell',    target: false, hot: false, cold: true,  desc: 'Hits the leader (not you) for −10 points. Ties are all hit. No choosing needed.' },
   shield:     { icon: '🛡️', name: 'Shield',        target: false, hot: true,  cold: true,  desc: 'Automatically blocks the next item used against you.', passive: true },
 };
-const LOCK_TURNS = 2, BLUE_SHELL_POINTS = 5, BEGINNER_TURNS = 5, EXODIA_PIECES = 5; // minimum; Exodia grows to one piece per tier if there are more tiers than this
+const LOCK_TURNS = 2, BLUE_SHELL_POINTS = 10, BEGINNER_TURNS = 5, EXODIA_PIECES = 5; // minimum; Exodia grows to one piece per tier if there are more tiers than this
 const defaultItemSettings = () => ({
   enabled: true, streaks: [3, 5, 7],
   pools: Object.fromEntries(Object.entries(ITEMS).map(([k, it]) => [k, { hot: it.hot, cold: it.cold }])),
@@ -7999,7 +8017,7 @@ function startGame() {
   if (!gameQs().length) return alert("No questions are in play — turn at least one category and one difficulty back on.");
   rememberPlayers();
   players.forEach(p => playerStat(p.name).games++); saveStats();
-  players.forEach(p => Object.assign(p, { score: 0, items: [], streak: { kind: null, count: 0 }, skip: 0, hardLock: 0, catLock: null, boost: null, halfTime: false, halfGain: false, beginner: 0, helper: null, tax: null, dodge: false, exodia: null, turnsPlayed: 0, lastGamble: -Infinity }));
+  players.forEach(p => Object.assign(p, { score: 0, items: [], streak: { kind: null, count: 0 }, skip: 0, hardLock: 0, catLock: null, boost: null, halfTime: false, halfGain: false, beginner: 0, helper: null, tax: null, dodge: false, exodia: null, turnsPlayed: 0, lastGamble: -Infinity, gambleLocked: false }));
   bets = [];
   // Random turn order each game (Fisher–Yates shuffle)
   for (let i = players.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [players[i], players[j]] = [players[j], players[i]]; }
@@ -8024,7 +8042,7 @@ function statusBadges(p) {
   if (p.beginner) b.push(`<span title="Beginner's Luck: easiest questions worth double, ${p.beginner} turn(s) left">🐣${p.beginner}</span>`);
   if (p.helper) b.push(`<span title="Phone a Friend: ${esc(p.helper.name)} is helping this turn">📞${esc(p.helper.name)}</span>`);
   if (p.exodia) b.push(`<span title="Exodia: ${p.exodia.pieces} of ${p.exodia.path.length} pieces">🃏${p.exodia.pieces}/${p.exodia.path.length}</span>`);
-  if (data.settings.gamble && gambleWait(p)) b.push(`<span title="Gamble ready in ${gambleWait(p)} turn(s)">🎰⏳${gambleWait(p)}</span>`);
+  if (data.settings.gamble && (gambleNeedsRight(p) || gambleWait(p))) b.push(`<span title="${gambleNeedsRight(p) ? 'Gamble locked until a correct answer' : `Gamble ready in ${gambleWait(p)} turn(s)`}">🎰${gambleNeedsRight(p) ? '🔒' : '⏳' + gambleWait(p)}</span>`);
   if (p.dodge) b.push(`<span title="Dodge the Bullet ready this turn">💨</span>`);
   if (p.tax) b.push(`<span title="Taxed by ${esc(p.tax.by.name)} on their next question">💸</span>`);
   bets.filter(x => x.from === p).forEach(x => b.push(`<span title="Side Bet on ${esc(x.on.name)}">🤝${esc(x.on.name)}</span>`));
@@ -8085,9 +8103,9 @@ function renderGameInner() {
       const rb = data.settings.randomBonus;
       if (!(byCat && pickGroup)) buttons.push(`<button class="randomBtn" onclick="draw('any')">🎲 Random<small>${rb ? `+${rb} bonus point${rb === 1 ? '' : 's'} if right!` : 'Surprise me!'}</small></button>`);
       if (data.settings.gamble && !p.boost && !(byCat && pickGroup)) {
-        const wait = gambleWait(p);
-        buttons.push(wait
-          ? `<button class="gambleBtn" disabled title="Gamble is on cooldown">🎰 Gamble<small>Ready in ${wait} turn${wait === 1 ? '' : 's'}</small></button>`
+        const wait = gambleWait(p), needRight = gambleNeedsRight(p);
+        buttons.push(needRight || wait
+          ? `<button class="gambleBtn" disabled title="Gamble is locked">🎰 Gamble<small>${needRight ? 'Get a question right first' : `Ready in ${wait} turn${wait === 1 ? '' : 's'}`}</small></button>`
           : `<button class="gambleBtn" onclick="draw('any', null, true)">🎰 Gamble<small>Random · win ×2 or lose ×2</small></button>`);
       }
       footer = `<p class="muted" style="text-align:center;margin:18px 0 0">Choosing by ${byCat ? 'category' : 'difficulty'} ·
@@ -8167,6 +8185,8 @@ function stakes(p) {
 }
 // How many more of this player's turns until they can Gamble again (0 = ready)
 function gambleWait(p) { return Math.max(0, data.settings.gambleCooldown - (p.turnsPlayed - p.lastGamble)); }
+// Gamble is locked until the player gets a regular (non-Gamble) question right after their last Gamble
+const gambleNeedsRight = p => data.settings.gambleNeedsWin && p.gambleLocked;
 function stakeBadge(p) {
   const tags = [current.gamble && '🎰 Gamble ×2', current.random && data.settings.randomBonus > 0 && `🎲 Random +${data.settings.randomBonus}`, p.boost === 'double' && '⚡ Double ×2', p.boost === 'triple' && '🔱 Triple ×3', p.halfGain && '🌧️ Storm ½',
     p.beginner > 0 && current.tierId === easiestTierId() && "🐣 Beginner's Luck ×2",
@@ -8350,7 +8370,8 @@ function mark(correct) {
     sfx('wrong');
     if (st.lose) { const lost = Math.min(st.lose, p.score); p.score -= lost; if (lost) toast(`${p.name} loses ${lost} point${lost === 1 ? '' : 's'}`); }
   }
-  if (current.gamble) p.lastGamble = p.turnsPlayed;
+  if (current.gamble) { p.lastGamble = p.turnsPlayed; p.gambleLocked = true; }
+  else if (correct) p.gambleLocked = false;
   p.turnsPlayed++;
   p.boost = null; p.halfGain = false;
   if (p.beginner > 0) p.beginner--;
@@ -8540,7 +8561,7 @@ function applyItem(idx, ti, catId) {
   }
   let msg;
   if (key === 'pickpocket' || key === 'heist') {
-    const amt = Math.min(key === 'heist' ? rand(3, 5) : rand(1, 3), v.score);
+    const amt = Math.min(2 * (key === 'heist' ? rand(3, 5) : rand(1, 3)), v.score); // even amounts: 2–6 or 6–10
     v.score -= amt; p.score += amt;
     msg = `<h2>${it.name}!</h2><p>${esc(p.name)} stole <b>${amt} point${amt === 1 ? '' : 's'}</b> from ${esc(v.name)}.</p>`;
   } else if (key === 'swap') {
