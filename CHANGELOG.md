@@ -3,6 +3,10 @@
 All notable changes to Potato Quiz. Versions follow `major.minor.patch`:
 **minor** for new features or question batches, **patch** for fixes and small tweaks.
 
+## 2.0.2 — 2026-10-16
+- Category lists no longer repeat the group name: under Food you now see "Drinks", not "Food: Drinks".
+- Categories inside each group are now strictly A–Z (General included), both in Edit Questions and on the setup screen.
+
 ## 2.0.1 — 2026-10-16
 - Edit Questions now lists categories in the same order as the setup screen: groups A–Z, each group's General category first, then A–Z. Ungrouped categories come last under "Other". This applies to the category filter, the question form, and the Categories tab.
 

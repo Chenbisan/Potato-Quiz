@@ -593,7 +593,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '2.0.1';
+const APP_VERSION = '2.0.2';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -962,16 +962,14 @@ function topChoices(qs) {
   return out;
 }
 // Category <select> options with groups as <optgroup>s
-// One display order everywhere: families A–Z; inside a family its General category first, then A–Z; ungrouped last, A–Z
+// One display order everywhere: groups A–Z, categories A–Z inside each group, ungrouped categories last (A–Z)
 const az = (x, y) => x.localeCompare(y, undefined, { sensitivity: 'base' });
-const isGeneralOf = (c, g) => /^general\b/i.test(c.name) || c.name === g;
-const catOrder = (a, b) => (!a.group - !b.group) || (a.group && b.group && az(a.group, b.group))
-  || (a.group && (isGeneralOf(b, b.group) - isGeneralOf(a, a.group))) || az(a.name, b.name);
+const catOrder = (a, b) => (!a.group - !b.group) || (a.group && b.group && az(a.group, b.group)) || az(a.name, b.name);
 const sortedCats = () => [...data.categories].sort(catOrder);
 const sortedGroups = () => [...new Set(data.categories.filter(c => c.group).map(c => c.group))].sort(az);
 function catOptions() {
   const cats = sortedCats(), ungrouped = cats.filter(c => !c.group);
-  return sortedGroups().map(g => `<optgroup label="${esc(g)}">${cats.filter(c => c.group === g).map(c => `<option value="${c.id}">${esc(g)}: ${esc(c.name)}</option>`).join('')}</optgroup>`).join('') +
+  return sortedGroups().map(g => `<optgroup label="${esc(g)}">${cats.filter(c => c.group === g).map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}</optgroup>`).join('') +
     (ungrouped.length ? `<optgroup label="Other">${ungrouped.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}</optgroup>` : '');
 }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1441,7 +1439,7 @@ function renderCatPicker() {
   const off = offCats();
   const chip = (c, n, label) => { const on = !off.includes(c.id);
     return `<button class="catToggle ${on ? 'on' : ''}" style="--c:${c.color}" onclick="toggleCat('${c.id}')">${on ? '✓' : '✕'} ${esc(label)} <small>${n}</small></button>`; };
-  // Families are collapsible rows, A–Z; inside a family its own "General" category comes first, then A–Z
+  // Families are collapsible rows, A–Z, with their categories A–Z inside (same order as Edit Questions)
   const top = topChoices(data.questions);
   const open = openGroups();
   const groups = top.filter(e => e.kind === 'group').sort((x, y) => az(x.group, y.group));
