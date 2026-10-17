@@ -1,5 +1,8 @@
 # What's new in Potato Quiz
 
+## 3.2.1 — 2026-10-17
+- The item list has its own **📋 Item list** tab in Settings, so the Items tab is shorter.
+
 ## 3.2.0 — 2026-10-17
 - **Player colors:** every player gets their own color, shown on the setup screen, the turn bar, the scoreboard and "your turn" prompts. Players keep the same color from game to game.
 - A game can have up to **12 players**.

@@ -520,6 +520,7 @@
   <div class="tabs setTabs" id="setTabs">
     <button data-t="game" onclick="settingsTab('game')">🎯 Game</button>
     <button data-t="items" onclick="settingsTab('items')">🎒 Items</button>
+    <button data-t="itemlist" onclick="settingsTab('itemlist')">📋 Item list</button>
     <button data-t="timing" onclick="settingsTab('timing')">⏱️ Timer</button>
     <button data-t="fx" onclick="settingsTab('fx')">✨ Effects</button>
     <button data-t="data" onclick="settingsTab('data')">💾 Data</button>
@@ -624,7 +625,7 @@
     <div class="setting">
       <label class="switch"><input type="checkbox" id="rewardsOn"
         onchange="data.settings.items.rewards = this.checked; save(); renderItemSettings(); toast('Saved')"> Players in the bottom half can find an item on a question they pick</label>
-      <div class="help">On a trailing player's turn, each difficulty (or category) button rolls this chance once. A hit shows the item on the button; pick it and answer correctly to win the item. Not for Random, Gamble, locked turns or Exodia. Choose which items can be prizes in the list below.</div>
+      <div class="help">On a trailing player's turn, each difficulty (or category) button rolls this chance once. A hit shows the item on the button; pick it and answer correctly to win the item. Not for Random, Gamble, locked turns or Exodia. Choose which items can be prizes on the 📋 Item list tab.</div>
     </div>
     <div class="setting" id="rewardChanceRow">
       <div class="setName">Chance per button, per turn</div>
@@ -643,7 +644,7 @@
     <div class="help" style="margin-top:0">How likely each rarity is. These are relative weights shared by all the items of that rarity: with 60 / 30 / 10, any single Common item is about twice as likely as a single Rare, and a Legendary is the rarest. An item that already showed up this game is half as likely to show up again. Set a weight to 0 to switch that rarity off.</div>
     <div class="rarityGrid" id="rarityWeights"></div>
   </div>
-  <div class="card itemsDep" data-stab="items">
+  <div class="card itemsDep" data-stab="itemlist">
     <h3 class="cardTitle">📋 Item list</h3>
     <div class="help" style="margin-top:0">Set each item's rarity and where it can come from. Untick all three boxes to turn an item off completely.</div>
     <div class="row" style="margin-top:10px"><button class="small" onclick="setAllItems(true)">✓ Tick all</button>
@@ -690,7 +691,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '3.2.0';
+const APP_VERSION = '3.2.1';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
