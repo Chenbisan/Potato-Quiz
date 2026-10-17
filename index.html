@@ -138,6 +138,13 @@
   .rewardPill { background: #ffcc33; color: #2a1d00; }
   /* 3.0 streak tracker on the scoreboard: last answers as dots + a meter toward the next streak item */
   .rowHead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .colorBtn { width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,.6); flex: none; cursor: pointer; box-shadow: 0 0 0 2px rgba(0,0,0,.35); }
+  .colorBtn:hover { transform: scale(1.2); }
+  .colorGrid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin: 16px 0; }
+  .swatch { aspect-ratio: 1; border-radius: 50%; padding: 0; background: var(--sw); border: 3px solid transparent; font-weight: 900; color: #111; font-size: 1rem; }
+  .swatch:hover:not(:disabled) { transform: scale(1.12); }
+  .swatch.mine { border-color: #fff; box-shadow: 0 0 0 2px var(--accent); }
+  .swatch:disabled { opacity: .3; cursor: not-allowed; }
   .pDot { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; box-shadow: 0 0 0 2px rgba(0,0,0,.35); }
   .rowHead .pDot { margin-right: -2px; }
   #liveBoard li { box-shadow: inset 5px 0 0 var(--pc); padding-left: 16px; }
@@ -696,7 +703,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '3.3.0';
+const APP_VERSION = '3.4.0';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1822,7 +1829,11 @@ function rememberPlayers() {
 }
 const isPlaying = name => players.some(p => p.name.toLowerCase() === name.toLowerCase());
 // Player colors: each player in a game gets a distinct color, remembered by name on this device (no yellow: that's the "your turn" highlight)
-const PLAYER_COLORS = ['#ff6b6b', '#4dabf7', '#51cf66', '#cc5de8', '#ff922b', '#22b8cf', '#f06595', '#94d82d', '#ced4da', '#20c997', '#845ef7', '#b08968'];
+// 24 colors to choose from; new players are handed the first free one (the first 12 are the most distinct)
+const PLAYER_COLORS = ['#ff6b6b', '#4dabf7', '#51cf66', '#cc5de8', '#ff922b', '#22b8cf', '#f06595', '#94d82d', '#ced4da', '#20c997', '#845ef7', '#b08968',
+  '#e03131', '#4263eb', '#2f9e44', '#e599f7', '#e8590c', '#1098ad', '#c2255c', '#74b816', '#ffffff', '#ffc9c9', '#a5d8ff', '#b2f2bb'];
+const COLOR_NAMES = ['Coral', 'Sky blue', 'Green', 'Purple', 'Orange', 'Cyan', 'Pink', 'Lime', 'Silver', 'Teal', 'Violet', 'Tan',
+  'Red', 'Royal blue', 'Forest', 'Lavender', 'Rust', 'Ocean', 'Raspberry', 'Olive', 'White', 'Blush', 'Ice blue', 'Mint'];
 function assignColors(list) {
   const saved = roster.colors ??= {}, taken = new Set();
   list.forEach(p => { const c = saved[p.name.toLowerCase()]; if (c && !taken.has(c)) { p.color = c; taken.add(c); } else p.color = null; });
@@ -1832,6 +1843,23 @@ function assignColors(list) {
   saveRoster();
 }
 const pc = p => p?.color || 'var(--accent)';
+// Setup screen: tap a player's color dot to choose any of the 24 colors not already used by another player
+function pickColor(i) {
+  const p = players[i]; if (!p) return;
+  const taken = new Map(players.filter((o, j) => j !== i).map(o => [o.color, o.name]));
+  modal(`<h2 style="margin-top:0">Pick a color for <span style="color:${p.color}">${esc(p.name)}</span></h2>
+    <div class="colorGrid">${PLAYER_COLORS.map((c, n) => {
+      const by = taken.get(c), mine = c === p.color;
+      return `<button class="swatch ${mine ? 'mine' : ''}" style="--sw:${c}" ${by ? 'disabled' : ''} title="${esc(COLOR_NAMES[n])}${by ? ` — taken by ${esc(by)}` : ''}"
+        onclick="setPlayerColor(${i}, '${c}')">${by ? '✕' : mine ? '✓' : ''}</button>`; }).join('')}</div>
+    <p class="muted" style="margin-bottom:0">Colors with ✕ are taken by another player. ${esc(p.name)} keeps this color in future games.</p>`,
+    [{ label: 'Cancel', cls: 'ghost' }]);
+}
+function setPlayerColor(i, c) {
+  const p = players[i]; if (!p || players.some((o, j) => j !== i && o.color === c)) return;
+  p.color = c; (roster.colors ??= {})[p.name.toLowerCase()] = c; saveRoster();
+  closeModal(); renderSetup();
+}
 const MAX_NAME = 16; // keeps names from breaking the scoreboard, turn strip and buttons
 const cleanName = n => String(n).trim().replace(/\s+/g, ' ').slice(0, MAX_NAME).trim();
 const MAX_PLAYERS = 12; // one distinct color each
@@ -1859,7 +1887,7 @@ function renderSetup() {
   renderCatPicker(); renderChoicePicker();
   assignColors(players);
   document.getElementById('playerChips').innerHTML = players.map((p, i) =>
-    `<span class="chip" style="box-shadow: inset 4px 0 0 ${p.color}"><i class="pDot" style="background:${p.color}"></i>${esc(p.name)} <b onclick="removePlayer(${i})" title="Remove">✕</b></span>`).join('');
+    `<span class="chip" style="box-shadow: inset 4px 0 0 ${p.color}"><button class="colorBtn" style="background:${p.color}" onclick="pickColor(${i})" title="Change ${esc(p.name)}'s color"></button>${esc(p.name)} <b onclick="removePlayer(${i})" title="Remove">✕</b></span>`).join('');
   const full = players.length >= MAX_PLAYERS;
   document.getElementById('setupInfo').textContent = players.length
     ? `${players.length} of ${MAX_PLAYERS} players${full ? ' (full)' : ''}. First to ${data.settings.targetPoints} points wins.`

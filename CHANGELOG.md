@@ -1,5 +1,8 @@
 # What's new in Potato Quiz
 
+## 3.4.0 — 2026-10-17
+- **Pick your color:** on the setup screen, tap the colored dot next to a player's name to choose from **24 colors**. Colors already taken by another player can't be picked. Your choice sticks for future games.
+
 ## 3.3.0 — 2026-10-17
 - **Item list upgrades:** items are sorted by rarity (Common first), or switch to Legendary first or A–Z. Filter to what can come from 🔥 hot streaks, 🧊 cold streaks, 🎁 prizes, or what's turned off.
 - **Legendaries aren't question prizes anymore:** Exodia, Nuke and Swap only come from streaks now. (You can still tick them as prizes on the Item list tab.)
