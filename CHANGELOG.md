@@ -3,6 +3,11 @@
 All notable changes to Potato Quiz. Versions follow `major.minor.patch`:
 **minor** for new features or question batches, **patch** for fixes and small tweaks.
 
+## 2.3.1 — 2026-10-16
+- **Click an answer, then Next:** clicking a multiple-choice answer now scores it right away ("🎉 Correct! +4" or "❌ Wrong") and shows a single **Next** button. A small "Change result" link brings back the Correct/Wrong buttons if someone clicked by mistake.
+- **Ended games don't count:** games ended with ✕ End game no longer add to players' Games or Wins. Answers and item use from that game still count.
+- Groundwork for new sub-categories coming in the next question update. They stay hidden until they have questions.
+
 ## 2.3.0 — 2026-10-16
 Playtest improvements:
 - **Click an answer:** players can tap a multiple-choice answer instead of pressing Reveal. Their pick is marked, wrong picks turn red, and the matching Correct/Wrong button is highlighted for the host to confirm. The Reveal button still works too.

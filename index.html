@@ -101,6 +101,8 @@
   .choices div.picked { box-shadow: 0 0 0 3px #fff; }
   .choices div.wrongPick { background: var(--bad); color: #fff; font-weight: 700; }
   .pickTag { font-size: .7em; font-weight: 700; text-transform: uppercase; opacity: .85; margin-left: 6px; }
+  .pickResult { text-align: center; font-size: 1.4rem; font-weight: 800; margin: 6px 0 4px; }
+  .pickResult.good { color: var(--good); } .pickResult.bad { color: var(--bad); }
   .actions button.suggest { box-shadow: 0 0 0 3px #fff, 0 0 14px rgba(255,255,255,.6); }
   .choices div.right { background: var(--good); color: #04210f; font-weight: 700; }
   .answer { text-align: center; font-size: 1.5rem; color: var(--good); font-weight: 800; margin-bottom: 20px; }
@@ -613,7 +615,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.3.1';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -789,6 +791,62 @@ const SEED_CATEGORIES = [
   { id: 'cat_animals_insects', name: "Insects & Bugs", color: '#a3b34a', group: "Animals" },
   { id: 'cat_animals_pets', name: "Pets & Dog Breeds", color: '#e0a66a', group: "Animals" },
   { id: 'cat_animals_dinosaurs', name: "Dinosaurs & Prehistoric", color: '#8a6d4a', group: "Animals" },
+  // bank version 12: more sub-categories across the families
+  { id: 'cat_anime_isekai', name: "Isekai & Fantasy", color: '#ff3195', group: "Anime" },
+  { id: 'cat_anime_sports', name: "Sports Anime", color: '#ff4ba2', group: "Anime" },
+  { id: 'cat_anime_romance', name: "Romance & Slice of Life", color: '#ff64af', group: "Anime" },
+  { id: 'cat_anime_mecha', name: "Mecha & Sci-Fi", color: '#fe7ebc', group: "Anime" },
+  { id: 'cat_anime_seinen', name: "Seinen & Thrillers", color: '#ff97c9', group: "Anime" },
+  { id: 'cat_anime_manga', name: "Manga", color: '#fea3cf', group: "Anime" },
+  { id: 'cat_anime_music', name: "Anime Music & Voice Actors", color: '#fea3cf', group: "Anime" },
+  { id: 'cat_games_horror', name: "Horror Games", color: '#654eff', group: "Video Games" },
+  { id: 'cat_games_indie', name: "Indie Games", color: '#7b68ff', group: "Video Games" },
+  { id: 'cat_games_mobile', name: "Mobile Games", color: '#9281fe', group: "Video Games" },
+  { id: 'cat_games_sportsracing', name: "Sports & Racing Games", color: '#a89bff', group: "Video Games" },
+  { id: 'cat_games_industry', name: "Industry & Hardware", color: '#afa3fe', group: "Video Games" },
+  { id: 'cat_games_action', name: "Action & Adventure", color: '#afa3fe', group: "Video Games" },
+  { id: 'cat_games_mmo', name: "MMOs & Online Games", color: '#afa3fe', group: "Video Games" },
+  { id: 'cat_games_strategy', name: "Strategy & Simulation", color: '#afa3fe', group: "Video Games" },
+  { id: 'cat_movies_comedy', name: "Comedy", color: '#f4b700', group: "Movies" },
+  { id: 'cat_movies_action', name: "Action & Thrillers", color: '#ffc30f', group: "Movies" },
+  { id: 'cat_movies_animation', name: "Animated Films (non-Disney)", color: '#ffc928', group: "Movies" },
+  { id: 'cat_movies_franchises', name: "Big Franchises", color: '#fecf42', group: "Movies" },
+  { id: 'cat_movies_oscars', name: "Directors & Oscars", color: '#ffd65b', group: "Movies" },
+  { id: 'cat_movies_romcom', name: "Rom-Coms & Musicals", color: '#ffdc75', group: "Movies" },
+  { id: 'cat_movies_teen', name: "Teen & Coming-of-Age", color: '#ffe28e', group: "Movies" },
+  { id: 'cat_general_myths', name: "Myths & Legends", color: '#5191ff', group: "General Knowledge" },
+  { id: 'cat_general_games', name: "Board & Card Games", color: '#6ba1ff', group: "General Knowledge" },
+  { id: 'cat_general_money', name: "Money & Business", color: '#84b1fe', group: "General Knowledge" },
+  { id: 'cat_general_fashion', name: "Fashion & Style", color: '#9ec1ff', group: "General Knowledge" },
+  { id: 'cat_general_records', name: "Records & Firsts", color: '#a3c4fe', group: "General Knowledge" },
+  { id: 'cat_general_people', name: "Famous People", color: '#a3c4fe', group: "General Knowledge" },
+  { id: 'cat_science_weather', name: "Weather & Climate", color: '#ac3ffe', group: "Science" },
+  { id: 'cat_sports_hockey', name: "Ice Hockey", color: '#229a55', group: "Sports" },
+  { id: 'cat_sports_wrestling', name: "Pro Wrestling", color: '#27ae60', group: "Sports" },
+  { id: 'cat_sports_extreme', name: "Cycling & Extreme Sports", color: '#2cc36c', group: "Sports" },
+  { id: 'cat_medicine_health', name: "Health & Nutrition", color: '#41dbfe', group: "Medicine" },
+  { id: 'cat_medicine_history', name: "Medical History", color: '#5be0ff', group: "Medicine" },
+  { id: 'cat_math_puzzles', name: "Puzzles & Logic", color: '#0f83ff', group: "Math" },
+  { id: 'cat_history_wars', name: "World Wars", color: '#b48341', group: "History" },
+  { id: 'cat_history_explorers', name: "Explorers & Empires", color: '#bf9050', group: "History" },
+  { id: 'cat_music_country', name: "Country", color: '#ff51c2', group: "Music" },
+  { id: 'cat_music_latin', name: "Latin", color: '#ff6bcb', group: "Music" },
+  { id: 'cat_music_edm', name: "Electronic & Dance", color: '#fe84d4', group: "Music" },
+  { id: 'cat_music_musicals', name: "Musicals & Soundtracks", color: '#ff9edd', group: "Music" },
+  { id: 'cat_tech_ai', name: "AI & Robots", color: '#33b998', group: "Technology" },
+  { id: 'cat_tech_social', name: "Social Media & Apps", color: '#3ec9a6', group: "Technology" },
+  { id: 'cat_pop_creators', name: "Influencers & YouTubers", color: '#fe3c3c', group: "Pop Culture" },
+  { id: 'cat_pop_awards', name: "Award Shows", color: '#ff5656', group: "Pop Culture" },
+  { id: 'cat_geo_flags', name: "Flags", color: '#fe7f05', group: "Geography" },
+  { id: 'cat_geo_states', name: "US States", color: '#ff8c1f', group: "Geography" },
+  { id: 'cat_cars_ev', name: "Electric & Future Cars", color: '#8b97ae', group: "Cars" },
+  { id: 'cat_disney_channel', name: "Disney Channel", color: '#3183ff', group: "Disney" },
+  { id: 'cat_disney_liveaction', name: "Live-Action Remakes", color: '#4b92ff', group: "Disney" },
+  { id: 'cat_food_snacks', name: "Snacks & Candy", color: '#ff9428', group: "Food" },
+  { id: 'cat_tv_kids', name: "Kids & Teen Shows", color: '#1aaed6', group: "Television" },
+  { id: 'cat_tv_streaming', name: "Streaming Originals", color: '#26bce4', group: "Television" },
+  { id: 'cat_tv_scifi', name: "Sci-Fi & Fantasy TV", color: '#3cc3e6', group: "Television" },
+  { id: 'cat_tv_talk', name: "Late Night & Talk Shows", color: '#53cae9', group: "Television" },
 ];
 // Starter questions moved to the Obscure tier in version 8 (pre-1990 topics most players won't know), by number within their category
 const SEED_RETIER = {"actors":"11,81,98,112,113,114,115,116,117,118,121,122,124,125,128,129,131,132,133,134,135,136,137,138,139,142,145,146,149,150","anime":"59,98,144,151,152,209","body":"86,135","cars":"79,131,133,134,135,138,146","dentistry":"109,111,130,131,138","disney":"113,150","disney_parks":"28,36,41","games":"105,121,133,141","gossip":"129,130,131,135,141,142","memes":"12,98,99,107","movies":"63,81,95,99,108,118,119,122,129","music":"87,88,89,124,128,130,131,132,133,134,135,136,137,138,140,141,142,144","space":"54,94,106,114,135,140","sports":"117,121,126,134,203,204,206,207,208,225,229,233,236,237","tech":"121,122,129,133,135,144,150,151,152","tv":"52,53,54,55,97,119,131,132,199,203"};
@@ -1753,7 +1811,7 @@ function startGame() {
   if (!data.questions.length) return alert('Add some questions first (Edit Questions).');
   if (!gameQs().length) return alert("No questions are in play — turn at least one category and one difficulty back on.");
   rememberPlayers(); turnPrizes = {};
-  players.forEach(p => playerStat(p.name).games++); saveStats();
+  // games played are counted when a game finishes with a winner (quitting with End game doesn't count)
   players.forEach(p => Object.assign(p, { score: 0, items: [], streak: { kind: null, count: 0 }, skip: 0, hardLock: 0, catLock: null, boost: null, halfTime: false, halfGain: false, beginner: 0, helper: null, tax: null, dodge: false, exodia: null, turnsPlayed: 0, lastGamble: -Infinity, gambleLocked: false }));
   bets = [];
   // Random turn order each game (Fisher–Yates shuffle)
@@ -1975,7 +2033,11 @@ function renderReveal() {
       const cls = [revealed && c === q.answer && 'right', revealed && q.picked === i && c !== q.answer && 'wrongPick', q.picked === i && 'picked'].filter(Boolean).join(' ');
       return `<div class="${cls}" ${revealed ? '' : `onclick="pickChoice(${i})" title="Lock in this answer"`}><b>${'ABCDEF'[i]}.</b> ${esc(c)}${q.picked === i ? ' <span class="pickTag">picked</span>' : ''}</div>`;
     }).join('')}</div>` : ''}
-    ${revealed ? `${timesUp ? `<div class="timesUp">⏰ Time's up!${late ? ' <small>If they answered just in time, you can still mark it correct.</small>' : ''}</div>` : ''}<div class="answer">✅ ${esc(q.answer)}</div>
+    ${revealed && pickedRight !== null && !timesUp ? `<div class="answer">✅ ${esc(q.answer)}</div>
+      <div class="pickResult ${pickedRight ? 'good' : 'bad'}">${pickedRight ? `🎉 Correct! <b>+${st.win}</b>` : `❌ Wrong${st.lose ? ` <b>−${st.lose}</b>` : ''}`}</div>
+      <div class="actions"><button class="primary" onclick="mark(${pickedRight})">Next ▶</button></div>
+      <p class="muted" style="text-align:center;margin:6px 0 0;font-size:.85rem"><a href="#" style="color:var(--muted)" onclick="current.picked = null; renderReveal(); return false">Change result</a></p>`
+    : revealed ? `${timesUp ? `<div class="timesUp">⏰ Time's up!${late ? ' <small>If they answered just in time, you can still mark it correct.</small>' : ''}</div>` : ''}<div class="answer">✅ ${esc(q.answer)}</div>
       <div class="actions">${timesUp && !late ? '' : `<button class="good ${pickedRight === true ? 'suggest' : ''}" onclick="mark(true)">Correct (+${st.win})</button>`}
       <button class="bad ${pickedRight === false ? 'suggest' : ''}" onclick="mark(false)">${timesUp && !late ? 'Continue — counts as wrong' : 'Wrong'}${st.lose ? ` (−${st.lose})` : ''}</button></div>`
       : `<div class="actions"><button class="primary" onclick="reveal()">Reveal answer</button></div>`}`;
@@ -2058,7 +2120,8 @@ function draw(kind, id, gamble = false) {
 let introTimer = null;
 function showQuestion() { clearTimeout(introTimer); if (!current) return; current.intro = false; startTimer(players[turn]); renderGame(); }
 function reveal() { stopTimer(); revealed = true; renderReveal(); }
-// Players can lock in an answer by clicking it: that reveals the answer and highlights the matching mark button
+// Players can lock in an answer by clicking it: that reveals the answer, scores it, and shows a Next button
+// ("Change result" falls back to the host's Correct / Wrong buttons)
 function pickChoice(i) { if (revealed || !current) return; current.picked = i; reveal(); }
 
 // ---------- Timer ----------
@@ -2470,6 +2533,7 @@ function finishItem(p, idx, html, sound = 'use') {
 
 // ---------- Winner ----------
 function showWinner(w, how) {
+  players.forEach(p => playerStat(p.name).games++); // only finished games count toward games and wins
   playerStat(w.name).wins++;
   players.forEach(p => p.items.forEach(k => itemStat(k).unused++)); // still in hand when the game ended
   saveStats();
