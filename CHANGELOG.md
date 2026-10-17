@@ -1,5 +1,21 @@
 # What's new in Potato Quiz
 
+## 3.7.0 — 2026-10-17
+- **🎒 Item bag:** each player can hold up to **6 items** (change it in Settings › Items). Earn one with a full bag and you choose which item to drop, with the new item and your bag shown side by side and what each one does. The new item can be the one you drop.
+- **No more pop-ups when you earn an item:** a card slides in over the activity bar with the item and what it does, and fades after 10 seconds while the game keeps going (up to 2 at once; change how long they stay in Settings › Effects).
+- **New activity bar** above the question area shows the last few things that happened: every answer (who, which difficulty and category, right or wrong, points and streak), items earned and used, bets, taxes, skips and Exodia pieces. Tap **History** to see more.
+- **A tidier scoreboard:** every player's box is the same compact two lines: name, streak and score on top, their bag of items and anything affecting them right now below. Many more players fit on screen. A faint band in each player's color behind their name and score fills up as they get closer to winning. The win target (🏁 First to 60) stands out at the top. Effects are color-coded tags (**green** helps, **red** hurts, **grey** for the rest), and if there are too many to fit, they slowly slide to show the rest.
+- **The scoreboard scrolls itself** slowly up and down when there are too many players to fit, so everyone stays visible. Hover over it to pause.
+- **The game screen fits your window:** long lists (like all the categories) scroll inside the question area, so the scoreboard always stays fully on screen next to it.
+- **Bigger on big screens:** the game now scales up to fit your window (about 125% on a typical laptop). Pick a fixed size for a TV or projector in Settings › Effects › Screen size.
+- Difficulty and category buttons are all the same size.
+- The turn order stays on one line and slides to keep the current player in view.
+- **New ☰ menu** in the top right of the game, with **Restart game** (same players, fresh start) and **End game**.
+- On your turn, everything affecting you is listed above the question choices.
+- Whose turn it is shows as the gold outline on the scoreboard.
+- The category buttons on the setup screen now say exactly what they'll do (**Turn culture on/off**, **Turn After Dark on/off**) and stay put: they keep the same size and place, and grey out when there's nothing to do.
+- A **Coming soon** banner on the main menu shows what's in the works. First up: Survival mode in version 4, and new items.
+
 ## 3.6.0 — 2026-10-17
 - **Exodia is a little easier:** when you use it, you pick **3 families** (like Anime, Movies or Sports) and your Exodia questions come only from those.
 

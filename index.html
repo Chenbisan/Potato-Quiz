@@ -11,7 +11,7 @@
   }
   * { box-sizing: border-box; }
   body { margin: 0; font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-    background: radial-gradient(circle at top, #23235a, var(--bg) 70%); color: var(--text); min-height: 100vh; }
+    background: radial-gradient(circle at top, #23235a, var(--bg) 70%); color: var(--text); min-height: calc(100vh / var(--z, 1)); }
   .screen { display: none; max-width: 1000px; margin: 0 auto; padding: 32px 20px; }
   .screen.active { display: block; animation: screenIn .4s ease-out; }
   @keyframes screenIn { from { opacity: 0; transform: translateY(16px); } }
@@ -87,12 +87,15 @@
   .turn span { color: var(--accent); font-weight: 800; }
   .turn span.pill { color: #111; font-weight: 700; vertical-align: middle; }
   .tierPick { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
-  .tierPick button { padding: 26px 10px; font-size: 1.2rem; font-weight: 800; color: #111; }
+  .tierPick button { padding: 10px; font-size: 1.2rem; font-weight: 800; color: #111; height: 124px; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; }
+  /* every pick button is the same size: names and details get at most 2 lines each */
+  .pkTitle, .tierPick small { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; line-height: 1.2; }
+  .tierPick .groupBack { height: auto; }
   .tierPick .randomBtn { background: linear-gradient(135deg, #ff5e5e, #ffcc33, #2ecc71, #4da3ff, #c77dff); }
   .tierPick .gambleBtn { background: linear-gradient(135deg, #1a1a1a, #3b2a00); color: var(--accent); border: 2px solid var(--accent); }
   .stakePill { background: var(--accent); }
   .tierPick button:disabled { filter: grayscale(.8); opacity: .5; }
-  .tierPick small { display: block; font-weight: 600; font-size: .95rem; margin-top: 4px; }
+  .tierPick small { font-weight: 600; font-size: .9rem; margin-top: 4px; }
   .question { font-size: 1.8rem; text-align: center; margin: 20px 0 26px; line-height: 1.35; }
   .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
   .choices div { background: var(--panel2); padding: 14px; border-radius: 10px; font-size: 1.15rem; }
@@ -123,7 +126,7 @@
   .medal { width: 34px; display: inline-block; }
   .qMediaSlot { text-align: center; margin: -6px 0 22px; }
   .qMediaSlot:empty { display: none; }
-  .qImg { max-width: 100%; max-height: 45vh; border-radius: 12px; cursor: zoom-in; box-shadow: 0 6px 20px rgba(0,0,0,.4); }
+  .qImg { max-width: 100%; max-height: calc(45vh / var(--z, 1)); border-radius: 12px; cursor: zoom-in; box-shadow: 0 6px 20px rgba(0,0,0,.4); }
   .qAudio { width: min(100%, 460px); }
   .mediaPreview { margin-top: 10px; }
   .mediaPreview .qImg { max-height: 160px; }
@@ -147,26 +150,117 @@
   .swatch:disabled { opacity: .3; cursor: not-allowed; }
   .famCell { display: inline-flex; flex-direction: column; line-height: 1.2; white-space: nowrap; }
   .famCell small { color: var(--muted); font-size: .78rem; }
+  .news { max-width: 520px; margin: 0 auto 22px; padding: 12px 16px; border-radius: 14px; background: linear-gradient(135deg, rgba(255,204,51,.14), rgba(77,163,255,.12)); border: 1px solid rgba(255,204,51,.45); text-align: left; }
+  .news:empty { display: none; }
+  .newsHead { font-weight: 900; font-size: .8rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .newsItems { display: grid; gap: 8px; }
+  .newsItem { display: flex; gap: 10px; align-items: flex-start; }
+  .newsIcon { font-size: 1.4rem; line-height: 1.2; }
+  .newsItem small { display: block; color: var(--muted); }
   .pDot { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; box-shadow: 0 0 0 2px rgba(0,0,0,.35); }
   .rowHead .pDot { margin-right: -2px; }
-  #liveBoard li { box-shadow: inset 5px 0 0 var(--pc); padding-left: 16px; }
-  #liveBoard li.current { box-shadow: inset 5px 0 0 var(--pc), 0 0 0 2px var(--accent); outline: none; }
-  .rowName { font-weight: 800; }
+  #liveBoard li { box-shadow: inset 5px 0 0 var(--pc); padding: 6px 10px 6px 15px; margin-bottom: 5px; }
+  #liveBoard .progress { height: 4px; margin-top: 5px; }
+  .boardHead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+  .boardHead h3 { margin: 0; }
+  
+  /* big games: smaller turn-bar chips so the bar stays on one or two short lines */
+  .turnStrip.many .turnChip { padding: 4px 9px; font-size: .85rem; }
+  .turnStrip.many { gap: 4px; }
+  .turnStrip.many .turnArrow { display: none; }
+  /* whose turn: a gold ring drawn just inside the edge, so the scrolling board can't clip it */
+  #liveBoard li.current { box-shadow: inset 5px 0 0 var(--pc), inset 0 0 0 2px var(--accent); outline: none; }
+  /* progress toward the win target: a faint band in the player's color behind the name and score line */
+  #liveBoard li { position: relative; z-index: 0; overflow: hidden; }
+  #liveBoard li::before { content: ''; position: absolute; left: 0; top: 0; height: 32px; /* 6px padding + 22px name line + a little below */ width: var(--prog, 0%); background: var(--pc); opacity: .22; z-index: -1;
+    transition: width .6s ease; border-top-left-radius: 8px; }
+  .rowName { font-weight: 800; font-size: .95rem; }
   .rowName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .rowHead .rowTag { flex: none; margin: 0 auto 0 0; }
-  .rowHead b { font-size: 1.15rem; margin-left: auto; }
-  .streakRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 7px; font-size: .8rem; height: 22px; }
+  .rowHead .rowTag { flex: none; }
+  .rowRight { margin-left: auto; display: flex; align-items: center; gap: 6px; flex: none; }
+  .rowHead b { font-size: 1.05rem; min-width: 24px; text-align: right; }
+  .rowHead { height: 22px; }
+  .streakRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; font-size: .78rem; height: 18px; }
   .streakLbl { font-weight: 800; white-space: nowrap; } .streakLbl.hot { color: #ffb347; } .streakLbl.cold { color: #8fd3ff; }
-  .streakBar { height: 4px; border-radius: 2px; background: #33335a; margin-top: 5px; overflow: hidden; }
-  .streakBar i { display: block; height: 100%; border-radius: 2px; }
-  .streakBar.hot i { background: linear-gradient(90deg, #ffd166, #ff5e3a); } .streakBar.cold i { background: linear-gradient(90deg, #bdf0ff, #4da3ff); }
-  .badgeRow { display: flex; flex-wrap: nowrap; gap: 8px; margin-top: 6px; font-size: .85rem; height: 22px; align-items: center; overflow: hidden; white-space: nowrap; }
-  .board .boardItems { display: flex; flex-wrap: nowrap; gap: 4px; margin-top: 4px; height: 30px; align-items: center; overflow: hidden; }
+  .infoRow { display: flex; align-items: center; gap: 8px; margin-top: 4px; height: 22px; }
+  #liveBoard .slot { width: 19px; height: 19px; font-size: .8rem; border-radius: 5px; }
+  #liveBoard .bag { gap: 2px; padding-right: 6px; border-right: 1px solid #3a3a68; }
+  .fxRow { display: flex; gap: 4px; flex: 1; justify-content: flex-end; overflow: hidden; white-space: nowrap; min-width: 0; }
+  .fx { display: inline-flex; align-items: center; gap: 2px; font-size: .74rem; font-weight: 800; padding: 1px 6px; border-radius: 999px; line-height: 1.5; border: 1px solid; white-space: nowrap; }
+  .fx.buff { background: rgba(61,220,132,.16); border-color: #3ddc84; color: #b9f6d3; }
+  .fx.debuff { background: rgba(255,92,92,.16); border-color: #ff5c5c; color: #ffc9c9; }
+  .fx.info { background: rgba(160,170,200,.14); border-color: #8a90b0; color: #d6daf0; }
+  .fx.more { background: #33335a; border-color: #55558a; color: var(--text); }
+  .bagRow { display: flex; align-items: center; gap: 8px; margin-top: 2px; height: 24px; font-size: .9rem; }
+  .bag { display: inline-flex; gap: 3px; flex: none; }
+  .slot { width: 22px; height: 22px; border-radius: 6px; border: 1px dashed #4a4a7a; display: inline-grid; place-items: center; font-size: .95rem; line-height: 1; }
+  .slot.full { border: 1px solid #6a6aa8; background: #2a2a52; }
+  .boardScroll { overflow: hidden; scroll-behavior: auto; }
+  .game.fitted { align-items: stretch; }
+  .game.fitted .leftCol { min-height: 0; }
+  .game.fitted #stage { overflow-y: auto; min-height: 0; }
+  .game.fitted .board { display: flex; flex-direction: column; min-height: 0; }
+  .game.fitted .boardScroll { flex: 1; min-height: 0; }
+  .fxRow { display: block; flex: 1; overflow: hidden; white-space: nowrap; min-width: 0; text-align: left; }
+  .lineIcon { flex: none; width: 20px; text-align: center; font-size: .85rem; }
+  .noFx { font-size: .75rem; color: var(--muted); opacity: .6; font-style: italic; }
+  #targetInfo { font-size: .85rem; font-weight: 800; color: #1a1300; background: var(--accent); padding: 2px 10px; border-radius: 999px; box-shadow: 0 0 12px rgba(255,204,51,.35); }
+  .fxTrack { display: inline-flex; gap: 4px; }
+  .fxTrack.sliding { animation: fxSlide linear infinite alternate; }
+  @keyframes fxSlide { 0%, 15% { transform: translateX(0); } 85%, 100% { transform: translateX(var(--over)); } }
+  .leftCol { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .leftCol #stage { flex: 1; }
+  .feed { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 6px 12px; border-radius: 10px; background: var(--panel); border: 1px solid #2f2f5c; }
+  .feedLines { flex: 1; height: 66px; overflow: hidden; display: flex; flex-direction: column; gap: 2px; }
+  .feedLine { font-size: .85rem; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+  .feedLine:first-child { color: var(--text); }
+  .feedLine.fresh { animation: feedIn .5s ease-out; color: #fff; }
+  @keyframes feedIn { from { opacity: 0; transform: translateY(-6px); background: rgba(255,204,51,.25); } }
+  .feedRound { display: inline-block; min-width: 30px; font-size: .7rem; font-weight: 900; color: var(--muted); }
+  .feedHistory { text-align: left; max-height: calc(60vh / var(--z, 1)); overflow-y: auto; display: grid; gap: 4px; }
+  .feedHistory .feedLine { white-space: normal; color: var(--text); }
+  /* item cards: compact full-width strips stacked over the activity bar (newest on top), never over the scoreboard */
+  .itemCards { position: fixed; right: 16px; top: var(--cardsTop, 84px); z-index: 30; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+  .itemCards .itemCardPop { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; padding: 6px 28px 9px 10px; }
+  .icTop { font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .icBody { min-width: 0; }
+  .itemCardPop .icTimer { position: absolute; left: 10px; right: 10px; bottom: 4px; margin: 0; }
+  .itemCardPop .icDesc { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; margin-top: 1px; }
+  .itemCardPop { pointer-events: auto; position: relative; background: var(--panel); border: 1px solid #55558a; border-left: 4px solid var(--accent); border-radius: 12px; padding: 7px 10px 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.45); animation: cardIn .35s ease-out; }
+  .itemCardPop.leaving { transition: opacity .4s, transform .4s; opacity: 0; transform: translateX(30px); }
+  @keyframes cardIn { from { opacity: 0; transform: translateX(40px); } }
+  .itemCardPop .close { position: absolute; top: 6px; right: 6px; padding: 2px 7px; background: none; color: var(--muted); font-size: .8rem; }
+  .icHead { display: flex; gap: 10px; align-items: center; padding-right: 18px; }
+  .icIcon { font-size: 1.6rem; line-height: 1; }
+  .icDesc { margin-top: 4px; font-size: .8rem; line-height: 1.3; color: var(--text); opacity: .9; }
+  .icTimer { height: 3px; background: #2a2a52; border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .icTimer i { display: block; height: 100%; background: var(--accent); animation: icTime 10s linear forwards; }
+  @keyframes icTime { from { width: 100%; } to { width: 0; } }
+  .bagFull .zone { text-align: left; margin-top: 14px; padding: 12px; border-radius: 12px; background: var(--panel2); }
+  .bagFull .newZone { border: 2px solid var(--accent); background: rgba(255,204,51,.08); }
+  .zoneHead { font-weight: 800; margin-bottom: 8px; }
+  .bagGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+  .pickCard { width: 100%; display: flex; align-items: flex-start; gap: 10px; text-align: left; padding: 10px; border-radius: 10px; background: var(--panel); color: var(--text); border: 1px solid #44447a; }
+  .pickCard:hover { border-color: var(--bad); box-shadow: 0 0 0 2px rgba(255,92,92,.35); }
+  .pickCard .pcIcon { font-size: 1.6rem; line-height: 1; }
+  .pickCard .pcBody { flex: 1; }
+  .pickCard small { display: block; color: var(--muted); margin-top: 3px; font-weight: 400; }
+  .pickCard .pcDrop { font-size: .72rem; font-weight: 900; color: var(--bad); align-self: center; opacity: .6; }
+  .pickCard:hover .pcDrop { opacity: 1; }
+  .myFx { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: center; margin: -6px 0 12px; }
+  .myFx .fx, .fxList .fx { font-size: .85rem; padding: 3px 10px; }
+  .fxList { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; }
+  .detailHead { margin: 16px 0 8px; text-align: left; font-size: 1rem; }
+  .detailItems { display: grid; gap: 8px; text-align: left; }
+  .detailItems small { display: block; color: var(--muted); }
+  .badgeRow { display: flex; flex-wrap: nowrap; gap: 6px; font-size: .8rem; align-items: center; overflow: hidden; white-space: nowrap; min-width: 0; }
+  .board .boardItems { display: flex; flex-wrap: nowrap; gap: 2px; align-items: center; flex: none; font-size: 1.2rem; letter-spacing: 0; }
   .moreItems { font-size: .8rem; font-weight: 800; color: var(--muted); margin-left: 2px; }
   .hist { display: flex; gap: 4px; align-items: center; }
-  .hist i { width: 16px; height: 16px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 10px; font-style: normal; font-weight: 900; color: #10101f; background: #33335a; }
+  .hist i { width: 14px; height: 14px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 9px; font-style: normal; font-weight: 900; color: #10101f; background: #33335a; }
   .hist i.r { background: #3ddc84; } .hist i.w { background: #ff5c5c; }
-  .hist i.last { width: 20px; height: 20px; font-size: 12px; box-shadow: 0 0 0 2px #fff6; }
+  .hist i.last { width: 17px; height: 17px; font-size: 11px; box-shadow: 0 0 0 2px #fff6; }
   .meter { display: flex; align-items: center; gap: 3px; }
   .meter b { width: 13px; height: 9px; border-radius: 3px; background: #33335a; }
   .meter.hot b.f { background: linear-gradient(#ffd166, #ff5e3a); box-shadow: 0 0 6px #ff7a3a; }
@@ -176,7 +270,7 @@
   .board li.close.hotC { box-shadow: 0 0 0 2px #ff7a3a, 0 0 18px rgba(255,122,58,.55); animation: closeGlow 1.4s ease-in-out infinite; }
   .board li.close.coldC { box-shadow: 0 0 0 2px #4da3ff, 0 0 18px rgba(77,163,255,.55); animation: closeGlow 1.4s ease-in-out infinite; }
   @keyframes closeGlow { 50% { filter: brightness(1.18); } }
-  .closeTag { display: inline-block; font-size: .72rem; font-weight: 800; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
+  .closeTag { display: inline-block; font-size: .72rem; font-weight: 800; padding: 1px 6px; border-radius: 999px; white-space: nowrap; }
   .closeTag.hot { background: #ff7a3a; color: #1a0a00; } .closeTag.cold { background: #4da3ff; color: #00142a; }
   /* Beginner's Luck: the easiest difficulty glows while it's worth double */
   .tierPick button.lucky, .luckyBanner, .glowBadge { animation: luckyGlow 1.2s ease-in-out infinite; }
@@ -186,7 +280,7 @@
   .luckyBanner { text-align: center; margin: 0 auto 12px; padding: 8px 14px; border-radius: 999px; background: #3a3000; color: #ffe066; font-weight: 800; width: fit-content; box-shadow: 0 0 0 2px #ffe066; }
   .glowBadge { border-radius: 6px; padding: 0 3px; box-shadow: 0 0 0 1px #ffe066, 0 0 10px rgba(255,224,102,.8); }
   /* Category Lock picker */
-  .modalBox.wide { max-width: 760px; max-height: 88vh; overflow-y: auto; }
+  .modalBox.wide { max-width: 760px; max-height: calc(88vh / var(--z, 1)); overflow-y: auto; }
   .lockSearch { width: 100%; box-sizing: border-box; margin: 6px 0 12px; }
   .lockFamilies { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; text-align: left; }
   .lockFamily { border-radius: 10px; background: var(--panel2); border-left: 5px solid var(--c); overflow: hidden; }
@@ -205,6 +299,19 @@
   .cardToggle { background: none; border: 0; color: var(--text); padding: 0; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; }
   .cardToggle .groupArrow { pointer-events: none; }
   .nsfwOn { background: #880e4f !important; color: #fff !important; }
+  .gameMenu { position: relative; flex: none; }
+  .menuBtn { font-size: 1.35rem; line-height: 1; width: 46px; height: 42px; padding: 0; display: grid; place-items: center; }
+  .menuDrop { display: none; position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; min-width: 190px; padding: 6px; border-radius: 12px;
+    background: var(--panel); border: 1px solid #44447a; box-shadow: 0 14px 34px rgba(0,0,0,.5); }
+  .menuDrop.open { display: grid; gap: 4px; animation: pop .15s ease-out; }
+  .menuDrop button { text-align: left; background: none; color: var(--text); padding: 10px 12px; border-radius: 8px; font-weight: 700; }
+  .menuDrop button:hover { background: var(--panel2); }
+  .menuDrop button.danger { color: #ff8a8a; }
+  .twoLbl { display: inline-grid; }
+  .twoLbl > span { grid-area: 1 / 1; text-align: center; }
+  .twoLbl > span:last-child, .alt .twoLbl > span:first-child { visibility: hidden; }
+  .alt .twoLbl > span:last-child { visibility: visible; }
+  .catBtns button:disabled { opacity: .4; cursor: default; }
   .rewardHint { text-align: center; margin: 0 0 10px; color: #ffcc33; font-weight: 600; }
   .rarityTag { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; color: var(--rc); border: 1px solid var(--rc); background: rgba(0,0,0,.25); vertical-align: middle; white-space: nowrap; }
   .itemCard { text-align: left; background: #2d2d63; border: 1px solid #4a4a8a; padding: 10px 12px; border-radius: 10px; font-weight: 700; }
@@ -246,16 +353,37 @@
   .introBar { width: min(260px, 80%); height: 6px; margin: 22px auto 0; background: #0f0f26; border-radius: 3px; overflow: hidden; }
   .introBar i { display: block; height: 100%; width: 100%; background: var(--accent); transform-origin: left; animation: introShrink linear forwards; }
   @keyframes introShrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
-  .gameTop { gap: 14px; }
+  .gameTop { gap: 14px; margin-bottom: 8px; }
+  #game.screen { padding-top: 14px; padding-bottom: 12px; }
+  #game .card { margin-bottom: 0; }
+  #game #stage { padding: 14px 18px; }
+  #game .turn { font-size: 1.35rem; margin-bottom: 10px; }
+  #game .tierPick { gap: 10px; }
+  #game .itemBar { margin-top: 12px; padding-top: 10px; }
+  #game .pickFooter { margin: 10px 0 0 !important; }
+  #game .game { gap: 14px; }
+  #game .leftCol { gap: 8px; }
+  #game .feed { padding: 5px 10px; }
+  #game .feedLines { height: 54px; gap: 0; }
+  #game .feedLine { line-height: 18px; }
+  #game .luckyBanner { margin-bottom: 8px; }
+  #game .myFx { margin: -2px 0 8px; }
+  #game .board { padding: 10px 16px 14px; }
+  #game .boardHead { margin-bottom: 6px; }
   .roundBadge { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 78px; padding: 6px 14px;
     background: var(--accent); color: #222; border-radius: 14px; box-shadow: 0 4px 16px rgba(255,204,51,.3); line-height: 1; }
   .roundBadge small { font-size: .7rem; font-weight: 800; letter-spacing: 2px; }
   .roundBadge b { font-size: 2rem; font-weight: 900; }
   .roundBadge.bump { animation: bump .6s ease-out; }
-  .turnStrip { flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; justify-content: center; }
+  .turnStrip { flex: 1; display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; justify-content: safe center; overflow-x: auto; scrollbar-width: none; padding: 12px 14px; margin: -8px 0; min-width: 0; }
+  .turnStrip::-webkit-scrollbar { display: none; }
+  .turnStrip.fadeR { -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
+  .turnStrip.fadeL { -webkit-mask-image: linear-gradient(90deg, transparent, #000 15%); mask-image: linear-gradient(90deg, transparent, #000 15%); }
+  .turnStrip.fadeL.fadeR { -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
+  .turnChip { flex: none; }
   .turnChip { position: relative; padding: 8px 14px; border-radius: 999px; background: var(--panel); border: 2px solid #33335f; color: var(--muted); font-weight: 600; }
   .turnChip em { font-style: normal; font-size: .62rem; font-weight: 900; letter-spacing: 1px; margin-right: 6px; padding: 2px 6px; border-radius: 6px; vertical-align: middle; }
-  .turnChip.now { background: var(--accent); border-color: var(--accent); color: #222; font-weight: 800; transform: scale(1.08); box-shadow: 0 0 18px rgba(255,204,51,.45); }
+  .turnChip.now { background: var(--accent); border-color: var(--accent); color: #222; font-weight: 800; box-shadow: 0 0 10px rgba(255,204,51,.5); }
   .turnChip .pDot { width: 9px; height: 9px; }
   .turnChip.now em { background: #222; color: var(--accent); }
   .turnChip.next { border-color: var(--blue); color: var(--text); }
@@ -311,6 +439,7 @@
 <section id="menu" class="screen active">
   <h1>🥔 Potato Quiz</h1>
   <p class="sub">Host a quiz and see who comes out on top.</p>
+  <div class="news" id="news"></div>
   <div class="menu">
     <button class="primary" onclick="go('setup')">▶ Start Quiz</button>
     <button onclick="go('editor')">✏️ Edit Questions</button>
@@ -360,13 +489,13 @@
     <div class="row" style="justify-content:space-between">
       <button class="cardToggle" onclick="toggleCatCard()"><span class="groupArrow" id="catCardArrow"></span>
         <h3 style="margin:0">Categories in this game <span class="muted" style="font-size:.9rem;font-weight:400" id="catCardSummary"></span></h3></button>
-      <div class="row"><button class="small" id="nsfwBtn" onclick="toggleNsfw()" title="Adults-only categories (18+)">🔞 After Dark off</button>
+      <div class="row catBtns"><button class="small" id="nsfwBtn" onclick="toggleNsfw()" title="Adults-only categories (18+)"><span class="twoLbl"><span>🔞 Turn After Dark on</span><span>🔞 Turn After Dark off</span></span></button>
         <button class="small" id="allCatsBtn" onclick="allCatsOn()">Turn all on</button>
         <button class="small" id="allCatsOffBtn" onclick="allCatsOff()">Turn all off</button>
-        <button class="small" id="cultureBtn" onclick="toggleCulture()">🌍 Culture off</button>
-        <button class="small ghost" id="expandAllBtn" onclick="expandAllGroups()">Expand all</button></div>
+        <button class="small" id="cultureBtn" onclick="toggleCulture()"><span class="twoLbl"><span>🌍 Turn culture off</span><span>🌍 Turn culture on</span></span></button></div>
     </div>
-    <div id="catCardBody"><div class="chips" id="catPicker"></div></div>
+    <div id="catCardBody"><div class="row" style="justify-content:flex-end;margin-top:8px"><button class="small ghost" id="expandAllBtn" onclick="expandAllGroups()"><span class="twoLbl"><span>Expand all</span><span>Collapse all</span></span></button></div>
+      <div class="chips" id="catPicker"></div></div>
     <p class="muted" id="catPickerInfo" style="margin-bottom:0"></p>
   </div>
 </section>
@@ -376,16 +505,25 @@
   <div class="topbar gameTop">
     <div class="roundBadge" id="roundBadge"><small>ROUND</small><b id="roundNum">1</b></div>
     <div class="turnStrip" id="turnStrip"></div>
-    <button class="ghost" onclick="quitGame()">✕ End game</button>
-  </div>
-  <div class="game">
-    <div class="card" id="stage"></div>
-    <div class="card board">
-      <h3 style="margin-top:0">Scoreboard</h3>
-      <p class="muted" style="margin-top:-8px" id="targetInfo"></p>
-      <ol id="liveBoard"></ol>
+    <div class="gameMenu">
+      <button class="ghost menuBtn" onclick="toggleGameMenu(event)" title="Menu" aria-label="Menu" aria-haspopup="true">☰</button>
+      <div class="menuDrop" id="gameMenu" role="menu">
+        <button role="menuitem" onclick="closeGameMenu(); restartGame()">🔄 Restart game</button>
+        <button role="menuitem" class="danger" onclick="closeGameMenu(); quitGame()">✕ End game</button>
+      </div>
     </div>
   </div>
+  <div class="game">
+    <div class="leftCol">
+      <div class="feed" id="feed"><div class="feedLines" id="feedLines"></div><button class="small ghost" onclick="showFeedHistory()">History</button></div>
+      <div class="card" id="stage"></div>
+    </div>
+    <div class="card board">
+      <div class="boardHead"><h3>Scoreboard</h3><span class="muted" id="targetInfo"></span></div>
+      <div id="boardScroll" class="boardScroll"><ol id="liveBoard"></ol></div>
+    </div>
+  </div>
+  <div id="itemCards" class="itemCards"></div>
 </section>
 
 <!-- WINNER -->
@@ -584,6 +722,17 @@
     <h3 style="margin-top:0">✨ Effects</h3>
     <label class="switch"><input type="checkbox" id="fxOn" onchange="saveFxSettings()"> Animations — screen transitions and points flying to / dropping off players</label>
     <label class="switch" style="margin-top:10px"><input type="checkbox" id="sfxOn" onchange="saveFxSettings()"> Sound effects — right / wrong answers, points, items, game start, each new turn and the winner</label>
+    <div class="setting" style="margin-top:12px">
+      <div class="setName">🔍 Screen size</div>
+      <div class="ctrl"><select id="uiScaleSel" onchange="saveFxSettings()">
+        <option value="auto">Auto (fits your window)</option><option value="1">100%</option><option value="1.1">110%</option><option value="1.25">125%</option><option value="1.4">140%</option><option value="1.6">160%</option></select></div>
+      <div class="help">Auto makes everything bigger on larger windows. Pick a fixed size for a TV or projector.</div>
+    </div>
+    <div class="setting" style="margin-top:12px">
+      <div class="setName">🎒 Item cards stay on screen for</div>
+      <div class="ctrl"><input type="number" id="itemCardSecs" min="3" max="60" style="width:80px" onchange="saveFxSettings()"><span class="unit">seconds</span></div>
+      <div class="help">How long the card that shows a newly earned item stays on screen before it slides away. Up to 2 show at once.</div>
+    </div>
     <label class="switch" style="margin-top:10px"><input type="checkbox" id="uiSfxOn" onchange="saveFxSettings()"> Button sounds — a soft tick when you hover over or click a button</label>
     <div class="row" style="margin-top:10px"><button class="small" onclick="sfx('right')">▶ Right</button><button class="small" onclick="sfx('wrong')">▶ Wrong</button>
       <button class="small" onclick="sfx('item')">▶ Item gained</button><button class="small" onclick="sfx('use')">▶ Item used</button><button class="small" onclick="sfx('block')">▶ Shield block</button><button class="small" onclick="sfx('win')">▶ Winner</button>
@@ -628,6 +777,11 @@
         <div class="setName">🧊 Cold streak: wrong answers in a row that give a comeback item</div>
         <div class="ctrl"><input id="itemColdStreaks" placeholder="2, 3, 4, 5" style="width:160px" onchange="saveItemSettings()"></div>
         <div class="help">Shorter than the hot streak so players who are behind get help sooner. Default 2, 3, 4, 5.</div>
+      </div>
+      <div class="setting">
+        <div class="setName">🎒 Bag size</div>
+        <div class="ctrl"><input type="number" id="maxHeld" min="1" max="10" style="width:80px" onchange="saveItemSettings()"><span class="unit">items a player can hold</span></div>
+        <div class="help">When a player earns an item with a full bag, they choose one to drop (the new item can be the one).</div>
       </div>
       <div class="setting">
         <div class="setName">🪃 Last-place boost</div>
@@ -712,7 +866,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '3.6.0';
+const APP_VERSION = '3.7.0';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1137,7 +1291,9 @@ function upgrade(d) {
     d.seedVersion = SEED_VERSION;
   }
   d.settings.timer.warnAt ??= 10; // the clock ticks (and turns red) for this many final seconds
-  d.settings.uiSfx ??= true;      // small interface sounds: hovering and clicking buttons, turn changes
+  d.settings.uiSfx ??= true;
+  d.settings.itemCardSeconds ??= 10; // item-gained cards stay this long
+  d.settings.uiScale ??= 'auto';     // screen size: 'auto' or a fixed zoom like 1.25      // small interface sounds: hovering and clicking buttons, turn changes
   d.settings.items ??= defaultItemSettings();
   const itemDefaults = defaultItemSettings();
   d.settings.items.enabled ??= true; d.settings.items.streaks ??= [...itemDefaults.streaks];
@@ -1149,6 +1305,7 @@ function upgrade(d) {
   d.settings.items.rewardChance ??= itemDefaults.rewardChance; d.settings.items.rewards ??= true; d.settings.items.rewardAfterRounds ??= 3;
   d.settings.items.lastPlaceAfter ??= itemDefaults.lastPlaceAfter;
   d.settings.items.coldStreaks ??= [...itemDefaults.coldStreaks];
+  d.settings.items.maxHeld ??= itemDefaults.maxHeld;
   delete d.deleted;
   return d;
 }
@@ -1255,7 +1412,17 @@ function go(id) {
   document.getElementById(id).classList.add('active');
   ({ menu: renderMenu, setup: renderSetup, editor: renderEditor, settings: renderSettings, stats: () => { renderStats(); renderQuestionStats(); } })[id]?.();
 }
+// "Coming soon" banner on the main menu — edit this list to tell players what's in the works
+const NEWS = [
+  { icon: '🛡️', title: 'Survival mode', text: 'A brand-new way to play, coming in version 4.' },
+  { icon: '🎒', title: 'New items', text: 'More ways to help yourself and mess with your friends.' },
+];
+function renderNews() {
+  document.getElementById('news').innerHTML = NEWS.length ? `<div class="newsHead">🚧 Coming soon</div>
+    <div class="newsItems">${NEWS.map(n => `<div class="newsItem"><span class="newsIcon">${n.icon}</span><span><b>${esc(n.title)}</b><small>${esc(n.text)}</small></span></div>`).join('')}</div>` : '';
+}
 function renderMenu() {
+  renderNews();
   document.getElementById('menuStats').textContent =
     `${data.questions.length} questions · ${data.tiers.length} tiers · ${data.categories.length} categories · first to ${data.settings.targetPoints} points wins`;
 }
@@ -1280,6 +1447,8 @@ function renderSettings() {
   document.getElementById('timerSound').checked = tm.sound;
   document.getElementById('timerWarn').value = tm.warnAt ?? 10;
   document.getElementById('uiSfxOn').checked = data.settings.uiSfx;
+  document.getElementById('itemCardSecs').value = data.settings.itemCardSeconds ?? 10;
+  document.getElementById('uiScaleSel').value = String(data.settings.uiScale ?? 'auto');
   document.getElementById('timerLate').checked = !!tm.lateCorrect;
   document.getElementById('timerBody').style.opacity = tm.enabled ? 1 : .45;
   renderItemSettings();
@@ -1325,6 +1494,7 @@ function renderItemSettings() {
   document.getElementById('itemStreaks').value = st.streaks.join(', ');
   document.getElementById('itemColdStreaks').value = st.coldStreaks.join(', ');
   document.getElementById('lastPlaceAfter').value = st.lastPlaceAfter ?? 10;
+  document.getElementById('maxHeld').value = st.maxHeld ?? 6;
   document.getElementById('rewardChance').value = st.rewardChance;
   document.getElementById('rewardsOn').checked = st.rewards;
   document.getElementById('rewardChanceRow').style.opacity = st.rewards ? '' : '.45';
@@ -1371,6 +1541,7 @@ function saveItemSettings() {
   if (nums('itemStreaks').length) st.streaks = nums('itemStreaks');
   if (nums('itemColdStreaks').length) st.coldStreaks = nums('itemColdStreaks');
   const lp = parseInt(document.getElementById('lastPlaceAfter').value); if (lp >= 0) st.lastPlaceAfter = Math.min(100, lp);
+  const mh = parseInt(document.getElementById('maxHeld').value); if (mh >= 1) st.maxHeld = Math.min(10, mh);
   save(); renderItemSettings(); toast('Saved');
 }
 function saveChoiceSettings() {
@@ -1384,6 +1555,8 @@ function saveFxSettings() {
   data.settings.fx = document.getElementById('fxOn').checked;
   data.settings.sfx = document.getElementById('sfxOn').checked;
   data.settings.uiSfx = document.getElementById('uiSfxOn').checked;
+  const cs = parseInt(document.getElementById('itemCardSecs').value); if (cs >= 3) data.settings.itemCardSeconds = Math.min(60, cs);
+  const us = document.getElementById('uiScaleSel').value; data.settings.uiScale = us === 'auto' ? 'auto' : +us;
   applyFx(); save(); toast('Saved');
 }
 function saveIntroSetting() {
@@ -1729,24 +1902,25 @@ function renderCatPicker() {
   }).join('') + (loose.length ? `<div class="catGroup open"><div class="catGroupRow"><span class="groupMeta" style="cursor:default">Other categories</span></div>
       <div class="catGroupSubs">${loose.map(e => chip(e.c, e.count, e.c.name)).join('')}</div></div>` : '');
   const cIds = cultureCatIds();
-  document.getElementById('cultureBtn').style.display = cIds.length ? '' : 'none';
-  document.getElementById('cultureBtn').textContent = cIds.every(id => !off.includes(id)) ? '🌍 Culture off' : '🌍 Culture on';
-  document.getElementById('expandAllBtn').textContent = groups.length && groups.every(g => open.has(g.group)) ? 'Collapse all' : 'Expand all';
+  const pick = (id, second) => document.getElementById(id).classList.toggle('alt', second); // which of the two stacked labels shows
+  document.getElementById('cultureBtn').disabled = !cIds.length;
+  pick('cultureBtn', !cIds.every(id => !off.includes(id)));
+  pick('expandAllBtn', groups.length && groups.every(g => open.has(g.group)));
   const cardOpen = !!roster.catsOpen, shownCats = top.flatMap(e => e.kind === 'group' ? e.cats.map(x => x.c) : [e.c]);
   const onCats = shownCats.filter(c => !off.includes(c.id)).length;
   document.getElementById('catCardBody').style.display = cardOpen ? '' : 'none';
   document.getElementById('catCardArrow').className = 'groupArrow' + (cardOpen ? ' isOpen' : '');
   document.getElementById('catCardSummary').textContent = `— ${onCats === shownCats.length ? `all ${shownCats.length}` : `${onCats} of ${shownCats.length}`} on · click to ${cardOpen ? 'hide' : 'show'}`;
-  document.getElementById('expandAllBtn').style.display = cardOpen ? '' : 'none';
+
   const hasNsfw = data.categories.some(isNsfwCat);
-  document.getElementById('nsfwBtn').style.display = hasNsfw ? '' : 'none';
-  document.getElementById('nsfwBtn').textContent = nsfwOn() ? '🔞 After Dark on' : '🔞 After Dark off';
+  document.getElementById('nsfwBtn').disabled = !hasNsfw;
+  pick('nsfwBtn', nsfwOn());
   document.getElementById('nsfwBtn').classList.toggle('nsfwOn', nsfwOn());
   const total = gameQs().length;
   document.getElementById('catPickerInfo').textContent = total
     ? `${total} of ${visibleQs().length} questions in play.` : 'No questions in play — turn a category or difficulty back on.';
-  document.getElementById('allCatsBtn').style.display = off.length ? '' : 'none';
-  document.getElementById('allCatsOffBtn').style.display = total ? '' : 'none';
+  document.getElementById('allCatsBtn').disabled = !off.length;
+  document.getElementById('allCatsOffBtn').disabled = !total;
 }
 // ---------- Stats (saved separately from the question bank) ----------
 // seen: question id -> times shown; answered/right: question id -> times marked / marked correct;
@@ -1965,6 +2139,7 @@ const defaultItemSettings = () => ({
   // question prizes on/off, and the % chance that a question a trailing player picks carries an item prize
   rarity: { ...DEFAULT_RARITY }, rarityWeights: { 1: 60, 2: 30, 3: 10 },
   lastPlaceAfter: 10, // from this round on, whoever is in last place gets a free Common cold-streak item each round (0 = off)
+  maxHeld: 6, // bag size: when full, a player picks one item to drop
 });
 const itemsOn = () => data.settings.items.enabled;
 const rand = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
@@ -2103,7 +2278,8 @@ function startGame() {
   rememberPlayers(); turnPrizes = {}; assignColors(players);
   // games played are counted when a game finishes with a winner (quitting with End game doesn't count)
   players.forEach(p => Object.assign(p, { score: 0, items: [], history: [], streak: { kind: null, count: 0 }, skip: 0, hardLock: 0, catLock: null, boost: null, halfTime: false, halfGain: false, beginner: 0, helper: null, tax: null, dodge: false, exodia: null, turnsPlayed: 0, lastGamble: -Infinity, gambleLocked: false }));
-  bets = []; itemsThisGame = {}; lastPlaceRound = 0; catsThisGame = {}; famsThisGame = {};
+  bets = []; itemsThisGame = {}; lastPlaceRound = 0; catsThisGame = {}; famsThisGame = {}; feedLog = []; lastPlaceNotes = [];
+  document.getElementById('itemCards').innerHTML = ''; setTimeout(renderFeed);
   // Random turn order each game (Fisher–Yates shuffle)
   for (let i = players.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [players[i], players[j]] = [players[j], players[i]]; }
   turn = 0; round = 1; used.clear(); current = null; itemUsedThisTurn = false; shownScores = new Map(); shownRound = 0;
@@ -2112,64 +2288,177 @@ function startGame() {
     <ol class="turnOrder">${players.map(p => `<li>${esc(p.name)}</li>`).join('')}</ol>`, [{ label: "Let's go!", cls: 'primary' }]);
 }
 function rematch() { startGame(); }
+// ☰ game menu (top right of the game screen) — add more entries to the #gameMenu list as needed
+function toggleGameMenu(e) { e.stopPropagation(); document.getElementById('gameMenu').classList.toggle('open'); }
+function closeGameMenu() { document.getElementById('gameMenu')?.classList.remove('open'); }
+document.addEventListener('click', e => { if (!e.target.closest?.('.gameMenu')) closeGameMenu(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeGameMenu(); });
+function restartGame() {
+  if (!confirm('Restart the game with the same players? Scores and items go back to zero (this game won\'t count toward Games or Wins).')) return;
+  document.querySelector('#stage audio')?.pause(); stopTimer(); current = null; closeModal(); startGame();
+}
 function quitGame() { if (confirm('End this game and return to the menu?')) { document.querySelector('#stage audio')?.pause(); stopTimer(); current = null; go('menu'); } }
 
-function statusBadges(p) {
-  const b = [];
-  if (p.skip) b.push(`<span title="Will miss next turn">⏭️</span>`);
-  if (p.hardLock) b.push(`<span title="Hard Lock: ${p.hardLock} turn(s) left">🔒${p.hardLock}</span>`);
-  if (p.catLock) b.push(`<span title="Locked to ${esc(choiceLabel(p.catLock.id))}: ${p.catLock.turns} turn(s) left">🎯${p.catLock.turns}</span>`);
-  if (p.boost === 'double') b.push(`<span title="Double points this turn">⚡x2</span>`);
-  if (p.boost === 'triple') b.push(`<span title="Triple Threat this turn">🔱x3</span>`);
-  if (p.halfTime) b.push(`<span title="Time Crunch: half time on next question">⏳½</span>`);
-  if (p.halfGain) b.push(`<span title="Storm Cloud: half points next turn">🌧️½</span>`);
-  if (p.beginner) b.push(`<span class="glowBadge" title="Beginner's Luck: easiest questions worth double, ${p.beginner} turn(s) left">🐣${p.beginner}</span>`);
-  if (p.helper) b.push(`<span title="Phone a Friend: ${esc(p.helper.name)} answers for them this turn">📞${esc(p.helper.name)}</span>`);
-  if (p.exodia) b.push(`<span title="Exodia: ${p.exodia.pieces} of ${p.exodia.path.length} pieces">🃏${p.exodia.pieces}/${p.exodia.path.length}</span>`);
-  if (data.settings.gamble && (gambleNeedsRight(p) || gambleWait(p))) b.push(`<span title="${gambleNeedsRight(p) ? 'Gamble locked until a correct answer' : `Gamble ready in ${gambleWait(p)} turn(s)`}">🎰${gambleNeedsRight(p) ? '🔒' : '⏳' + gambleWait(p)}</span>`);
-  if (p.dodge) b.push(`<span title="Dodge the Bullet ready this turn">💨</span>`);
-  if (p.tax) b.push(`<span title="Taxed by ${esc(p.tax.by.name)} on their next question">💸</span>`);
-  bets.filter(x => x.from === p).forEach(x => b.push(`<span title="Side Bet on ${esc(x.on.name)}">🤝${esc(x.on.name)}</span>`));
-  return b.join(' ');
+// Everything currently affecting a player. kind: 'buff' (helps them), 'debuff' (hurts them) or 'info' (neutral).
+// short = the tag on the scoreboard; text = the full explanation (player details and the current player's turn)
+function effectList(p) {
+  const e = [], add = (kind, short, text) => e.push({ kind, short, text });
+  if (p.skip) add('debuff', `⏭️${p.skip > 1 ? p.skip : ''}`, `Skip Turn: misses their next ${p.skip > 1 ? p.skip + ' turns' : 'turn'}`);
+  if (p.hardLock) add('debuff', `🔒${p.hardLock}`, `Hard Lock: hardest questions only, ${p.hardLock} turn${p.hardLock === 1 ? '' : 's'} left`);
+  if (p.catLock) add('debuff', `🎯${p.catLock.turns}`, `Category Lock: ${choiceLabel(p.catLock.id)} only, ${p.catLock.turns} turn${p.catLock.turns === 1 ? '' : 's'} left`);
+  if (p.halfTime) add('debuff', '⏳½', 'Time Crunch: half the time on their next question');
+  if (p.halfGain) add('debuff', '🌧️½', 'Storm Cloud: half points on their next turn');
+  if (p.tax) add('debuff', '💸', `Tax: ${p.tax.by.name} takes half of what they earn next question`);
+  if (p.boost === 'double') add('buff', '⚡×2', 'Double Points this turn');
+  if (p.boost === 'triple') add('buff', '🔱×3', 'Triple Threat this turn (triple points, or lose triple)');
+  if (p.beginner) add('buff', `🐣${p.beginner}`, `Beginner's Luck: easiest questions worth double, ${p.beginner} turn${p.beginner === 1 ? '' : 's'} left`);
+  if (p.helper) add('buff', '📞', `Phone a Friend: ${p.helper.name} answers for them this turn`);
+  if (p.dodge) add('buff', '💨', 'Dodge the Bullet ready this turn');
+  if (p.exodia) add('info', `🃏${p.exodia.pieces}/${p.exodia.path.length}`, `Exodia: ${p.exodia.pieces} of ${p.exodia.path.length} pieces${exodiaFamNames(p).length ? ' · ' + exodiaFamNames(p).join(' / ') : ''}`);
+  bets.filter(x => x.from === p).forEach(x => add('info', '🤝', `Side Bet on ${x.on.name}`));
+  if (data.settings.gamble && (gambleNeedsRight(p) || gambleWait(p))) add('info', gambleNeedsRight(p) ? '🎰🔒' : `🎰${gambleWait(p)}`,
+    gambleNeedsRight(p) ? 'Gamble locked until they get a regular question right' : `Gamble ready in ${gambleWait(p)} turn${gambleWait(p) === 1 ? '' : 's'}`);
+  return e;
+}
+const effectTag = (x, full = false) => `<span class="fx ${x.kind}" title="${esc(x.text)}">${full ? esc(x.text) : x.short}</span>`;
+// Scoreboard: as many tags as fit (4), the rest folded into "+N" (tap the row to see everything)
+const BOARD_FX_SHOWN = 4;
+function boardEffects(p) {
+  const e = effectList(p);
+  if (e.length <= BOARD_FX_SHOWN) return e.map(x => effectTag(x)).join('');
+  const shown = e.slice(0, BOARD_FX_SHOWN - 1), rest = e.slice(BOARD_FX_SHOWN - 1);
+  return shown.map(x => effectTag(x)).join('') + `<span class="fx more" title="${esc(rest.map(x => x.text).join('\n'))}">+${rest.length}</span>`;
 }
 // Streak tracker: the last 5 answers as ✓ / ✗ dots, and a meter filling toward the next streak that gives an item
 const streakList = kind => kind === 'cold' ? data.settings.items.coldStreaks : data.settings.items.streaks;
 function nextStreakGoal(p) { return itemsOn() && p.streak.kind ? streakList(p.streak.kind).find(n => n > p.streak.count) ?? null : null; }
-function streakRow(p) {
+// Scoreboard row = 2 fixed lines: [dot · name · NOW … streak label · score] and [last 5 answers · effects … items]
+function histDots(p) {
   const h = (p.history || []).slice(-5), dots = [...Array(5 - h.length).fill(null), ...h];
-  const hist = `<span class="hist" title="Last answers (newest on the right)">${dots.map((r, i) =>
+  return `<span class="hist" title="Last answers (newest on the right)">${dots.map((r, i) =>
     `<i class="${r === null ? '' : r ? 'r' : 'w'} ${i === 4 && r !== null ? 'last' : ''}">${r === null ? '' : r ? '✓' : '✗'}</i>`).join('')}</span>`;
-  const k = p.streak.kind, n = p.streak.count, goal = nextStreakGoal(p);
-  if (!k || !n) return `<div class="streakRow">${hist}<span class="streakLbl"></span></div><div class="streakBar"><i style="width:0"></i></div>`;
-  const icon = k === 'hot' ? '🔥' : '🧊';
-  const label = goal && n === goal - 1 ? `<span class="closeTag ${k}" title="${n} ${k === 'hot' ? 'right' : 'wrong'} in a row">${icon} 1 more = item!</span>`
-    : `<span class="streakLbl ${k}" title="${n} ${k === 'hot' ? 'right' : 'wrong'} in a row${goal ? ` — an item at ${goal}` : ''}">${icon} ${n}${goal ? `/${goal}` : ' in a row'}</span>`;
-  // a thin bar under the dots fills toward the next streak item
-  const bar = `<div class="streakBar ${k}"><i style="width:${goal ? Math.round(n / goal * 100) : 100}%"></i></div>`;
-  return `<div class="streakRow">${hist}${label}</div>${bar}`;
 }
-// Every scoreboard row has the same lines (streak, effects, items) at a fixed height, so rows never grow or shrink
-const BOARD_ITEMS_SHOWN = 6;
-function boardItems(p) {
-  const shown = p.items.slice(0, BOARD_ITEMS_SHOWN).map(k => `<span title="${esc(ITEMS[k].name)}">${ITEMS[k].icon}</span>`).join('');
-  const more = p.items.length - BOARD_ITEMS_SHOWN;
-  return shown + (more > 0 ? `<span class="moreItems" title="${esc(p.items.slice(BOARD_ITEMS_SHOWN).map(k => ITEMS[k].name).join(', '))}">+${more}</span>` : '');
+function streakLabel(p) {
+  const k = p.streak.kind, n = p.streak.count, goal = nextStreakGoal(p);
+  if (!k || !n) return '';
+  const icon = k === 'hot' ? '🔥' : '🧊';
+  // same format for both streaks: icon + progress toward the next item (🔥 2/3, 🧊 1/2); past the last item, just the count
+  return `<span class="streakLbl ${k}" title="${n} ${k === 'hot' ? 'right' : 'wrong'} in a row${goal ? ` — an item at ${goal}` : ''}">${icon} ${n}${goal ? `/${goal}` : ''}</span>`;
+}
+// Items live in a bag with a fixed number of slots (Settings › Items, 5 by default), so every row is the same size
+const maxItems = () => Math.max(1, data.settings.items.maxHeld || 6);
+function boardBag(p) {
+  const n = maxItems(), slots = Array.from({ length: n }, (_, i) => p.items[i]);
+  return `<span class="bag" title="Items (${p.items.length} of ${n})">${slots.map(k => k
+    ? `<span class="slot full" title="${esc(ITEMS[k].name)}: ${esc(itemDesc(k))}">${ITEMS[k].icon}</span>` : '<span class="slot"></span>').join('')}</span>`;
+}
+// Bag full: after the turn's messages, a player holding more than the limit picks which item to drop (the new one included)
+function resolveOverflow() {
+  const p = players.find(x => x.items.length > maxItems());
+  if (!p) return;
+  sfx('block');
+  const card = (k, i, isNew) => `<button class="pickCard ${isNew ? 'isNew' : ''}" onclick="dropItem(${players.indexOf(p)}, ${i})">
+      <span class="pcIcon">${ITEMS[k].icon}</span><span class="pcBody"><b>${ITEMS[k].name}</b> ${rarityTag(k)}<small>${esc(itemDesc(k))}</small></span>
+      <span class="pcDrop">Drop</span></button>`;
+  const max = maxItems(), newOnes = p.items.slice(max);
+  modal(`<div class="bagFull"><h2 style="margin-top:0">🎒 <span style="color:${pc(p)}">${esc(p.name)}</span>'s bag is full</h2>
+    <p class="muted" style="margin-top:-8px">You can hold ${max} items. Tap the one you want to drop.</p>
+    <div class="zone newZone"><div class="zoneHead">✨ New item</div>${newOnes.map((k, j) => card(k, max + j, true)).join('')}</div>
+    <div class="zone"><div class="zoneHead">🎒 In your bag (${max} of ${max})</div><div class="bagGrid">${p.items.slice(0, max).map((k, i) => card(k, i, false)).join('')}</div></div></div>`, []);
+  document.querySelector('#modal .modalBox').classList.add('wide');
+}
+function dropItem(pi, i) {
+  const p = players[pi], k = p?.items[i]; if (!k) return;
+  p.items.splice(i, 1); itemStat(k).unused++; saveStats();
+  logEvent(`🗑️ <b style="color:${pc(p)}">${esc(p.name)}</b> dropped <b>${ITEMS[k].name}</b> (bag full)`);
+  closeModal(); renderGame(); resolveOverflow();
 }
 const streakClose = p => { const g = nextStreakGoal(p); return g && p.streak.kind && p.streak.count === g - 1; };
 function renderBoard() {
   const target = data.settings.targetPoints;
-  document.getElementById('targetInfo').textContent = `First to ${target} points`;
+  document.getElementById('targetInfo').textContent = `🏁 First to ${target}`;
   const order = players.map((p, i) => ({ p, i })).sort((a, b) => b.p.score - a.p.score);
+  // every row has the same 3 lines whatever the game size; the board scrolls itself when it's taller than the screen
   document.getElementById('liveBoard').innerHTML = order.map(({ p, i }) =>
-    `<li data-pi="${i}" class="${i === turn ? 'current' : ''}" style="display:block;--pc:${pc(p)}">
-      <div class="rowHead"><i class="pDot" style="background:${pc(p)}"></i><span class="rowName" style="color:${pc(p)}">${esc(p.name)}</span>${i === turn ? '<span class="rowTag now">NOW</span>' : ''}<b>${p.score}</b></div>
-      ${streakRow(p)}
-      ${itemsOn() ? `<div class="badgeRow" title="${esc(statusBadges(p).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())}">${statusBadges(p)}</div>
-      <div class="boardItems">${boardItems(p)}</div>` : ''}
-      <div class="progress"><i style="width:${Math.min(100, p.score / target * 100)}%"></i></div></li>`).join('');
+    `<li data-pi="${i}" class="${i === turn ? 'current' : ''}" style="display:block;--pc:${pc(p)};--prog:${Math.min(100, Math.max(0, p.score / target * 100))}%">
+      <div class="rowHead"><i class="pDot" style="background:${pc(p)}"></i><span class="rowName" style="color:${pc(p)}" title="${esc(p.name)}">${esc(p.name)}</span>
+        <span class="rowRight">${streakLabel(p)}<b>${p.score}</b></span></div>
+      <div class="infoRow">${itemsOn() ? boardBag(p) : ''}<span class="fxRow"><span class="fxTrack">${effectList(p).map(x => effectTag(x)).join('') || '<span class="noFx">no effects</span>'}</span></span></div></li>`).join('');
   renderTurnInfo();
   animateScores();
+  fitBoard(); slideEffects();
 }
+// Effects that don't fit on their line slide slowly sideways and back, so every effect is readable without tapping
+function slideEffects() {
+  document.querySelectorAll('#liveBoard .fxRow').forEach(row => {
+    const track = row.firstElementChild, over = track.scrollWidth - row.clientWidth;
+    track.classList.toggle('sliding', over > 2);
+    if (over > 2) { track.style.setProperty('--over', -over + 'px'); track.style.animationDuration = Math.max(6, over / 12 + 4) + 's'; }
+  });
+}
+// The game screen fits the window: the question area scrolls inside itself (e.g. a long category list) and the
+// scoreboard fills the rest of the height, drifting down and back up on its own when it's taller (pausing at each
+// end, and while the mouse is over it). Phones (one column) keep normal page scrolling.
+function fitBoard() {
+  const grid = document.querySelector('#game .game'), box = document.getElementById('boardScroll');
+  if (!grid || !grid.offsetParent) return;
+  // positions come back in screen pixels and heights are set in page pixels, so divide by the zoom
+  const z = +(document.documentElement.dataset.zoom || 1), oneColumn = innerWidth / z <= 760;
+  grid.classList.toggle('fitted', !oneColumn);
+  if (oneColumn) { grid.style.height = ''; box.style.maxHeight = '420px'; return; }
+  const h = Math.max(360, (innerHeight - grid.getBoundingClientRect().top) / z - 16);
+  grid.style.height = h + 'px';
+  const extra = document.documentElement.scrollHeight - document.documentElement.clientHeight; // padding below would still scroll the page
+  if (extra > 0) grid.style.height = Math.max(360, h - extra / z) + 'px';
+  box.style.maxHeight = '';
+}
+let boardDir = 1, boardPauseUntil = 0;
+setInterval(() => {
+  const box = document.getElementById('boardScroll');
+  // paused while the mouse is over it (checked live, so a redraw under the cursor can't leave it stuck)
+  if (!box || !box.offsetParent || box.matches(':hover') || performance.now() < boardPauseUntil) return;
+  const max = box.scrollHeight - box.clientHeight; if (max <= 2) return;
+  box.scrollTop += boardDir * 0.7;
+  if (box.scrollTop >= max - 1 || box.scrollTop <= 0) { boardDir = box.scrollTop <= 0 ? 1 : -1; boardPauseUntil = performance.now() + 3000; }
+}, 30);
+addEventListener('resize', () => { fitBoard(); slideEffects(); });
+
+// ---------- Activity bar & item cards (non-blocking) ----------
+// The bar under the turn strip shows the latest 3 events; History lists the last 40.
+let feedLog = [];
+function logEvent(html) {
+  feedLog.unshift({ html, round, at: Date.now() }); feedLog.length = Math.min(feedLog.length, 40);
+  renderFeed();
+}
+function renderFeed() {
+  const el = document.getElementById('feedLines'); if (!el) return;
+  el.innerHTML = feedLog.slice(0, 3).map((e, i) => `<div class="feedLine ${i === 0 && Date.now() - e.at < 6000 ? 'fresh' : ''}"><span class="feedRound">R${e.round}</span>${e.html}</div>`).join('')
+    || '<div class="feedLine muted">Game activity shows up here.</div>';
+}
+setInterval(() => { const f = document.querySelector('.feedLine.fresh'); if (f && feedLog[0] && Date.now() - feedLog[0].at >= 6000) f.classList.remove('fresh'); }, 1000);
+function showFeedHistory() {
+  modal(`<h2 style="margin-top:0">📰 Game activity</h2><div class="feedHistory">${feedLog.map(e => `<div class="feedLine"><span class="feedRound">R${e.round}</span>${e.html}</div>`).join('') || '<p class="muted">Nothing yet.</p>'}</div>`);
+  document.querySelector('#modal .modalBox').classList.add('wide');
+}
+// Item gained: a card slides in over the right end of the activity bar (above the question area, never over the scoreboard) for ~10 s (doesn't block anything) and the bar logs it
+function itemGained(p, k, how) {
+  const it = ITEMS[k], secs = data.settings.itemCardSeconds ?? 10; // how long the card stays (Settings › Effects)
+  logEvent(`${it.icon} <b style="color:${pc(p)}">${esc(p.name)}</b> ${how} <b>${it.name}</b>`);
+  const box = document.getElementById('itemCards'); if (!box) return;
+  const card = document.createElement('div'); card.className = 'itemCardPop';
+  card.innerHTML = `<button class="close" title="Dismiss">✕</button><span class="icIcon">${it.icon}</span><div class="icBody">
+      <div class="icTop"><b style="color:${pc(p)}">${esc(p.name)}</b> <span class="muted">${how}</span> <b>${it.name}</b> ${rarityTag(k)}</div>
+      <div class="icDesc">${esc(itemDesc(k))}</div></div><div class="icTimer"><i style="animation-duration:${secs}s"></i></div>`;
+  card.querySelector('.close').onclick = () => card.remove();
+  const feed = document.getElementById('feed'), z = +(document.documentElement.dataset.zoom || 1);
+  if (feed) { const r = feed.getBoundingClientRect(); // fixed positions are in page pixels, rects in screen pixels
+    box.style.setProperty('--cardsTop', Math.max(8, r.top / z) + 'px'); const hist = feed.querySelector('button').getBoundingClientRect(); // stay left of the History button
+    box.style.right = Math.max(8, (innerWidth - hist.left) / z + 8) + 'px'; box.style.left = Math.max(8, r.left / z) + 'px'; } // cards share this width
+  box.prepend(card); while (box.children.length > 2) box.lastChild.remove(); // at most 2 cards on screen (older ones stay in the activity bar)
+  setTimeout(() => sfx('item'), 250);
+  setTimeout(() => { card.classList.add('leaving'); setTimeout(() => card.remove(), 400); }, secs * 1000);
+}
+const plainText = html => { const d = document.createElement('div'); d.innerHTML = html; return d.textContent.replace(/\s+/g, ' ').trim(); };
 function renderGameInner() {
   renderBoard();
   const p = players[turn], stage = document.getElementById('stage');
@@ -2191,7 +2480,7 @@ function renderGameInner() {
         p.catLock && `🎯 ${esc(choiceLabel(p.catLock.id))} only (${p.catLock.turns} turn${p.catLock.turns > 1 ? 's' : ''} left)`].filter(Boolean);
       heading = `you've been locked!`;
       buttons = [`<button class="lockedBtn" onclick="draw('lock')">Draw your question<small>${parts.join(' · ')}</small></button>`];
-      footer = `<p class="muted" style="text-align:center;margin:18px 0 0">${parts.join('<br>')}</p>`;
+      footer = `<p class="muted pickFooter" style="text-align:center;margin:18px 0 0">${parts.join('<br>')}</p>`;
     } else {
       if (byCat) {
         const top = topChoices(gameQs()), open = top.find(e => e.kind === 'group' && e.group === pickGroup);
@@ -2220,13 +2509,15 @@ function renderGameInner() {
           ? `<button class="gambleBtn" disabled title="Gamble is locked">🎰 Gamble<small>${needRight ? 'Get a question right first' : `Ready in ${wait} turn${wait === 1 ? '' : 's'}`}</small></button>`
           : `<button class="gambleBtn" onclick="draw('any', null, true)">🎰 Gamble<small>Random · win ×2 or lose ×2</small></button>`);
       }
-      footer = `<p class="muted" style="text-align:center;margin:18px 0 0">Choosing by ${byCat ? 'category' : 'difficulty'} ·
+      footer = `<p class="muted pickFooter" style="text-align:center;margin:18px 0 0">Choosing by ${byCat ? 'category' : 'difficulty'} ·
         <a href="#" onclick="setPickMode('${byCat ? 'tier' : 'cat'}');return false" style="color:var(--blue)">switch to ${byCat ? 'difficulty' : 'category'}</a></p>`;
     }
     const hint = !locked && rewardEligible(p) ? `<p class="rewardHint">🎁 Catching up: each ${byCat ? 'category' : 'difficulty'} has a ${data.settings.items.rewardChance}% chance to carry an item each turn. Pick one marked 🎁 and get it right to win that item. (Not Random or Gamble.)</p>` : '';
     const et = tierOf(easiestTierId());
     const luckyBanner = p.beginner > 0 && et ? `<div class="luckyBanner">🐣 Beginner's Luck: ${esc(et.name)} questions are worth <b>${et.points * 2}</b> instead of ${et.points} · ${p.beginner} turn${p.beginner === 1 ? '' : 's'} left</div>` : '';
-    stage.innerHTML = `<div class="turn"><span style="color:${pc(p)}">${esc(p.name)}</span>, ${heading}</div>${luckyBanner}${hint}
+    const myFx = effectList(p).filter(x => !x.text.startsWith("Beginner's Luck")); // Beginner's Luck has its own banner
+    const fxBox = myFx.length ? `<div class="myFx"><span class="muted">Affecting you:</span> ${myFx.map(x => effectTag(x, true)).join('')}</div>` : '';
+    stage.innerHTML = `<div class="turn"><span style="color:${pc(p)}">${esc(p.name)}</span>, ${heading}</div>${luckyBanner}${fxBox}${hint}
       <div class="tierPick">${buttons.join('')}</div>${footer}${itemsOn() ? itemBar(p) : ''}`;
     return;
   }
@@ -2260,7 +2551,17 @@ function renderGameInner() {
   renderTimer();
 }
 function renderGame() {
+  const st = document.getElementById('stage'), keep = st.dataset.view === (current ? 'q' : 'pick:' + turn + ':' + (pickGroup || ''));
   renderGameInner();
+  // wrap each pick button's name (everything before its <small>) so it can be capped at 2 lines
+  st.querySelectorAll('.tierPick > button:not(.groupBack)').forEach(b => {
+    if (b.querySelector('.pkTitle')) return;
+    const t = document.createElement('span'); t.className = 'pkTitle';
+    while (b.firstChild && b.firstChild.nodeName !== 'SMALL') t.appendChild(b.firstChild);
+    b.prepend(t);
+  });
+  st.dataset.view = current ? 'q' : 'pick:' + turn + ':' + (pickGroup || '');
+  if (!keep) st.scrollTop = 0;
   const stage = document.getElementById('stage');
   stage.classList.remove('stageIn'); void stage.offsetWidth; stage.classList.add('stageIn');
 }
@@ -2460,6 +2761,7 @@ function startTimer(p) {
 function stopTimer() { if (timer) clearInterval(timer.id); timer = null; }
 function tick() {
   if (!timer || timer.paused) return;
+  if (!current) { stopTimer(); return; } // the question is gone (e.g. the game moved on), so the clock stops
   timer.left--;
   if (timer.left <= (data.settings.timer.warnAt ?? 10) && timer.left > 0) beep(timer.left <= 3 ? 1100 : 880, .08);
   if (timer.left <= 0) { beep(180, .6, .25); stopTimer(); timesUp = true; revealed = true; renderReveal(); }
@@ -2490,7 +2792,19 @@ function beep(freq, dur, vol = .12) {
 }
 
 // ---------- Effects: sounds & animations ----------
-function applyFx() { document.body.classList.toggle('fxOff', !data.settings.fx); }
+function applyFx() { document.body.classList.toggle('fxOff', !data.settings.fx); applyScale(); }
+// Screen size: 'auto' grows the whole game with the window (a laptop lands around 125%, never below 100%, at most 140%);
+// a number is a fixed size for TVs / projectors. Uses CSS zoom on the page.
+const uiScale = () => { const v = data.settings.uiScale ?? 'auto';
+  return v === 'auto' ? Math.min(1.4, Math.max(1, innerWidth / 1150)) : Math.min(2, Math.max(.8, +v || 1)); };
+function applyScale() {
+  const z = Math.round(uiScale() * 100) / 100;
+  document.documentElement.style.zoom = z === 1 ? '' : z;
+  document.documentElement.dataset.zoom = z;
+  document.documentElement.style.setProperty('--z', z); // vh-based sizes divide by this so they still fit the window
+  if (typeof fitBoard === 'function') { fitBoard(); slideEffects(); }
+}
+addEventListener('resize', () => { if ((data.settings.uiScale ?? 'auto') === 'auto') applyScale(); });
 const fxOn = () => data.settings.fx && !matchMedia('(prefers-reduced-motion: reduce)').matches;
 function tone(freq, start, dur, { type = 'sine', vol = .15, slide } = {}) {
   audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
@@ -2671,6 +2985,11 @@ function mark(correct) {
   // Streaks: consecutive correct (hot) or wrong (cold) answers
   const kind = correct ? 'hot' : 'cold';
   p.streak = p.streak.kind === kind ? { kind, count: p.streak.count + 1 } : { kind, count: 1 };
+  // activity bar: who answered what, right or wrong, the points, and where their streak stands
+  { const c = catOf(current.categoryId), where = c ? (c.group ? `${c.group} › ${c.name}` : c.name) : 'Uncategorized';
+    const pts = correct ? ` (+${st.win})` : st.lose ? ` (−${st.lose})` : '', goal = nextStreakGoal(p);
+    const streak = `${kind === 'hot' ? '🔥' : '🧊'} ${p.streak.count}${goal ? '/' + goal : ''}`;
+    logEvent(`${correct ? '✅' : '❌'} <b style="color:${pc(p)}">${esc(p.name)}</b> answered ${esc(tierOf(current.tierId)?.name || '')} · ${esc(where)} <b>${correct ? 'right' : 'wrong'}</b>${pts} · ${streak}`); }
   const prize = correct && current.reward && itemsOn() ? current.reward : null;
   if (prize) { p.items.push(prize); itemStat(prize).earned++; }
   let earned = null;
@@ -2688,22 +3007,15 @@ function mark(correct) {
   const name = p.name, count = p.streak.count;
   const skipped = advanceTurn();
   renderGame();
-  let notes = turnNotes + exodiaNote + skipped.map(n => `<p>⏭️ <b>${esc(n)}</b>'s turn was skipped!</p>`).join('') + lastPlaceNotes.splice(0).join('');
-  if (prize) {
-    const it = ITEMS[prize], box = `<div class="bigIcon">🎁${it.icon}</div><h2>Question prize!</h2>
-      <p><b>${esc(name)}</b> won <b>${it.name}</b> ${rarityTag(prize)}</p><p class="muted">${esc(itemDesc(prize))}</p>`;
-    if (!earned) { setTimeout(() => sfx('item'), 350); return modal(box + notes); }
-    notes = `<hr style="border-color:#4a4a8a">${box}` + notes;
-  }
-  if (earned) {
-    const it = ITEMS[earned];
-    setTimeout(() => sfx('item'), 350);
-    modal(`<div class="bigIcon">${it.icon}</div>
-      <h2>${kind === 'hot' ? `🔥 ${count} in a row!` : `🧊 ${count} misses in a row…`}</h2>
-      <p><b>${esc(name)}</b> ${kind === 'hot' ? 'earned' : 'gets a comeback item:'} <b>${it.name}</b> ${rarityTag(earned)}</p>
-      <p class="muted">${esc(itemDesc(earned))}</p>${notes}`);
-  } else if (notes) modal(notes);
-  setTimeout(() => sfx('turn'), notes || earned || prize ? 120 : 650);
+  // Everything that happened goes to the activity bar; items gained also get a card. Nothing blocks the next turn
+  // (except choosing what to drop when a bag is full).
+  [turnNotes, exodiaNote].forEach(h => { if (h) h.split('</p>').map(x => x.replace(/^\s*<p>/, '').trim()).filter(Boolean).forEach(logEvent); });
+  skipped.forEach(n => logEvent(`⏭️ <b>${esc(n)}</b>'s turn was skipped`));
+  if (prize) itemGained(p, prize, 'won a question prize:');
+  if (earned) itemGained(p, earned, kind === 'hot' ? `earned (🔥 ${count} in a row):` : `got a comeback item (🧊 ${count} misses):`);
+  lastPlaceNotes.splice(0).forEach(([lp, k]) => itemGained(lp, k, `got a last-place boost:`));
+  resolveOverflow();
+  setTimeout(() => sfx('turn'), 650);
 }
 // Moves to the next player, passing over anyone hit by Skip Turn. Returns names that were skipped.
 // If anyone has reached the target, the highest score wins. On a tie, the player whose turn it is wins
@@ -2724,14 +3036,28 @@ function nextPlayerIndex() {
   return (turn + 1) % players.length;
 }
 let shownRound = 0;
+// faded edges on the turn order show there are more players off to that side
+function stripFades() {
+  const st = document.getElementById('turnStrip'); if (!st) return;
+  const more = st.scrollWidth - st.clientWidth;
+  st.classList.toggle('fadeL', more > 2 && st.scrollLeft > 2);
+  st.classList.toggle('fadeR', more > 2 && st.scrollLeft < more - 2);
+}
+document.addEventListener('scroll', e => { if (e.target?.id === 'turnStrip') stripFades(); }, true);
 // Round badge + turn-order strip (NOW / NEXT) at the top of the game screen
 function renderTurnInfo() {
   document.getElementById('roundNum').textContent = round;
   const next = players.length > 1 ? nextPlayerIndex() : -1;
+  const strip = document.getElementById('turnStrip');
+  strip.classList.toggle('many', players.length > 6);
   document.getElementById('turnStrip').innerHTML = players.map((p, i) => {
     const tag = i === turn ? '<em>NOW</em>' : i === next ? '<em>NEXT</em>' : p.skip > 0 ? '<em>SKIPPED</em>' : '';
     return `<span class="turnChip ${i === turn ? 'now' : i === next ? 'next' : ''} ${p.skip > 0 ? 'skipped' : ''}" style="--pc:${pc(p)}">${tag}<i class="pDot" style="background:${pc(p)}"></i>${esc(p.name)}</span>`;
   }).join('<span class="turnArrow">›</span>');
+  // one line only: slide the strip so the current player sits in the middle
+  const nowChip = strip.querySelector('.turnChip.now');
+  if (nowChip && strip.scrollWidth > strip.clientWidth) strip.scrollTo({ left: nowChip.offsetLeft - strip.offsetLeft - strip.clientWidth / 2 + nowChip.offsetWidth / 2, behavior: fxOn() ? 'smooth' : 'auto' });
+  stripFades();
   if (round !== shownRound) {
     if (shownRound) { pulse(document.getElementById('roundBadge'), 'bump'); roundBanner(round); }
     shownRound = round;
@@ -2757,9 +3083,8 @@ function lastPlaceGift() {
   players.filter(p => p.score === low).forEach(p => {
     const k = randomItem('cold', 1); if (!k) return;
     p.items.push(k); const st = itemStat(k); st.shown++; st.earned++;
-    lastPlaceNotes.push(`<p>🪃 Last-place boost: <b>${esc(p.name)}</b> gets <b>${ITEMS[k].icon} ${ITEMS[k].name}</b> for round ${round}.</p>`);
+    lastPlaceNotes.push([p, k]); // shown as an item card when the turn ends
   });
-  if (lastPlaceNotes.length) setTimeout(() => sfx('item'), 500);
 }
 function advanceTurn() {
   const skipped = [];
@@ -2924,6 +3249,8 @@ function stormCloud(p, idx) {
 }
 function finishItem(p, idx, html, sound = 'use') {
   sfx(sound);
+  { const it = ITEMS[p.items[idx]], body = plainText(html.replace(/<h2>.*?<\/h2>/, '').replace(/<div class="bigIcon">.*?<\/div>/, ''));
+    logEvent(`${it.icon} <b style="color:${pc(p)}">${esc(p.name)}</b> used <b>${it.name}</b>${body ? ' — ' + esc(body.length > 110 ? body.slice(0, 107) + '…' : body) : ''}`); }
   itemStat(p.items[idx]).used++; saveStats();
   p.items.splice(idx, 1); itemUsedThisTurn = true;
   renderGame();
