@@ -145,6 +145,8 @@
   .swatch:hover:not(:disabled) { transform: scale(1.12); }
   .swatch.mine { border-color: #fff; box-shadow: 0 0 0 2px var(--accent); }
   .swatch:disabled { opacity: .3; cursor: not-allowed; }
+  .famCell { display: inline-flex; flex-direction: column; line-height: 1.2; white-space: nowrap; }
+  .famCell small { color: var(--muted); font-size: .78rem; }
   .pDot { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; box-shadow: 0 0 0 2px rgba(0,0,0,.35); }
   .rowHead .pDot { margin-right: -2px; }
   #liveBoard li { box-shadow: inset 5px 0 0 var(--pc); padding-left: 16px; }
@@ -515,9 +517,11 @@
   </div>
   <div class="card" id="statsP">
     <div class="tableScroll"><table><thead><tr><th>Player</th><th>Games</th><th>Wins</th><th>Win %</th><th>Correct</th><th>Incorrect</th><th>% Correct</th>
+      <th title="Category family this player gets right most often (at least 3 answers)">💪 Best category</th><th title="Category family this player gets wrong most often (at least 3 answers)">😬 Worst category</th>
       <th title="Times this player activated Exodia">🃏 Exodia used</th><th title="Times this player completed Exodia for an instant win">🃏 Exodia won</th></tr></thead>
       <tbody id="statsTable"></tbody></table></div>
     <p class="muted" id="statsInfo"></p>
+    <p class="muted" style="margin-top:-6px">Best and worst categories are by family (e.g. Anime, Movies) and need at least 3 answers in that family. They start counting from version 3.5.</p>
     <div class="row"><button class="small bad" onclick="resetPlayerStats()">Reset player stats</button></div>
   </div>
 </section>
@@ -703,7 +707,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '3.4.1';
+const APP_VERSION = '3.5.0';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1758,12 +1762,23 @@ const exodiaStats = () => stats.exodia ??= { activated: 0, completed: 0, failed:
 const itemStat = k => (stats.items ??= {})[k] ??= { shown: 0, earned: 0, used: 0, unused: 0 };
 function playerStat(name) { const k = name.toLowerCase(); return stats.players[k] ??= { name, games: 0, wins: 0, correct: 0, wrong: 0 }; }
 const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '—';
+// Best / worst category family for a player: families with at least FAM_MIN answers, by % right (more answers wins ties)
+const FAM_MIN = 3;
+function famBestWorst(ps) {
+  const list = Object.entries(ps.fam || {}).filter(([, [, n]]) => n >= FAM_MIN).map(([name, [r, n]]) => ({ name, r, n, rate: r / n }));
+  if (!list.length) return [null, null];
+  const best = [...list].sort((a, b) => b.rate - a.rate || b.n - a.n)[0];
+  const worst = list.length > 1 ? [...list].sort((a, b) => a.rate - b.rate || b.n - a.n)[0] : null;
+  return [best, worst && worst.name !== best.name ? worst : null];
+}
+const famCell = (f, icon) => f ? `<span class="famCell"><b>${icon} ${esc(f.name)}</b><small>${Math.round(f.rate * 100)}% · ${f.r}/${f.n}</small></span>` : '<span class="muted">—</span>';
 function renderStats() {
   const rows = Object.values(stats.players).sort((a, b) => b.wins - a.wins || (b.correct / (b.correct + b.wrong || 1)) - (a.correct / (a.correct + a.wrong || 1)));
   document.getElementById('statsTable').innerHTML = rows.map(p => `<tr><td><b>${esc(p.name)}</b></td><td>${p.games}</td><td>${p.wins}</td>
     <td>${pct(p.wins, p.games)}</td><td>${p.correct}</td><td>${p.wrong}</td><td>${pct(p.correct, p.correct + p.wrong)}</td>
+    ${(([b, w]) => `<td>${famCell(b, '💪')}</td><td>${famCell(w, '😬')}</td>`)(famBestWorst(p))}
     <td>${p.exodiaUsed || 0}</td><td>${p.exodiaWins || 0}</td></tr>`).join('')
-    || '<tr><td colspan="9" class="muted">No games played yet.</td></tr>';
+    || '<tr><td colspan="11" class="muted">No games played yet.</td></tr>';
   const shown = Object.values(stats.seen).reduce((a, b) => a + b, 0);
   const ex = exodiaStats();
   document.getElementById('statsInfo').textContent = `${shown} questions shown so far · ${Object.keys(stats.seen).length} different questions seen · 🃏 Exodia completed ${ex.completed} time${ex.completed === 1 ? '' : 's'} (out of ${ex.activated} attempt${ex.activated === 1 ? '' : 's'}).`;
@@ -2535,6 +2550,9 @@ function mark(correct) {
   const st = stakes(p);
   const gained = correct ? st.win : 0;
   playerStat(p.name)[correct ? 'correct' : 'wrong']++;
+  // per-family tally for the Stats screen's best / worst category: family -> [right, answered]
+  { const c = catOf(current.categoryId), fam = c ? (c.group || c.name) : 'Uncategorized', f = (playerStat(p.name).fam ??= {})[fam] ??= [0, 0];
+    f[1]++; if (correct) f[0]++; }
   stats.answered[current.id] = (stats.answered[current.id] || 0) + 1;
   if (correct) stats.right[current.id] = (stats.right[current.id] || 0) + 1;
   saveStats();

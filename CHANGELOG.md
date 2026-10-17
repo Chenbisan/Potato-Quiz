@@ -1,5 +1,8 @@
 # What's new in Potato Quiz
 
+## 3.5.0 — 2026-10-17
+- **💪 Best and 😬 worst categories:** the Stats screen now shows each player's strongest and weakest category family (e.g. Anime, Movies), with their % right. A family needs at least 3 answers to count, and tracking starts with this update.
+
 ## 3.4.1 — 2026-10-17
 - **Easier-to-tell-apart colors:** the color picker now has **15 clearly different colors** instead of 24 look-alikes. Players whose color was removed get a new one automatically.
 
