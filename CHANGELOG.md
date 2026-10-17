@@ -1,5 +1,8 @@
 # What's new in Potato Quiz
 
+## 3.7.1 — 2026-10-17
+- Small touch-ups to the main menu.
+
 ## 3.7.0 — 2026-10-17
 - **🎒 Item bag:** each player can hold up to **6 items** (change it in Settings › Items). Earn one with a full bag and you choose which item to drop, with the new item and your bag shown side by side and what each one does. The new item can be the one you drop.
 - **No more pop-ups when you earn an item:** a card slides in over the activity bar with the item and what it does, and fades after 10 seconds while the game keeps going (up to 2 at once; change how long they stay in Settings › Effects).

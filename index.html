@@ -150,6 +150,15 @@
   .swatch:disabled { opacity: .3; cursor: not-allowed; }
   .famCell { display: inline-flex; flex-direction: column; line-height: 1.2; white-space: nowrap; }
   .famCell small { color: var(--muted); font-size: .78rem; }
+  .coffeeLink { color: var(--muted); text-decoration: none; border-bottom: 1px dotted currentColor; }
+  .coffeeLink:hover { color: var(--accent); }
+  .coffeePop { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60; display: flex; gap: 12px; align-items: center; max-width: calc(100vw - 32px);
+    background: var(--panel); border: 1px solid #55558a; border-left: 4px solid #ff6b8a; border-radius: 12px; padding: 12px 16px; box-shadow: 0 10px 30px rgba(0,0,0,.45);
+    animation: coffeeIn .35s ease-out; cursor: pointer; text-align: left; }
+  .coffeePop small { display: block; color: var(--muted); margin-top: 2px; }
+  .coffeePop .cpIcon { font-size: 1.6rem; }
+  .coffeePop.leaving { transition: opacity .4s, transform .4s; opacity: 0; transform: translate(-50%, 20px); }
+  @keyframes coffeeIn { from { opacity: 0; transform: translate(-50%, 20px); } }
   .news { max-width: 520px; margin: 0 auto 22px; padding: 12px 16px; border-radius: 14px; background: linear-gradient(135deg, rgba(255,204,51,.14), rgba(77,163,255,.12)); border: 1px solid rgba(255,204,51,.45); text-align: left; }
   .news:empty { display: none; }
   .newsHead { font-weight: 900; font-size: .8rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
@@ -447,7 +456,7 @@
     <button onclick="go('settings')">⚙️ Settings</button>
   </div>
   <p class="sub" id="menuStats" style="margin-top:30px"></p>
-  <p class="sub" style="margin-top:-30px"><a id="menuVersion" class="versionLink" target="_blank" rel="noopener"></a></p>
+  <p class="sub" style="margin-top:-30px"><a id="menuVersion" class="versionLink" target="_blank" rel="noopener"></a> · <a href="#" class="coffeeLink" onclick="coffee(); return false">☕ Buy me a coffee</a></p>
 </section>
 
 <!-- PLAYER SETUP -->
@@ -866,7 +875,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '3.7.0';
+const APP_VERSION = '3.7.1';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1420,6 +1429,15 @@ const NEWS = [
 function renderNews() {
   document.getElementById('news').innerHTML = NEWS.length ? `<div class="newsHead">🚧 Coming soon</div>
     <div class="newsItems">${NEWS.map(n => `<div class="newsItem"><span class="newsIcon">${n.icon}</span><span><b>${esc(n.title)}</b><small>${esc(n.text)}</small></span></div>`).join('')}</div>` : '';
+}
+// "Buy me a coffee": a friendly joke — it doesn't go anywhere, it just says thanks
+function coffee() {
+  document.querySelector('.coffeePop')?.remove();
+  const el = document.createElement('div'); el.className = 'coffeePop';
+  el.innerHTML = `<span class="cpIcon">❤️</span><div><b>Thanks, but I do this for the love of the game!</b><small>I'm not taking donations, so just enjoy the game. 🥔</small></div>`;
+  el.onclick = () => el.remove();
+  document.body.appendChild(el); sfx('coin');
+  setTimeout(() => { el.classList.add('leaving'); setTimeout(() => el.remove(), 400); }, 6000);
 }
 function renderMenu() {
   renderNews();
