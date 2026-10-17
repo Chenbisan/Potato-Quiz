@@ -81,7 +81,7 @@
   .chip.recent b:hover { color: var(--bad); }
 
   /* Game */
-  .game { display: grid; grid-template-columns: 1fr 260px; gap: 20px; }
+  .game { display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
   @media (max-width: 760px) { .game { grid-template-columns: 1fr; } }
   .turn { font-size: 1.5rem; text-align: center; margin-bottom: 18px; }
   .turn span { color: var(--accent); font-weight: 800; }
@@ -137,7 +137,17 @@
   @keyframes prizePulse { 50% { transform: scale(1.12); } }
   .rewardPill { background: #ffcc33; color: #2a1d00; }
   /* 3.0 streak tracker on the scoreboard: last answers as dots + a meter toward the next streak item */
-  .streakRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: .8rem; }
+  .rowHead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .rowName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rowHead .rowTag { flex: none; margin: 0 auto 0 0; }
+  .rowHead b { font-size: 1.15rem; margin-left: auto; }
+  .streakRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 7px; font-size: .8rem; }
+  .streakLbl { font-weight: 800; white-space: nowrap; } .streakLbl.hot { color: #ffb347; } .streakLbl.cold { color: #8fd3ff; }
+  .streakBar { height: 4px; border-radius: 2px; background: #33335a; margin-top: 5px; overflow: hidden; }
+  .streakBar i { display: block; height: 100%; border-radius: 2px; }
+  .streakBar.hot i { background: linear-gradient(90deg, #ffd166, #ff5e3a); } .streakBar.cold i { background: linear-gradient(90deg, #bdf0ff, #4da3ff); }
+  .badgeRow { display: flex; flex-wrap: wrap; gap: 4px 8px; margin-top: 6px; font-size: .85rem; }
+  .board .boardItems { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
   .hist { display: flex; gap: 4px; align-items: center; }
   .hist i { width: 16px; height: 16px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 10px; font-style: normal; font-weight: 900; color: #10101f; background: #33335a; }
   .hist i.r { background: #3ddc84; } .hist i.w { background: #ff5c5c; }
@@ -151,7 +161,7 @@
   .board li.close.hotC { box-shadow: 0 0 0 2px #ff7a3a, 0 0 18px rgba(255,122,58,.55); animation: closeGlow 1.4s ease-in-out infinite; }
   .board li.close.coldC { box-shadow: 0 0 0 2px #4da3ff, 0 0 18px rgba(77,163,255,.55); animation: closeGlow 1.4s ease-in-out infinite; }
   @keyframes closeGlow { 50% { filter: brightness(1.18); } }
-  .closeTag { display: inline-block; font-size: .72rem; font-weight: 800; padding: 1px 7px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
+  .closeTag { display: inline-block; font-size: .72rem; font-weight: 800; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
   .closeTag.hot { background: #ff7a3a; color: #1a0a00; } .closeTag.cold { background: #4da3ff; color: #00142a; }
   /* Beginner's Luck: the easiest difficulty glows while it's worth double */
   .tierPick button.lucky, .luckyBanner, .glowBadge { animation: luckyGlow 1.2s ease-in-out infinite; }
@@ -295,7 +305,7 @@
   <div class="topbar"><h2>Who's playing?</h2><button class="ghost" onclick="go('menu')">← Menu</button></div>
   <div class="card">
     <div class="row">
-      <input id="playerName" placeholder="Player name" style="flex:1" onkeydown="if(event.key==='Enter')addPlayer()">
+      <input id="playerName" placeholder="Player name (up to 16 characters)" maxlength="16" style="flex:1" onkeydown="if(event.key==='Enter')addPlayer()">
       <button onclick="addPlayer()">Add player</button>
     </div>
     <div class="chips" id="playerChips"></div>
@@ -673,7 +683,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '3.1.0';
+const APP_VERSION = '3.1.1';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1778,7 +1788,9 @@ function rememberPlayers() {
   saveRoster();
 }
 const isPlaying = name => players.some(p => p.name.toLowerCase() === name.toLowerCase());
-function addByName(name) { if (!isPlaying(name)) players.push({ name, score: 0 }); }
+const MAX_NAME = 16; // keeps names from breaking the scoreboard, turn strip and buttons
+const cleanName = n => String(n).trim().replace(/\s+/g, ' ').slice(0, MAX_NAME).trim();
+function addByName(name) { name = cleanName(name); if (name && !isPlaying(name)) players.push({ name, score: 0 }); }
 function addRecent(i) { addByName(roster.recent[i]); renderSetup(); }
 function addAllRecent() { roster.recent.forEach(addByName); renderSetup(); }
 function addLastLineup() { roster.lastGame.forEach(addByName); renderSetup(); }
@@ -1808,7 +1820,7 @@ function renderSetup() {
   setTimeout(() => document.getElementById('playerName').focus(), 50);
 }
 function addPlayer() {
-  const el = document.getElementById('playerName'); const name = el.value.trim();
+  const el = document.getElementById('playerName'); const name = cleanName(el.value);
   if (!name) return;
   if (isPlaying(name)) return alert('That name is already taken.');
   players.push({ name, score: 0 }); el.value = ''; renderSetup();
@@ -1983,12 +1995,13 @@ function streakRow(p) {
   const hist = `<span class="hist" title="Last answers (newest on the right)">${dots.map((r, i) =>
     `<i class="${r === null ? '' : r ? 'r' : 'w'} ${i === 4 && r !== null ? 'last' : ''}">${r === null ? '' : r ? '✓' : '✗'}</i>`).join('')}</span>`;
   const k = p.streak.kind, n = p.streak.count, goal = nextStreakGoal(p);
-  if (!k || !n) return `<div class="streakRow">${hist}<span class="muted">no streak yet</span></div>`;
+  if (!k || !n) return `<div class="streakRow">${hist}</div>`;
   const icon = k === 'hot' ? '🔥' : '🧊';
-  const meter = goal
-    ? `<span class="meter ${k}" title="${n} ${k === 'hot' ? 'right' : 'wrong'} in a row — an item at ${goal}">${Array.from({ length: goal }, (_, i) => `<b class="${i < n ? 'f' : ''}"></b>`).join('')}<span>${icon} ${n}/${goal}</span></span>`
-    : `<span class="meter ${k}"><span>${icon} ${n} in a row</span></span>`;
-  return `<div class="streakRow">${hist}${meter}</div>`;
+  const label = goal && n === goal - 1 ? `<span class="closeTag ${k}" title="${n} ${k === 'hot' ? 'right' : 'wrong'} in a row">${icon} 1 more = item!</span>`
+    : `<span class="streakLbl ${k}" title="${n} ${k === 'hot' ? 'right' : 'wrong'} in a row${goal ? ` — an item at ${goal}` : ''}">${icon} ${n}${goal ? `/${goal}` : ' in a row'}</span>`;
+  // a thin bar under the dots fills toward the next streak item
+  const bar = goal ? `<div class="streakBar ${k}"><i style="width:${Math.round(n / goal * 100)}%"></i></div>` : '';
+  return `<div class="streakRow">${hist}${label}</div>${bar}`;
 }
 const streakClose = p => { const g = nextStreakGoal(p); return g && p.streak.kind && p.streak.count === g - 1; };
 function renderBoard() {
@@ -1997,11 +2010,10 @@ function renderBoard() {
   const order = players.map((p, i) => ({ p, i })).sort((a, b) => b.p.score - a.p.score);
   document.getElementById('liveBoard').innerHTML = order.map(({ p, i }) =>
     `<li data-pi="${i}" class="${i === turn ? 'current' : players.length > 1 && i === nextPlayerIndex() ? 'next' : ''} ${streakClose(p) ? `close ${p.streak.kind}C` : ''}" style="display:block">
-      <div style="display:flex;justify-content:space-between"><span>${esc(p.name)}${i === turn ? ' <span class="rowTag now">NOW</span>' : players.length > 1 && i === nextPlayerIndex() ? ' <span class="rowTag next">NEXT</span>' : ''}${streakClose(p)
-        ? `<span class="closeTag ${p.streak.kind}">${p.streak.kind === 'hot' ? '🔥 1 more right = item!' : '🧊 1 more miss = item'}</span>` : ''}</span><b>${p.score}</b></div>
+      <div class="rowHead"><span class="rowName">${esc(p.name)}</span>${i === turn ? '<span class="rowTag now">NOW</span>' : players.length > 1 && i === nextPlayerIndex() ? '<span class="rowTag next">NEXT</span>' : ''}<b>${p.score}</b></div>
       ${streakRow(p)}
-      ${itemsOn() && (p.items.length || statusBadges(p)) ? `<div class="badges"><span>${statusBadges(p)}</span>
-        <span class="boardItems">${p.items.map(k => `<span title="${esc(ITEMS[k].name)}">${ITEMS[k].icon}</span>`).join('')}</span></div>` : ''}
+      ${itemsOn() && statusBadges(p) ? `<div class="badgeRow">${statusBadges(p)}</div>` : ''}
+      ${itemsOn() && p.items.length ? `<div class="boardItems">${p.items.map(k => `<span title="${esc(ITEMS[k].name)}">${ITEMS[k].icon}</span>`).join('')}</div>` : ''}
       <div class="progress"><i style="width:${Math.min(100, p.score / target * 100)}%"></i></div></li>`).join('');
   renderTurnInfo();
   animateScores();

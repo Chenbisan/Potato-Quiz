@@ -1,5 +1,9 @@
 # What's new in Potato Quiz
 
+## 3.1.1 — 2026-10-17
+- **Tidier scoreboard:** each player's row now stacks neatly, with the score, the last answers and streak, active effects, and items on their own lines, so nothing gets squeezed. The scoreboard is also a little wider.
+- Player names are limited to 16 characters so they always fit on screen.
+
 ## 3.1.0 — 2026-10-17
 - **🔞 After Dark › X-Rated:** a new, much spicier category with 119 questions on positions, toys, kinks, slang, porn trivia and the wilder side of science and history. Like the rest of After Dark, it only appears when After Dark is switched on.
 
