@@ -1,5 +1,8 @@
 # What's new in Potato Quiz
 
+## 3.5.1 — 2026-10-17
+- **More variety in each game:** a category that already came up this game is less likely to come up again when you pick by difficulty or hit Random, so you'll see a wider mix of topics. Questions you've never seen are still the most likely to appear.
+
 ## 3.5.0 — 2026-10-17
 - **💪 Best and 😬 worst categories:** the Stats screen now shows each player's strongest and weakest category family (e.g. Anime, Movies), with their % right. A family needs at least 3 answers to count, and tracking starts with this update.
 

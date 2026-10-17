@@ -707,7 +707,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '3.5.0';
+const APP_VERSION = '3.5.1';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -2053,7 +2053,7 @@ function startGame() {
   rememberPlayers(); turnPrizes = {}; assignColors(players);
   // games played are counted when a game finishes with a winner (quitting with End game doesn't count)
   players.forEach(p => Object.assign(p, { score: 0, items: [], history: [], streak: { kind: null, count: 0 }, skip: 0, hardLock: 0, catLock: null, boost: null, halfTime: false, halfGain: false, beginner: 0, helper: null, tax: null, dodge: false, exodia: null, turnsPlayed: 0, lastGamble: -Infinity, gambleLocked: false }));
-  bets = []; itemsThisGame = {}; lastPlaceRound = 0;
+  bets = []; itemsThisGame = {}; lastPlaceRound = 0; catsThisGame = {}; famsThisGame = {};
   // Random turn order each game (Fisher–Yates shuffle)
   for (let i = players.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [players[i], players[j]] = [players[j], players[i]]; }
   turn = 0; round = 1; used.clear(); current = null; itemUsedThisTurn = false; shownScores = new Map(); shownRound = 0;
@@ -2356,6 +2356,7 @@ function prizeFor(key) {
 const prizeBadge = key => { const k = prizeFor(key); return k ? `<span class="prizeBadge" title="Prize: ${esc(ITEMS[k].name)} — get it right to keep it">🎁${ITEMS[k].icon}</span>` : ''; };
 const rewardPill = q => q.reward ? `<span class="pill rewardPill" title="${esc(itemDesc(q.reward))}">🎁 Prize: ${ITEMS[q.reward].icon} ${ITEMS[q.reward].name}</span>` : '';
 // kind: 'tier' | 'cat' | 'any' | 'lock'; gamble = the Gamble button (random question, double or nothing)
+let catsThisGame = {}, famsThisGame = {}; // how often each category / family has been drawn in the current game
 function draw(kind, id, gamble = false) {
   const match = kind === 'tier' ? q => q.tierId === id
     : kind === 'cat' ? choiceMatch(id)
@@ -2367,11 +2368,15 @@ function draw(kind, id, gamble = false) {
     pool = gameQs().filter(match);
     toast('All of these questions used — reshuffling');
   }
-  // Questions shown more often are less likely: weight = 1 / (1 + times seen)
-  const weights = pool.map(q => 1 / (1 + seenCount(q.id)));
+  // Questions shown more often (ever, on this device) are less likely: 1 / (1 + times seen). On top of that, for variety
+  // within a game, each time a category has already come up this game halves its chance, and each time its family
+  // has come up trims it a little more (only matters when the pick spans several categories, e.g. a difficulty or Random)
+  const famOf = q => { const c = catOf(q.categoryId); return c ? (c.group || c.id) : ''; };
+  const weights = pool.map(q => 1 / (1 + seenCount(q.id)) * 0.5 ** (catsThisGame[q.categoryId || ''] || 0) * 0.8 ** (famsThisGame[famOf(q)] || 0));
   let pick = Math.random() * weights.reduce((a, b) => a + b, 0), q = pool[pool.length - 1];
   for (let i = 0; i < pool.length; i++) { pick -= weights[i]; if (pick <= 0) { q = pool[i]; break; } }
   stats.seen[q.id] = seenCount(q.id) + 1; saveStats();
+  catsThisGame[q.categoryId || ''] = (catsThisGame[q.categoryId || ''] || 0) + 1; famsThisGame[famOf(q)] = (famsThisGame[famOf(q)] || 0) + 1;
   used.add(q.id);
   current = { ...q, gamble, random: kind === 'any' && !gamble, shuffled: buildChoices(q),
     reward: kind === 'tier' || kind === 'cat' ? turnPrizes[kind + ':' + id] ?? null : null };
