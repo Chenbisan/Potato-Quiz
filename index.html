@@ -196,6 +196,11 @@
   .lockChips { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 10px 10px; justify-content: flex-start; }
   .lockChip { background: var(--c); color: #111; font-weight: 700; padding: 7px 11px; border-radius: 999px; }
   .lockChip small { margin-left: 6px; opacity: .7; font-weight: 600; }
+  .exoFam { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px; border-radius: 10px; background: var(--panel2); border-left: 5px solid var(--c); color: var(--text); font-weight: 800; text-align: left; }
+  .exoFam small { color: var(--muted); font-weight: 600; white-space: nowrap; }
+  .exoFam.on { background: var(--c); color: #111; box-shadow: 0 0 0 3px var(--accent); }
+  .exoFam.on small { color: #111; opacity: .7; }
+  .exoFam:disabled { opacity: .35; }
   .selfTarget { background: #2b2b55; border: 2px dashed var(--accent); }
   .cardToggle { background: none; border: 0; color: var(--text); padding: 0; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; }
   .cardToggle .groupArrow { pointer-events: none; }
@@ -707,7 +712,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '3.5.1';
+const APP_VERSION = '3.6.0';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -2000,7 +2005,7 @@ function exodiaPath(path = exodiaSequence()) {
 // Item description for display; Exodia's includes the actual difficulties it will ask
 function itemDesc(k) {
   return k === 'exodia'
-    ? `Get your next ${exodiaSequence().length} questions right (${exodiaPath()}) and win instantly. One wrong answer and you lose half your points.`
+    ? `Pick ${EXODIA_FAMS} families, then get your next ${exodiaSequence().length} questions from them right (${exodiaPath()}) to win instantly. One wrong answer and you lose half your points.`
     : ITEMS[k].desc;
 }
 // The easiest tier that actually has questions
@@ -2021,11 +2026,56 @@ function exodiaSequence() {
 }
 // The tier for the player's next Exodia piece (the ladder is fixed when Exodia starts)
 function exodiaTierId(p) { return p.exodia.path[Math.min(p.exodia.pieces, p.exodia.path.length - 1)]; }
+const EXODIA_FAMS = 3; // families a player picks when starting Exodia
+// A question's family: its category's group, or the category itself if it has no group
+const famKey = q => { const c = catOf(q.categoryId); return c ? (c.group || 'cat:' + c.id) : 'cat:'; };
 function lockMatch(p) {
   const tier = p.exodia ? exodiaTierId(p) : p.hardLock > 0 ? hardestTierId() : null, cat = p.catLock;
   const inCat = cat ? choiceMatch(cat.id) : () => true;
-  return q => (!tier || q.tierId === tier) && inCat(q);
+  const base = q => (!tier || q.tierId === tier) && inCat(q);
+  const fams = p.exodia?.fams;
+  if (fams?.length) { const inFam = q => fams.includes(famKey(q)); if (gameQs().some(q => base(q) && inFam(q))) return q => base(q) && inFam(q); }
+  return base;
 }
+// Exodia family picker: choose exactly 3 families (not sub-categories) the Exodia questions come from
+let exodiaPick = null;
+function exodiaFamilyPicker(idx) {
+  const top = topChoices(gameQs()), fams = top.map(e => e.kind === 'group' ? { key: e.group, name: e.group, color: e.color, count: e.count } : { key: 'cat:' + e.c.id, name: e.c.name, color: e.c.color, count: e.count })
+    .sort((a, b) => az(a.name, b.name));
+  exodiaPick = { idx, fams, chosen: [], need: Math.min(EXODIA_FAMS, fams.length) };
+  modal(`<div class="bigIcon">🃏</div><h2>Exodia: pick ${exodiaPick.need} families</h2>
+    <p class="muted" style="margin-top:-6px">Your ${exodiaSequence().length} Exodia questions (${esc(exodiaPath())}) will come from these.</p>
+    <div id="exoFams" class="lockFamilies" style="margin-top:12px"></div>`, [{ label: 'Cancel', cls: 'ghost' }]);
+  document.querySelector('#modal .modalBox').classList.add('wide');
+  const bar = document.querySelector('#modal .actions'), go = document.createElement('button');
+  go.id = 'exoGo'; go.className = 'primary'; go.onclick = () => exodiaStart(); bar.prepend(go);
+  renderExodiaPicker();
+}
+function exodiaToggle(n) {
+  const k = exodiaPick.fams[n].key, ch = exodiaPick.chosen, i = ch.indexOf(k);
+  if (i >= 0) ch.splice(i, 1); else if (ch.length < exodiaPick.need) ch.push(k);
+  renderExodiaPicker();
+}
+function renderExodiaPicker() {
+  const { fams, chosen, need } = exodiaPick;
+  document.getElementById('exoFams').innerHTML = fams.map((f, n) => { const on = chosen.includes(f.key);
+    return `<button class="exoFam ${on ? 'on' : ''}" style="--c:${f.color}" onclick="exodiaToggle(${n})" ${!on && chosen.length >= need ? 'disabled' : ''}>
+      <span>${on ? '✓ ' : ''}${esc(f.name)}</span><small>${f.count} q</small></button>`; }).join('');
+  const go = document.getElementById('exoGo');
+  go.disabled = chosen.length < need; go.textContent = chosen.length < need ? `Pick ${need - chosen.length} more` : '🃏 Start Exodia';
+}
+function exodiaStart() {
+  const { idx, chosen, fams } = exodiaPick, p = players[turn];
+  if (chosen.length < exodiaPick.need) return;
+  closeModal();
+  p.exodia = { pieces: 0, path: exodiaSequence(), fams: [...chosen] };
+  exodiaStats().activated++; playerStat(p.name).exodiaUsed = (playerStat(p.name).exodiaUsed || 0) + 1; saveStats();
+  const n = p.exodia.path.length, path = esc(exodiaPath(p.exodia.path)), names = chosen.map(k => fams.find(f => f.key === k).name);
+  finishItem(p, idx, `<div class="bigIcon">🃏</div><h2>Exodia!</h2><p>${esc(p.name)} begins assembling the Forbidden One.</p>
+    <p>Families: <b>${names.map(esc).join(' · ')}</b></p>
+    <p>Their next ${n} questions: <b>${path}</b></p><p>All ${n} right = <b>instant win</b>. One wrong = <b>lose half their points</b>.</p>`);
+}
+const exodiaFamNames = p => (p.exodia?.fams || []).map(k => k.startsWith('cat:') ? (catOf(k.slice(4))?.name || '?') : k);
 
 // Simple modal: html body plus buttons [{label, cls, fn}]
 function modal(html, buttons = [{ label: 'Continue', cls: 'primary' }]) {
@@ -2132,7 +2182,8 @@ function renderGameInner() {
       const n = p.exodia.pieces, tName = esc(tierOf(exodiaTierId(p))?.name || '');
       const total = p.exodia.path.length;
       heading = `assemble Exodia — piece ${n + 1} of ${total}!`;
-      buttons = [`<button class="exodiaBtn" onclick="draw('lock')">🃏 Draw piece ${n + 1}<small>${tName} question${p.catLock ? ` · 🎯 ${esc(choiceLabel(p.catLock.id))} only` : ''}</small></button>`];
+      const famText = exodiaFamNames(p).length ? ` · ${exodiaFamNames(p).map(esc).join(' / ')}` : '';
+      buttons = [`<button class="exodiaBtn" onclick="draw('lock')">🃏 Draw piece ${n + 1}<small>${tName} question${famText}${p.catLock ? ` · 🎯 ${esc(choiceLabel(p.catLock.id))} only` : ''}</small></button>`];
       footer = `<div class="exodiaPieces">${Array.from({ length: total }, (_, i) => `<span class="${i < n ? 'got' : ''}">${i < n ? '🃏' : '?'}</span>`).join('')}</div>
         <p class="muted" style="text-align:center;margin:8px 0 0">Get it right to claim the piece. One wrong answer and ${esc(p.name)} loses half their points.</p>`;
     } else if (locked) {
@@ -2737,11 +2788,7 @@ function useItem(idx) {
     }
     if (key === 'exodia') {
       if (p.exodia) return toast('Exodia is already in progress!');
-      p.exodia = { pieces: 0, path: exodiaSequence() };
-      exodiaStats().activated++; playerStat(p.name).exodiaUsed = (playerStat(p.name).exodiaUsed || 0) + 1; saveStats();
-      const n = p.exodia.path.length, path = esc(exodiaPath(p.exodia.path));
-      finishItem(p, idx, `<div class="bigIcon">🃏</div><h2>Exodia!</h2><p>${esc(p.name)} begins assembling the Forbidden One.</p>
-        <p>Their next ${n} questions: <b>${path}</b></p><p>All ${n} right = <b>instant win</b>. One wrong = <b>lose half their points</b>.</p>`);
+      exodiaFamilyPicker(idx); // the player picks 3 families first; Exodia starts from there
     }
     if (key === 'dodge') { p.dodge = true; finishItem(p, idx, `<div class="bigIcon">💨</div><h2>Dodge the Bullet!</h2><p>If ${esc(p.name)} gets this one wrong, they choose a player who loses the question's points.</p>`); }
     if (key === 'triple') { p.boost = 'triple'; finishItem(p, idx, `<div class="bigIcon">🔱</div><h2>Triple Threat!</h2><p>${esc(p.name)} wins <b>triple</b> points if right… and loses triple if wrong.</p>`); }

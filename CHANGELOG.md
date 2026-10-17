@@ -1,5 +1,8 @@
 # What's new in Potato Quiz
 
+## 3.6.0 — 2026-10-17
+- **Exodia is a little easier:** when you use it, you pick **3 families** (like Anime, Movies or Sports) and your Exodia questions come only from those.
+
 ## 3.5.1 — 2026-10-17
 - **More variety in each game:** a category that already came up this game is less likely to come up again when you pick by difficulty or hit Random, so you'll see a wider mix of topics. Questions you've never seen are still the most likely to appear.
 
