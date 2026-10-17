@@ -3,6 +3,38 @@
 All notable changes to Potato Quiz. Versions follow `major.minor.patch`:
 **minor** for new features or question batches, **patch** for fixes and small tweaks.
 
+## 3.0.0 — 2026-10-17
+A big update from playtesting.
+
+**Items**
+- **Fairer item drops.** Question prizes used to come only from the hot-streak list, so Exodia was the only Legendary prize, while Nuke, Swap and the other comeback items could only come from cold streaks and rarely appeared. Now every item can be a prize, and each item's chance comes from its rarity: any single Legendary is rarer than any single Rare. An item that already showed up in a game is half as likely to show up again. Item sources reset to the new defaults once.
+- **Separate streak lengths:** hot streaks (right answers) still give items at 3, 5 and 7; cold streaks (wrong answers) now give comeback items at **2, 4 and 6**. Both are in Settings › Items.
+- **Last-place boost:** from round 11 on, whoever is in last place at the start of each round gets a free Common cold-streak item. Change the round (or turn it off) in Settings › Items.
+- Question prize chance is now **35%** per button (was 20%).
+- **Using an item again stacks:** Skip Turn, Hard Lock, Category Lock and Beginner's Luck add more turns instead of resetting.
+- **Category Lock on yourself:** lock yourself into a favorite category for 1 turn.
+- **New Category Lock screen:** families as tidy cards in A–Z order, tap one to see its categories, or search them all.
+- **Beginner's Luck** now lasts 5 *turns*, and it's obvious when it's on: the easiest difficulty glows and shows the doubled points (e.g. ~~2~~ → 4), with a banner and a glowing badge on the scoreboard.
+- Nuke now rounds the average **up**, and its description says so.
+- Settings › Items › Item list has **Tick all / Untick all** and **Reset items to default**.
+
+**Scoreboard**
+- **Streak tracker:** each player shows their last 5 answers as ✓/✗ dots and a meter filling up toward their next streak item. A player one answer away from an item glows and gets a "1 more = item!" tag.
+
+**Setup**
+- **Categories fold away** so Recent players sits right under the player list. Click "Categories in this game" to open it.
+- **🔞 After Dark (18+):** a new adults-only family with 369 questions (sex, dating, partying, raunchy movies, TV and music). It's hidden and off until someone switches on **After Dark** on the setup screen, which asks for a quick confirmation.
+
+**Sound & timer**
+- New sounds for the game starting, each new turn and each question appearing, plus soft hover and click ticks on buttons (turn those off separately in Settings › Effects).
+- The timer warning now starts at **10 seconds** (was 5) and can be changed in Settings › Timer.
+
+**Questions**
+- **11,074 new questions**, bringing the bank to **29,499**. The biggest additions are Anime, General Knowledge, Video Games and Movies. Pokémon was left alone.
+- **55 new sub-categories** across the families, for example Isekai, Mecha, Horror Games, Indie Games, Rom-Coms & Musicals, Myths & Legends, Board & Card Games, Ice Hockey, Pro Wrestling, AI & Robots and Streaming Originals. About 1,450 existing questions moved into them.
+- Categories with no good fresh material left were stopped early instead of padded. New questions were checked against the whole bank and against each other for repeats.
+- The 🌍 Culture button now switches only the regional and ethnic culture families, not Pop Culture.
+
 ## 2.3.1 — 2026-10-16
 - **Click an answer, then Next:** clicking a multiple-choice answer now scores it right away ("🎉 Correct! +4" or "❌ Wrong") and shows a single **Next** button. A small "Change result" link brings back the Correct/Wrong buttons if someone clicked by mistake.
 - **Ended games don't count:** games ended with ✕ End game no longer add to players' Games or Wins. Answers and item use from that game still count.

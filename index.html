@@ -136,6 +136,45 @@
   .prizeBadge { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #1b1b3a; color: #fff; border: 2px solid #ffcc33; font-size: .85em; box-shadow: 0 0 8px rgba(255,204,51,.7); animation: prizePulse 1.6s ease-in-out infinite; }
   @keyframes prizePulse { 50% { transform: scale(1.12); } }
   .rewardPill { background: #ffcc33; color: #2a1d00; }
+  /* 3.0 streak tracker on the scoreboard: last answers as dots + a meter toward the next streak item */
+  .streakRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: .8rem; }
+  .hist { display: flex; gap: 4px; align-items: center; }
+  .hist i { width: 16px; height: 16px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 10px; font-style: normal; font-weight: 900; color: #10101f; background: #33335a; }
+  .hist i.r { background: #3ddc84; } .hist i.w { background: #ff5c5c; }
+  .hist i.last { width: 20px; height: 20px; font-size: 12px; box-shadow: 0 0 0 2px #fff6; }
+  .meter { display: flex; align-items: center; gap: 3px; }
+  .meter b { width: 13px; height: 9px; border-radius: 3px; background: #33335a; }
+  .meter.hot b.f { background: linear-gradient(#ffd166, #ff5e3a); box-shadow: 0 0 6px #ff7a3a; }
+  .meter.cold b.f { background: linear-gradient(#bdf0ff, #4da3ff); box-shadow: 0 0 6px #4da3ff; }
+  .meter span { margin-left: 4px; font-weight: 800; white-space: nowrap; }
+  .meter.hot span { color: #ffb347; } .meter.cold span { color: #8fd3ff; }
+  .board li.close.hotC { box-shadow: 0 0 0 2px #ff7a3a, 0 0 18px rgba(255,122,58,.55); animation: closeGlow 1.4s ease-in-out infinite; }
+  .board li.close.coldC { box-shadow: 0 0 0 2px #4da3ff, 0 0 18px rgba(77,163,255,.55); animation: closeGlow 1.4s ease-in-out infinite; }
+  @keyframes closeGlow { 50% { filter: brightness(1.18); } }
+  .closeTag { display: inline-block; font-size: .72rem; font-weight: 800; padding: 1px 7px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
+  .closeTag.hot { background: #ff7a3a; color: #1a0a00; } .closeTag.cold { background: #4da3ff; color: #00142a; }
+  /* Beginner's Luck: the easiest difficulty glows while it's worth double */
+  .tierPick button.lucky, .luckyBanner, .glowBadge { animation: luckyGlow 1.2s ease-in-out infinite; }
+  .tierPick button.lucky { box-shadow: 0 0 0 3px #ffe066, 0 0 24px 4px rgba(255,224,102,.75); position: relative; }
+  .tierPick button.lucky s { opacity: .65; }
+  @keyframes luckyGlow { 50% { box-shadow: 0 0 0 3px #fff3b0, 0 0 34px 8px rgba(255,224,102,.95); } }
+  .luckyBanner { text-align: center; margin: 0 auto 12px; padding: 8px 14px; border-radius: 999px; background: #3a3000; color: #ffe066; font-weight: 800; width: fit-content; box-shadow: 0 0 0 2px #ffe066; }
+  .glowBadge { border-radius: 6px; padding: 0 3px; box-shadow: 0 0 0 1px #ffe066, 0 0 10px rgba(255,224,102,.8); }
+  /* Category Lock picker */
+  .modalBox.wide { max-width: 760px; max-height: 88vh; overflow-y: auto; }
+  .lockSearch { width: 100%; box-sizing: border-box; margin: 6px 0 12px; }
+  .lockFamilies { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; text-align: left; }
+  .lockFamily { border-radius: 10px; background: var(--panel2); border-left: 5px solid var(--c); overflow: hidden; }
+  .lockFamily.open { grid-column: 1 / -1; }
+  .lockFamHead { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: none; color: var(--text); padding: 10px 12px; font-weight: 800; text-align: left; }
+  .lockFamHead small { color: var(--muted); font-weight: 600; white-space: nowrap; }
+  .lockChips { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 10px 10px; justify-content: flex-start; }
+  .lockChip { background: var(--c); color: #111; font-weight: 700; padding: 7px 11px; border-radius: 999px; }
+  .lockChip small { margin-left: 6px; opacity: .7; font-weight: 600; }
+  .selfTarget { background: #2b2b55; border: 2px dashed var(--accent); }
+  .cardToggle { background: none; border: 0; color: var(--text); padding: 0; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; }
+  .cardToggle .groupArrow { pointer-events: none; }
+  .nsfwOn { background: #880e4f !important; color: #fff !important; }
   .rewardHint { text-align: center; margin: 0 0 10px; color: #ffcc33; font-weight: 600; }
   .rarityTag { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; color: var(--rc); border: 1px solid var(--rc); background: rgba(0,0,0,.25); vertical-align: middle; white-space: nowrap; }
   .itemCard { text-align: left; background: #2d2d63; border: 1px solid #4a4a8a; padding: 10px 12px; border-radius: 10px; font-weight: 700; }
@@ -211,7 +250,7 @@
   .catGroup .groupHead { font-weight: 800; }
   .groupArrow { width: 34px; height: 34px; padding: 0; border-radius: 8px; background: var(--panel2); color: var(--text); flex: none; display: grid; place-items: center; }
   .groupArrow::before { content: ''; width: 9px; height: 9px; border-right: 3px solid currentColor; border-bottom: 3px solid currentColor; transform: rotate(-45deg); margin-left: -3px; transition: transform .15s; }
-  .catGroup.open .groupArrow::before { transform: rotate(45deg); margin: -4px 0 0; }
+  .catGroup.open .groupArrow::before, .groupArrow.isOpen::before { transform: rotate(45deg); margin: -4px 0 0; }
   .groupMeta { background: none; border: 0; padding: 4px 2px; color: var(--muted); font-size: .85rem; cursor: pointer; }
   .catGroupSubs { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0 4px 42px; }
   @media (max-width: 560px) { .catGroupRow { row-gap: 0; } .catGroupRow .groupMeta { flex-basis: 100%; text-align: left; padding: 2px 0 0 42px; } }
@@ -266,6 +305,16 @@
     </div>
     <button class="primary" style="margin-top:4px;font-size:1.2rem" onclick="startGame()">Start game →</button>
   </div>
+  <div class="card" id="recentCard">
+    <div class="row" style="justify-content:space-between">
+      <h3 style="margin:0">Recent players <span class="muted" style="font-size:.9rem;font-weight:400">— click a name to add them</span></h3>
+      <div class="row">
+        <button class="small" id="lastLineupBtn" onclick="addLastLineup()">↺ Same players as last game</button>
+        <button class="small" onclick="addAllRecent()">+ Add everyone</button>
+      </div>
+    </div>
+    <div class="chips" id="recentChips"></div>
+  </div>
   <div class="card">
     <h3 style="margin:0">Answer choices</h3>
     <div class="chips" id="choicePicker"></div>
@@ -276,26 +325,18 @@
     <div class="chips" id="tierPicker"></div>
     <p class="muted" style="margin-bottom:0">Hard Lock, Exodia and Beginner's Luck only use the difficulties that are on.</p>
   </div>
-  <div class="card">
+  <div class="card" id="catCard">
     <div class="row" style="justify-content:space-between">
-      <h3 style="margin:0">Categories in this game <span class="muted" style="font-size:.9rem;font-weight:400">— click to turn on/off</span></h3>
-      <div class="row"><button class="small" id="allCatsBtn" onclick="allCatsOn()">Turn all on</button>
+      <button class="cardToggle" onclick="toggleCatCard()"><span class="groupArrow" id="catCardArrow"></span>
+        <h3 style="margin:0">Categories in this game <span class="muted" style="font-size:.9rem;font-weight:400" id="catCardSummary"></span></h3></button>
+      <div class="row"><button class="small" id="nsfwBtn" onclick="toggleNsfw()" title="Adults-only categories (18+)">🔞 After Dark off</button>
+        <button class="small" id="allCatsBtn" onclick="allCatsOn()">Turn all on</button>
         <button class="small" id="allCatsOffBtn" onclick="allCatsOff()">Turn all off</button>
         <button class="small" id="cultureBtn" onclick="toggleCulture()">🌍 Culture off</button>
         <button class="small ghost" id="expandAllBtn" onclick="expandAllGroups()">Expand all</button></div>
     </div>
-    <div class="chips" id="catPicker"></div>
+    <div id="catCardBody"><div class="chips" id="catPicker"></div></div>
     <p class="muted" id="catPickerInfo" style="margin-bottom:0"></p>
-  </div>
-  <div class="card" id="recentCard">
-    <div class="row" style="justify-content:space-between">
-      <h3 style="margin:0">Recent players <span class="muted" style="font-size:.9rem;font-weight:400">— click a name to add them</span></h3>
-      <div class="row">
-        <button class="small" id="lastLineupBtn" onclick="addLastLineup()">↺ Same players as last game</button>
-        <button class="small" onclick="addAllRecent()">+ Add everyone</button>
-      </div>
-    </div>
-    <div class="chips" id="recentChips"></div>
   </div>
 </section>
 
@@ -508,9 +549,11 @@
   <div class="card" data-stab="fx">
     <h3 style="margin-top:0">✨ Effects</h3>
     <label class="switch"><input type="checkbox" id="fxOn" onchange="saveFxSettings()"> Animations — screen transitions and points flying to / dropping off players</label>
-    <label class="switch" style="margin-top:10px"><input type="checkbox" id="sfxOn" onchange="saveFxSettings()"> Sound effects — right / wrong answers, points, items and the winner</label>
+    <label class="switch" style="margin-top:10px"><input type="checkbox" id="sfxOn" onchange="saveFxSettings()"> Sound effects — right / wrong answers, points, items, game start, each new turn and the winner</label>
+    <label class="switch" style="margin-top:10px"><input type="checkbox" id="uiSfxOn" onchange="saveFxSettings()"> Button sounds — a soft tick when you hover over or click a button</label>
     <div class="row" style="margin-top:10px"><button class="small" onclick="sfx('right')">▶ Right</button><button class="small" onclick="sfx('wrong')">▶ Wrong</button>
-      <button class="small" onclick="sfx('item')">▶ Item gained</button><button class="small" onclick="sfx('use')">▶ Item used</button><button class="small" onclick="sfx('block')">▶ Shield block</button><button class="small" onclick="sfx('win')">▶ Winner</button></div>
+      <button class="small" onclick="sfx('item')">▶ Item gained</button><button class="small" onclick="sfx('use')">▶ Item used</button><button class="small" onclick="sfx('block')">▶ Shield block</button><button class="small" onclick="sfx('win')">▶ Winner</button>
+      <button class="small" onclick="sfx('start')">▶ Game start</button><button class="small" onclick="sfx('turn')">▶ Next turn</button><button class="small" onclick="sfx('question')">▶ Question</button></div>
   </div>
   <div class="card" data-stab="timing">
     <h3 style="margin-top:0">🏷️ Question preview</h3>
@@ -526,7 +569,9 @@
     <div id="timerBody">
       <label>Seconds to answer</label>
       <input type="number" id="timerSecs" min="5" max="600" style="width:120px" onchange="saveTimerSettings()">
-      <label class="switch" style="margin-top:12px"><input type="checkbox" id="timerSound" onchange="saveTimerSettings()"> Tick sound for the last 5 seconds and a buzzer at zero</label>
+      <label style="margin-top:12px;display:block">Warning: the clock turns red and ticks for the last</label>
+      <div class="row"><input type="number" id="timerWarn" min="0" max="60" style="width:90px" onchange="saveTimerSettings()"><span class="unit">seconds (0 = no warning)</span></div>
+      <label class="switch" style="margin-top:12px"><input type="checkbox" id="timerSound" onchange="saveTimerSettings()"> Tick sound during the warning and a buzzer at zero</label>
       <label class="switch" style="margin-top:12px"><input type="checkbox" id="timerLate" onchange="saveTimerSettings()"> Host can still mark an answer correct after time runs out (for last-second answers)</label>
       <p class="muted">The clock starts when the question appears and stops when you click Reveal answer. Click the clock to pause it.
         If time runs out, the answer is shown; it counts as wrong unless the host-override option above is on.</p>
@@ -541,9 +586,19 @@
       <p class="help" style="margin-top:10px">Players earn an item when they get several answers <b>right</b> in a row (🔥 hot streak) or <b>wrong</b> in a row (🧊 cold streak).
         Cold-streak items are stronger so players who are behind can catch up. A player can use one item per turn, before picking a question.</p>
       <div class="setting">
-        <div class="setName">Streak lengths that give an item</div>
+        <div class="setName">🔥 Hot streak: right answers in a row that give an item</div>
         <div class="ctrl"><input id="itemStreaks" placeholder="3, 5, 7" style="width:160px" onchange="saveItemSettings()"></div>
-        <div class="help">Separate numbers with commas. With 3, 5, 7, a player earns an item on their 3rd, 5th and 7th answer in a row.</div>
+        <div class="help">Separate numbers with commas. With 3, 5, 7, a player earns an item on their 3rd, 5th and 7th right answer in a row.</div>
+      </div>
+      <div class="setting">
+        <div class="setName">🧊 Cold streak: wrong answers in a row that give a comeback item</div>
+        <div class="ctrl"><input id="itemColdStreaks" placeholder="2, 4, 6" style="width:160px" onchange="saveItemSettings()"></div>
+        <div class="help">Shorter than the hot streak so players who are behind get help sooner. Default 2, 4, 6.</div>
+      </div>
+      <div class="setting">
+        <div class="setName">🪃 Last-place boost</div>
+        <div class="ctrl">After round <input type="number" id="lastPlaceAfter" min="0" max="100" style="width:80px" onchange="saveItemSettings()"><span class="unit">(0 = off)</span></div>
+        <div class="help">From then on, whoever is in last place at the start of each round gets a free Common cold-streak item. Players tied for last each get one; nobody does if everyone is tied.</div>
       </div>
     </div>
   </div>
@@ -568,12 +623,15 @@
   </div>
   <div class="card itemsDep" data-stab="items">
     <h3 class="cardTitle">⭐ Rarity</h3>
-    <div class="help" style="margin-top:0">How often each rarity is picked when an item is earned. These are relative weights: 60 / 30 / 10 means 60% Common, 30% Rare, 10% Legendary. Set one to 0 to switch that rarity off.</div>
+    <div class="help" style="margin-top:0">How likely each rarity is. These are relative weights shared by all the items of that rarity: with 60 / 30 / 10, any single Common item is about twice as likely as a single Rare, and a Legendary is the rarest. An item that already showed up this game is half as likely to show up again. Set a weight to 0 to switch that rarity off.</div>
     <div class="rarityGrid" id="rarityWeights"></div>
   </div>
   <div class="card itemsDep" data-stab="items">
     <h3 class="cardTitle">📋 Item list</h3>
     <div class="help" style="margin-top:0">Set each item's rarity and where it can come from. Untick all three boxes to turn an item off completely.</div>
+    <div class="row" style="margin-top:10px"><button class="small" onclick="setAllItems(true)">✓ Tick all</button>
+      <button class="small" onclick="setAllItems(false)">✕ Untick all</button>
+      <button class="small ghost" onclick="resetItemSettings()">↩ Reset items to default</button></div>
     <div class="tableScroll"><table style="margin-top:10px"><thead><tr><th>Item</th><th>Rarity</th><th>What it does</th><th style="text-align:center">🔥 Hot streak</th><th style="text-align:center">🧊 Cold streak</th><th style="text-align:center">🎁 Prize</th></tr></thead>
       <tbody id="itemTable"></tbody></table></div>
   </div>
@@ -615,7 +673,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '2.3.1';
+const APP_VERSION = '3.0.0';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -626,7 +684,7 @@ for (const [oldKey, newKey] of [['teamQuizData_v1', KEY], ['teamQuizPlayers_v1',
   } catch (e) {}
 }
 // Bump when a settings migration is added in upgrade(); a reset starts at this rev so no migration re-runs
-const SETTINGS_REV = 6;
+const SETTINGS_REV = 7;
 let SEED_VERSION = 10; // set from questions.json's "version" at startup; // 10: every starter question gets 2 extra wrong answers for 6-answer games; 5: category groups; 6: more families + Disney+, Theme Parks, Generations; 7: every category in a family (General Knowledge, Cars, Pop Culture); 8: pre-1990 questions most players won't know moved to Obscure; 9: regional culture families
 // Tier difficulty is their order in the list (easiest first, hardest last); points only decide scoring
 const OBSCURE_TIER = { id: 't4', name: 'Obscure', points: 10, color: '#b36bff' };
@@ -847,6 +905,12 @@ const SEED_CATEGORIES = [
   { id: 'cat_tv_streaming', name: "Streaming Originals", color: '#26bce4', group: "Television" },
   { id: 'cat_tv_scifi', name: "Sci-Fi & Fantasy TV", color: '#3cc3e6', group: "Television" },
   { id: 'cat_tv_talk', name: "Late Night & Talk Shows", color: '#53cae9', group: "Television" },
+  // After Dark: adults-only (18+) family, hidden unless the After Dark switch on the setup screen is on
+  { id: 'cat_afterdark', name: "General", color: '#e0245e', group: "After Dark", nsfw: true },
+  { id: 'cat_afterdark_sex', name: "Sex & Bodies", color: '#c2185b', group: "After Dark", nsfw: true },
+  { id: 'cat_afterdark_dating', name: "Dating & Hookups", color: '#d81b60', group: "After Dark", nsfw: true },
+  { id: 'cat_afterdark_party', name: "Drinking & Party", color: '#ad1457', group: "After Dark", nsfw: true },
+  { id: 'cat_afterdark_screen', name: "Raunchy Screen & Music", color: '#880e4f', group: "After Dark", nsfw: true },
 ];
 // Starter questions moved to the Obscure tier in version 8 (pre-1990 topics most players won't know), by number within their category
 const SEED_RETIER = {"actors":"11,81,98,112,113,114,115,116,117,118,121,122,124,125,128,129,131,132,133,134,135,136,137,138,139,142,145,146,149,150","anime":"59,98,144,151,152,209","body":"86,135","cars":"79,131,133,134,135,138,146","dentistry":"109,111,130,131,138","disney":"113,150","disney_parks":"28,36,41","games":"105,121,133,141","gossip":"129,130,131,135,141,142","memes":"12,98,99,107","movies":"63,81,95,99,108,118,119,122,129","music":"87,88,89,124,128,130,131,132,133,134,135,136,137,138,140,141,142,144","space":"54,94,106,114,135,140","sports":"117,121,126,134,203,204,206,207,208,225,229,233,236,237","tech":"121,122,129,133,135,144,150,151,152","tv":"52,53,54,55,97,119,131,132,199,203"};
@@ -938,9 +1002,18 @@ function upgrade(d) {
     d.settings.rev = 4;
   }
   if (d.settings.rev < 5) d.settings.rev = 5;
-  if (d.settings.rev < SETTINGS_REV) {
+  if (d.settings.rev < 6) {
     // 1.7 doubled the Random bonus to 2; it goes back to 1 so it stays below an Easy question's points
     if (d.settings.randomBonus === 2) d.settings.randomBonus = 1;
+    d.settings.rev = 6;
+  }
+  if (d.settings.rev < SETTINGS_REV) {
+    // 3.0: item sources were rebalanced (every item can be a question prize), so the item list goes back to the new
+    // defaults once; the prize chance moves from the old default 20% to 35%, and the timer ticks for the last 10 seconds
+    if (d.settings.items) {
+      delete d.settings.items.pools;
+      if (d.settings.items.rewardChance === 20) d.settings.items.rewardChance = 35;
+    }
     d.settings.rev = SETTINGS_REV;
   }
   if (!d.categories) {
@@ -1015,12 +1088,18 @@ function upgrade(d) {
     }
     d.seedVersion = SEED_VERSION;
   }
+  d.settings.timer.warnAt ??= 10; // the clock ticks (and turns red) for this many final seconds
+  d.settings.uiSfx ??= true;      // small interface sounds: hovering and clicking buttons, turn changes
   d.settings.items ??= defaultItemSettings();
-  for (const k in ITEMS) d.settings.items.pools[k] ??= { hot: ITEMS[k].hot, cold: ITEMS[k].cold };
+  const itemDefaults = defaultItemSettings();
+  d.settings.items.pools ??= itemDefaults.pools;
+  for (const k in ITEMS) d.settings.items.pools[k] ??= itemDefaults.pools[k];
   d.settings.items.rarity ??= {}; for (const k in ITEMS) d.settings.items.rarity[k] ??= DEFAULT_RARITY[k] ?? 1;
-  d.settings.items.rarityWeights ??= { 1: 60, 2: 30, 3: 10 };
-  for (const k in ITEMS) d.settings.items.pools[k].reward ??= ITEMS[k].hot;
-  d.settings.items.rewardChance ??= 20; d.settings.items.rewards ??= true; d.settings.items.rewardAfterRounds ??= 3;
+  d.settings.items.rarityWeights ??= { ...itemDefaults.rarityWeights };
+  for (const k in ITEMS) d.settings.items.pools[k].reward ??= itemDefaults.pools[k].reward;
+  d.settings.items.rewardChance ??= itemDefaults.rewardChance; d.settings.items.rewards ??= true; d.settings.items.rewardAfterRounds ??= 3;
+  d.settings.items.lastPlaceAfter ??= itemDefaults.lastPlaceAfter;
+  d.settings.items.coldStreaks ??= [...itemDefaults.coldStreaks];
   delete d.deleted;
   return d;
 }
@@ -1150,6 +1229,8 @@ function renderSettings() {
   document.getElementById('timerOn').checked = tm.enabled;
   document.getElementById('timerSecs').value = tm.seconds;
   document.getElementById('timerSound').checked = tm.sound;
+  document.getElementById('timerWarn').value = tm.warnAt ?? 10;
+  document.getElementById('uiSfxOn').checked = data.settings.uiSfx;
   document.getElementById('timerLate').checked = !!tm.lateCorrect;
   document.getElementById('timerBody').style.opacity = tm.enabled ? 1 : .45;
   renderItemSettings();
@@ -1193,6 +1274,8 @@ function renderItemSettings() {
   document.getElementById('itemsEnabled').checked = st.enabled;
   document.querySelectorAll('.itemsDep').forEach(el => el.style.opacity = st.enabled ? 1 : .45);
   document.getElementById('itemStreaks').value = st.streaks.join(', ');
+  document.getElementById('itemColdStreaks').value = st.coldStreaks.join(', ');
+  document.getElementById('lastPlaceAfter').value = st.lastPlaceAfter ?? 10;
   document.getElementById('rewardChance').value = st.rewardChance;
   document.getElementById('rewardsOn').checked = st.rewards;
   document.getElementById('rewardChanceRow').style.opacity = st.rewards ? '' : '.45';
@@ -1212,11 +1295,21 @@ function renderItemSettings() {
     ${['hot', 'cold', 'reward'].map(kind => `<td style="text-align:center"><input type="checkbox" ${st.pools[k][kind] ? 'checked' : ''}
       onchange="data.settings.items.pools['${k}'].${kind} = this.checked; save(); toast('Saved')"></td>`).join('')}</tr>`).join('');
 }
+function setAllItems(on) {
+  for (const k in ITEMS) data.settings.items.pools[k] = { hot: on, cold: on, reward: on };
+  save(); renderItemSettings(); toast(on ? 'All items on' : 'All items off');
+}
+function resetItemSettings() {
+  if (!confirm('Put every item option back to the default (streaks, prizes, rarity, item list)? Other settings stay as they are.')) return;
+  data.settings.items = defaultItemSettings(); save(); renderItemSettings(); toast('Item settings reset');
+}
 function saveItemSettings() {
   const st = data.settings.items;
   st.enabled = document.getElementById('itemsEnabled').checked;
-  const nums = [...new Set(document.getElementById('itemStreaks').value.split(/[^0-9]+/).map(Number).filter(n => n >= 1))].sort((a, b) => a - b);
-  if (nums.length) st.streaks = nums;
+  const nums = id => [...new Set(document.getElementById(id).value.split(/[^0-9]+/).map(Number).filter(n => n >= 1))].sort((a, b) => a - b);
+  if (nums('itemStreaks').length) st.streaks = nums('itemStreaks');
+  if (nums('itemColdStreaks').length) st.coldStreaks = nums('itemColdStreaks');
+  const lp = parseInt(document.getElementById('lastPlaceAfter').value); if (lp >= 0) st.lastPlaceAfter = Math.min(100, lp);
   save(); renderItemSettings(); toast('Saved');
 }
 function saveChoiceSettings() {
@@ -1229,6 +1322,7 @@ function saveChoiceSettings() {
 function saveFxSettings() {
   data.settings.fx = document.getElementById('fxOn').checked;
   data.settings.sfx = document.getElementById('sfxOn').checked;
+  data.settings.uiSfx = document.getElementById('uiSfxOn').checked;
   applyFx(); save(); toast('Saved');
 }
 function saveIntroSetting() {
@@ -1243,6 +1337,7 @@ function saveTimerSettings() {
   tm.lateCorrect = document.getElementById('timerLate').checked;
   const v = parseInt(document.getElementById('timerSecs').value);
   if (v >= 5) tm.seconds = Math.min(600, v);
+  const w = parseInt(document.getElementById('timerWarn').value); if (w >= 0) tm.warnAt = Math.min(60, w);
   save(); renderSettings(); toast('Saved');
 }
 function setPickMode(m) {
@@ -1476,7 +1571,20 @@ function loadRoster() {
 const offCats = () => roster.offCats ??= [];
 // Difficulty tiers switched off for the game (remembered for next time)
 const offTiers = () => roster.offTiers ??= [];
-const gameQs = () => data.questions.filter(q => !offCats().includes(q.categoryId || '') && !offTiers().includes(q.tierId));
+// After Dark (18+) categories only count when the After Dark switch on the setup screen is on
+const isNsfwCat = c => !!c && (!!c.nsfw || c.group === 'After Dark' || /^cat_afterdark/.test(c.id));
+const nsfwOn = () => !!roster.nsfw;
+const nsfwIds = () => new Set(data.categories.filter(isNsfwCat).map(c => c.id));
+const visibleQs = () => { if (nsfwOn()) return data.questions; const hide = nsfwIds(); return data.questions.filter(q => !hide.has(q.categoryId)); };
+const gameQs = () => { const off = new Set(offCats()), offT = new Set(offTiers()), hide = nsfwOn() ? null : nsfwIds();
+  return data.questions.filter(q => !off.has(q.categoryId || '') && !offT.has(q.tierId) && !hide?.has(q.categoryId)); };
+function toggleNsfw() {
+  if (!nsfwOn() && !confirm('After Dark has adults-only (18+) questions about sex, dating and partying.\n\nTurn it on only if everyone playing is an adult and is OK with it.')) return;
+  roster.nsfw = !nsfwOn(); saveRoster(); renderCatPicker();
+  toast(nsfwOn() ? '🔞 After Dark is on' : 'After Dark is off');
+}
+// The categories card on the setup screen folds away so Recent players and Start stay close (starts folded)
+function toggleCatCard() { roster.catsOpen = !roster.catsOpen; saveRoster(); renderCatPicker(); }
 function toggleTier(id) {
   const off = offTiers(), i = off.indexOf(id);
   i >= 0 ? off.splice(i, 1) : off.push(id);
@@ -1517,7 +1625,7 @@ function allCatsOff() {
   roster.offCats = ids; saveRoster(); renderCatPicker();
 }
 // All the regional "… Culture" families at once
-const cultureCatIds = () => data.categories.filter(c => /culture$/i.test(c.group || '')).map(c => c.id);
+const cultureCatIds = () => data.categories.filter(c => /culture$/i.test(c.group || '') && !/^pop culture$/i.test(c.group)).map(c => c.id); // regional/ethnic culture families, not Pop Culture
 function toggleCulture() {
   const ids = cultureCatIds(), off = offCats(), allOn = ids.every(id => !off.includes(id));
   roster.offCats = allOn ? [...new Set([...off, ...ids])] : off.filter(id => !ids.includes(id));
@@ -1540,7 +1648,7 @@ function renderCatPicker() {
   const chip = (c, n, label) => { const on = !off.includes(c.id);
     return `<button class="catToggle ${on ? 'on' : ''}" style="--c:${c.color}" onclick="toggleCat('${c.id}')">${on ? '✓' : '✕'} ${esc(label)} <small>${n}</small></button>`; };
   // Families are collapsible rows, A–Z, with their categories A–Z inside (same order as Edit Questions)
-  const top = topChoices(data.questions);
+  const top = topChoices(visibleQs());
   const open = openGroups();
   const groups = top.filter(e => e.kind === 'group').sort((x, y) => az(x.group, y.group));
   const loose = top.filter(e => e.kind === 'cat').sort((x, y) => az(x.c.name, y.c.name));
@@ -1563,9 +1671,19 @@ function renderCatPicker() {
   document.getElementById('cultureBtn').style.display = cIds.length ? '' : 'none';
   document.getElementById('cultureBtn').textContent = cIds.every(id => !off.includes(id)) ? '🌍 Culture off' : '🌍 Culture on';
   document.getElementById('expandAllBtn').textContent = groups.length && groups.every(g => open.has(g.group)) ? 'Collapse all' : 'Expand all';
+  const cardOpen = !!roster.catsOpen, shownCats = top.flatMap(e => e.kind === 'group' ? e.cats.map(x => x.c) : [e.c]);
+  const onCats = shownCats.filter(c => !off.includes(c.id)).length;
+  document.getElementById('catCardBody').style.display = cardOpen ? '' : 'none';
+  document.getElementById('catCardArrow').className = 'groupArrow' + (cardOpen ? ' isOpen' : '');
+  document.getElementById('catCardSummary').textContent = `— ${onCats === shownCats.length ? `all ${shownCats.length}` : `${onCats} of ${shownCats.length}`} on · click to ${cardOpen ? 'hide' : 'show'}`;
+  document.getElementById('expandAllBtn').style.display = cardOpen ? '' : 'none';
+  const hasNsfw = data.categories.some(isNsfwCat);
+  document.getElementById('nsfwBtn').style.display = hasNsfw ? '' : 'none';
+  document.getElementById('nsfwBtn').textContent = nsfwOn() ? '🔞 After Dark on' : '🔞 After Dark off';
+  document.getElementById('nsfwBtn').classList.toggle('nsfwOn', nsfwOn());
   const total = gameQs().length;
   document.getElementById('catPickerInfo').textContent = total
-    ? `${total} of ${data.questions.length} questions in play.` : 'No questions in play — turn a category or difficulty back on.';
+    ? `${total} of ${visibleQs().length} questions in play.` : 'No questions in play — turn a category or difficulty back on.';
   document.getElementById('allCatsBtn').style.display = off.length ? '' : 'none';
   document.getElementById('allCatsOffBtn').style.display = total ? '' : 'none';
 }
@@ -1700,20 +1818,20 @@ function removePlayer(i) { players.splice(i, 1); renderSetup(); }
 const ITEMS = {
   pickpocket: { icon: '🧤', name: 'Pickpocket',    target: true,  hot: true,  cold: false, desc: 'Steal 2, 4 or 6 points (random) from a player you choose.' },
   heist:      { icon: '💰', name: 'Heist',         target: true,  hot: false, cold: true,  desc: 'Steal 6, 8 or 10 points (random) from a player you choose.' },
-  skip:       { icon: '⏭️', name: 'Skip Turn',     target: true,  hot: true,  cold: true,  desc: 'Make a player miss their next turn.' },
-  hardlock:   { icon: '🔒', name: 'Hard Lock',     target: true,  hot: false, cold: true,  desc: 'Force a player onto the hardest questions for their next 2 turns.' },
-  catlock:    { icon: '🎯', name: 'Category Lock', target: true,  hot: false, cold: true,  desc: 'Lock a player to a category you pick for their next 2 turns.' },
+  skip:       { icon: '⏭️', name: 'Skip Turn',     target: true,  hot: true,  cold: true,  desc: 'Make a player miss their next turn. On someone already skipping, it adds another turn.' },
+  hardlock:   { icon: '🔒', name: 'Hard Lock',     target: true,  hot: false, cold: true,  desc: 'Force a player onto the hardest questions for their next 2 turns. On someone already locked, it adds 2 more turns.' },
+  catlock:    { icon: '🎯', name: 'Category Lock', target: true,  hot: false, cold: true,  desc: 'Lock a player to a category you pick for their next 2 turns (adds 2 more if they\'re already locked). Or lock yourself into a favorite for 1 turn.' },
   double:     { icon: '⚡', name: 'Double Points', target: false, hot: true,  cold: false, desc: 'Use before picking: your answer this turn is worth double.' },
   triple:     { icon: '🔱', name: 'Triple Threat', target: false, hot: true,  cold: true,  desc: 'Use before picking: triple points if right, but lose triple if wrong.' },
   timecrunch: { icon: '⏳', name: 'Time Crunch',   target: true,  hot: true,  cold: true,  desc: "Halve a player's timer on their next question.", needsTimer: true },
   storm:      { icon: '🌧️', name: 'Storm Cloud',   target: false, hot: false, cold: true,  desc: 'Everyone else earns half points (rounded up) on their next turn.' },
-  beginner:   { icon: '🐣', name: "Beginner's Luck", target: false, hot: false, cold: true, desc: 'For your next 5 answered questions, the easiest questions are worth double for you.' },
+  beginner:   { icon: '🐣', name: "Beginner's Luck", target: false, hot: false, cold: true, desc: 'For your next 5 turns, the easiest questions are worth double for you. Using another adds 5 more turns.' },
   bet:        { icon: '🤝', name: 'Side Bet',      target: true,  hot: true,  cold: true,  desc: "Bet on a player's next question: if they're right you earn double what they earn, if they're wrong you lose double what it was worth." },
   swap:       { icon: '🔄', name: 'Swap',          target: true,  hot: false, cold: true,  desc: 'Swap your score with a player you choose.' },
   phone:      { icon: '📞', name: 'Phone a Friend', target: true, hot: false, cold: true,  desc: 'Use before picking: choose a helper. If you answer right, you each get half the points (rounded up).' },
   tax:        { icon: '💸', name: 'Tax',           target: true,  hot: true,  cold: true,  desc: "On a player's next question, half of what they earn (rounded down) goes to you." },
   dodge:      { icon: '💨', name: 'Dodge the Bullet', target: false, hot: true, cold: true, desc: "Use before picking: if you get it wrong, choose a player who loses the question's points." },
-  nuke:       { icon: '☢️', name: 'Nuke',          target: false, hot: false, cold: true,  desc: "Everyone's score (yours included) becomes the average of all scores, rounded." },
+  nuke:       { icon: '☢️', name: 'Nuke',          target: false, hot: false, cold: true,  desc: "Everyone's score (yours included) becomes the average of all scores, rounded up." },
   exodia:     { icon: '🃏', name: 'Exodia',        target: false, hot: true,  cold: true,  desc: 'Get your next 5 questions right, climbing the difficulty ladder, and win instantly. One wrong answer and you lose half your points.' },
   catchup:    { icon: '🪜', name: 'Catch Up',      target: false, hot: false, cold: true,  desc: 'Jump up to match the score of the player just ahead of you.' },
   blueshell:  { icon: '🐢', name: 'Blue Shell',    target: false, hot: false, cold: true,  desc: 'Hits the leader (not you) for −10 points. Ties are all hit. No choosing needed.' },
@@ -1726,27 +1844,40 @@ const DEFAULT_RARITY = { pickpocket: 1, skip: 1, shield: 1, double: 1, timecrunc
 const itemRarity = k => data.settings.items.rarity?.[k] ?? DEFAULT_RARITY[k] ?? 1;
 const LOCK_TURNS = 2, BLUE_SHELL_POINTS = 10, BEGINNER_TURNS = 5, EXODIA_PIECES = 5; // minimum; Exodia grows to one piece per tier if there are more tiers than this
 const defaultItemSettings = () => ({
-  enabled: true, streaks: [3, 5, 7],
-  pools: Object.fromEntries(Object.entries(ITEMS).map(([k, it]) => [k, { hot: it.hot, cold: it.cold, reward: it.hot }])),
-  rewards: true, rewardChance: 20, rewardAfterRounds: 3, // prizes start once this many rounds are done (0 = from the start)
+  enabled: true, streaks: [3, 5, 7], coldStreaks: [2, 4, 6], // hot = right in a row; cold = wrong in a row (shorter, for comebacks)
+  // question prizes go to trailing players, so every item can be a prize (before 3.0 only hot-streak items could,
+  // which left Exodia as the only Legendary prize and Nuke / Swap almost never showing up)
+  pools: Object.fromEntries(Object.entries(ITEMS).map(([k, it]) => [k, { hot: it.hot, cold: it.cold, reward: true }])),
+  rewards: true, rewardChance: 35, rewardAfterRounds: 3, // prizes start once this many rounds are done (0 = from the start)
   // question prizes on/off, and the % chance that a question a trailing player picks carries an item prize
   rarity: { ...DEFAULT_RARITY }, rarityWeights: { 1: 60, 2: 30, 3: 10 },
+  lastPlaceAfter: 10, // from this round on, whoever is in last place gets a free Common cold-streak item each round (0 = off)
 });
 const itemsOn = () => data.settings.items.enabled;
 const rand = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
-function randomItem(kind) {
+// Items handed out this game, by item: within a rarity, an item that already showed up is less likely to show up again
+let itemsThisGame = {};
+function randomItem(kind, rarity = null) {
   const multiTier = rankedTiers().length > 1; // Hard Lock / Beginner's Luck do nothing with a single difficulty in play
   const pool = Object.keys(ITEMS).filter(k => data.settings.items.pools[k]?.[kind] && (!ITEMS[k].needsTimer || data.settings.timer.enabled)
     && (multiTier || !['hardlock', 'beginner'].includes(k))
     && (players.length > 2 || k !== 'phone')); // with 2 players the only friend is your opponent
   if (!pool.length) return null;
-  // pick a rarity tier by weight (only tiers that have an eligible item), then an item in that tier
-  const w = data.settings.items.rarityWeights, tiers = [1, 2, 3].filter(r => pool.some(k => itemRarity(k) === r) && (w[r] ?? 0) > 0);
-  if (!tiers.length) return pool[Math.floor(Math.random() * pool.length)];
-  let x = Math.random() * tiers.reduce((a, r) => a + w[r], 0), tier = tiers.at(-1);
-  for (const r of tiers) { x -= w[r]; if (x <= 0) { tier = r; break; } }
-  const inTier = pool.filter(k => itemRarity(k) === tier);
-  return inTier[Math.floor(Math.random() * inTier.length)];
+  // Each item's chance = its rarity's weight shared among ALL items of that rarity (so 60 / 30 / 10 means each Common
+  // is ~6.7, each Rare ~3.8, each Legendary ~3.3 with the default list). Sharing by the whole list, not just the items
+  // allowed here, keeps a lone Legendary in a pool (e.g. Exodia on hot streaks) from getting the whole 10% to itself.
+  // Every earlier appearance this game halves an item's chance, so the same item rarely comes up twice in a row.
+  const w = data.settings.items.rarityWeights, perRarity = { 1: 0, 2: 0, 3: 0 };
+  for (const k in ITEMS) if (Object.values(data.settings.items.pools[k] || {}).some(Boolean)) perRarity[itemRarity(k)]++;
+  const cands = pool.filter(k => !rarity || itemRarity(k) === rarity);
+  if (!cands.length) return null;
+  const weights = cands.map(k => (rarity ? 1 : (w[itemRarity(k)] ?? 0) / Math.max(1, perRarity[itemRarity(k)])) * 0.5 ** (itemsThisGame[k] || 0));
+  const total = weights.reduce((x, y) => x + y, 0);
+  if (!(total > 0)) return null;
+  let y = Math.random() * total, pick = cands.at(-1);
+  for (let i = 0; i < cands.length; i++) { y -= weights[i]; if (y <= 0) { pick = cands[i]; break; } }
+  itemsThisGame[pick] = (itemsThisGame[pick] || 0) + 1;
+  return pick;
 }
 const rarityTag = k => { const r = RARITIES[itemRarity(k)]; return `<span class="rarityTag" style="--rc:${r.color}" title="${r.name}">${r.stars} ${r.name}</span>`; };
 // The hardest tier that actually has questions
@@ -1812,12 +1943,12 @@ function startGame() {
   if (!gameQs().length) return alert("No questions are in play — turn at least one category and one difficulty back on.");
   rememberPlayers(); turnPrizes = {};
   // games played are counted when a game finishes with a winner (quitting with End game doesn't count)
-  players.forEach(p => Object.assign(p, { score: 0, items: [], streak: { kind: null, count: 0 }, skip: 0, hardLock: 0, catLock: null, boost: null, halfTime: false, halfGain: false, beginner: 0, helper: null, tax: null, dodge: false, exodia: null, turnsPlayed: 0, lastGamble: -Infinity, gambleLocked: false }));
-  bets = [];
+  players.forEach(p => Object.assign(p, { score: 0, items: [], history: [], streak: { kind: null, count: 0 }, skip: 0, hardLock: 0, catLock: null, boost: null, halfTime: false, halfGain: false, beginner: 0, helper: null, tax: null, dodge: false, exodia: null, turnsPlayed: 0, lastGamble: -Infinity, gambleLocked: false }));
+  bets = []; itemsThisGame = {}; lastPlaceRound = 0;
   // Random turn order each game (Fisher–Yates shuffle)
   for (let i = players.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [players[i], players[j]] = [players[j], players[i]]; }
   turn = 0; round = 1; used.clear(); current = null; itemUsedThisTurn = false; shownScores = new Map(); shownRound = 0;
-  go('game'); renderGame();
+  go('game'); renderGame(); sfx('start');
   if (players.length > 1) modal(`<div class="bigIcon">🎲</div><h2>Turn order</h2>
     <ol class="turnOrder">${players.map(p => `<li>${esc(p.name)}</li>`).join('')}</ol>`, [{ label: "Let's go!", cls: 'primary' }]);
 }
@@ -1826,7 +1957,6 @@ function quitGame() { if (confirm('End this game and return to the menu?')) { do
 
 function statusBadges(p) {
   const b = [];
-  if (p.streak.count >= 2) b.push(`<span title="${p.streak.count} ${p.streak.kind === 'hot' ? 'correct' : 'wrong'} in a row">${p.streak.kind === 'hot' ? '🔥' : '🧊'}${p.streak.count}</span>`);
   if (p.skip) b.push(`<span title="Will miss next turn">⏭️</span>`);
   if (p.hardLock) b.push(`<span title="Hard Lock: ${p.hardLock} turn(s) left">🔒${p.hardLock}</span>`);
   if (p.catLock) b.push(`<span title="Locked to ${esc(choiceLabel(p.catLock.id))}: ${p.catLock.turns} turn(s) left">🎯${p.catLock.turns}</span>`);
@@ -1834,7 +1964,7 @@ function statusBadges(p) {
   if (p.boost === 'triple') b.push(`<span title="Triple Threat this turn">🔱x3</span>`);
   if (p.halfTime) b.push(`<span title="Time Crunch: half time on next question">⏳½</span>`);
   if (p.halfGain) b.push(`<span title="Storm Cloud: half points next turn">🌧️½</span>`);
-  if (p.beginner) b.push(`<span title="Beginner's Luck: easiest questions worth double, ${p.beginner} turn(s) left">🐣${p.beginner}</span>`);
+  if (p.beginner) b.push(`<span class="glowBadge" title="Beginner's Luck: easiest questions worth double, ${p.beginner} turn(s) left">🐣${p.beginner}</span>`);
   if (p.helper) b.push(`<span title="Phone a Friend: ${esc(p.helper.name)} is helping this turn">📞${esc(p.helper.name)}</span>`);
   if (p.exodia) b.push(`<span title="Exodia: ${p.exodia.pieces} of ${p.exodia.path.length} pieces">🃏${p.exodia.pieces}/${p.exodia.path.length}</span>`);
   if (data.settings.gamble && (gambleNeedsRight(p) || gambleWait(p))) b.push(`<span title="${gambleNeedsRight(p) ? 'Gamble locked until a correct answer' : `Gamble ready in ${gambleWait(p)} turn(s)`}">🎰${gambleNeedsRight(p) ? '🔒' : '⏳' + gambleWait(p)}</span>`);
@@ -1843,13 +1973,31 @@ function statusBadges(p) {
   bets.filter(x => x.from === p).forEach(x => b.push(`<span title="Side Bet on ${esc(x.on.name)}">🤝${esc(x.on.name)}</span>`));
   return b.join(' ');
 }
+// Streak tracker: the last 5 answers as ✓ / ✗ dots, and a meter filling toward the next streak that gives an item
+const streakList = kind => kind === 'cold' ? data.settings.items.coldStreaks : data.settings.items.streaks;
+function nextStreakGoal(p) { return itemsOn() && p.streak.kind ? streakList(p.streak.kind).find(n => n > p.streak.count) ?? null : null; }
+function streakRow(p) {
+  const h = (p.history || []).slice(-5), dots = [...Array(5 - h.length).fill(null), ...h];
+  const hist = `<span class="hist" title="Last answers (newest on the right)">${dots.map((r, i) =>
+    `<i class="${r === null ? '' : r ? 'r' : 'w'} ${i === 4 && r !== null ? 'last' : ''}">${r === null ? '' : r ? '✓' : '✗'}</i>`).join('')}</span>`;
+  const k = p.streak.kind, n = p.streak.count, goal = nextStreakGoal(p);
+  if (!k || !n) return `<div class="streakRow">${hist}<span class="muted">no streak yet</span></div>`;
+  const icon = k === 'hot' ? '🔥' : '🧊';
+  const meter = goal
+    ? `<span class="meter ${k}" title="${n} ${k === 'hot' ? 'right' : 'wrong'} in a row — an item at ${goal}">${Array.from({ length: goal }, (_, i) => `<b class="${i < n ? 'f' : ''}"></b>`).join('')}<span>${icon} ${n}/${goal}</span></span>`
+    : `<span class="meter ${k}"><span>${icon} ${n} in a row</span></span>`;
+  return `<div class="streakRow">${hist}${meter}</div>`;
+}
+const streakClose = p => { const g = nextStreakGoal(p); return g && p.streak.kind && p.streak.count === g - 1; };
 function renderBoard() {
   const target = data.settings.targetPoints;
   document.getElementById('targetInfo').textContent = `First to ${target} points`;
   const order = players.map((p, i) => ({ p, i })).sort((a, b) => b.p.score - a.p.score);
   document.getElementById('liveBoard').innerHTML = order.map(({ p, i }) =>
-    `<li data-pi="${i}" class="${i === turn ? 'current' : players.length > 1 && i === nextPlayerIndex() ? 'next' : ''}" style="display:block">
-      <div style="display:flex;justify-content:space-between"><span>${esc(p.name)}${i === turn ? ' <span class="rowTag now">NOW</span>' : players.length > 1 && i === nextPlayerIndex() ? ' <span class="rowTag next">NEXT</span>' : ''}</span><b>${p.score}</b></div>
+    `<li data-pi="${i}" class="${i === turn ? 'current' : players.length > 1 && i === nextPlayerIndex() ? 'next' : ''} ${streakClose(p) ? `close ${p.streak.kind}C` : ''}" style="display:block">
+      <div style="display:flex;justify-content:space-between"><span>${esc(p.name)}${i === turn ? ' <span class="rowTag now">NOW</span>' : players.length > 1 && i === nextPlayerIndex() ? ' <span class="rowTag next">NEXT</span>' : ''}${streakClose(p)
+        ? `<span class="closeTag ${p.streak.kind}">${p.streak.kind === 'hot' ? '🔥 1 more right = item!' : '🧊 1 more miss = item'}</span>` : ''}</span><b>${p.score}</b></div>
+      ${streakRow(p)}
       ${itemsOn() && (p.items.length || statusBadges(p)) ? `<div class="badges"><span>${statusBadges(p)}</span>
         <span class="boardItems">${p.items.map(k => `<span title="${esc(ITEMS[k].name)}">${ITEMS[k].icon}</span>`).join('')}</span></div>` : ''}
       <div class="progress"><i style="width:${Math.min(100, p.score / target * 100)}%"></i></div></li>`).join('');
@@ -1892,8 +2040,10 @@ function renderGameInner() {
             : `<button style="background:${e.c.color}" onclick="draw('cat','${e.c.id}')">${esc(e.c.name)}${prizeBadge('cat:' + e.c.id)}<small>${e.count} question${e.count === 1 ? '' : 's'}</small></button>`);
         }
       } else {
-        buttons = data.tiers.filter(t => gameQs().some(q => q.tierId === t.id)).map(t =>
-          `<button style="background:${t.color}" onclick="draw('tier','${t.id}')">${esc(t.name)}${prizeBadge('tier:' + t.id)}<small>${t.points} pt${t.points == 1 ? '' : 's'}</small></button>`);
+        const lucky = p.beginner > 0 ? easiestTierId() : null;
+        buttons = data.tiers.filter(t => gameQs().some(q => q.tierId === t.id)).map(t => t.id === lucky
+          ? `<button class="lucky" style="background:${t.color}" onclick="draw('tier','${t.id}')" title="Beginner's Luck: worth double">🐣 ${esc(t.name)}${prizeBadge('tier:' + t.id)}<small><s>${t.points}</s> → ${t.points * 2} pts · double!</small></button>`
+          : `<button style="background:${t.color}" onclick="draw('tier','${t.id}')">${esc(t.name)}${prizeBadge('tier:' + t.id)}<small>${t.points} pt${t.points == 1 ? '' : 's'}</small></button>`);
       }
       const rb = data.settings.randomBonus;
       if (!(byCat && pickGroup)) buttons.push(`<button class="randomBtn" onclick="draw('any')">🎲 Random<small>${rb ? `+${rb} bonus point${rb === 1 ? '' : 's'} if right!` : 'Surprise me!'}</small></button>`);
@@ -1907,7 +2057,9 @@ function renderGameInner() {
         <a href="#" onclick="setPickMode('${byCat ? 'tier' : 'cat'}');return false" style="color:var(--blue)">switch to ${byCat ? 'difficulty' : 'category'}</a></p>`;
     }
     const hint = !locked && rewardEligible(p) ? `<p class="rewardHint">🎁 Catching up: each ${byCat ? 'category' : 'difficulty'} has a ${data.settings.items.rewardChance}% chance to carry an item each turn. Pick one marked 🎁 and get it right to win that item. (Not Random or Gamble.)</p>` : '';
-    stage.innerHTML = `<div class="turn"><span>${esc(p.name)}</span>, ${heading}</div>${hint}
+    const et = tierOf(easiestTierId());
+    const luckyBanner = p.beginner > 0 && et ? `<div class="luckyBanner">🐣 Beginner's Luck: ${esc(et.name)} questions are worth <b>${et.points * 2}</b> instead of ${et.points} · ${p.beginner} turn${p.beginner === 1 ? '' : 's'} left</div>` : '';
+    stage.innerHTML = `<div class="turn"><span>${esc(p.name)}</span>, ${heading}</div>${luckyBanner}${hint}
       <div class="tierPick">${buttons.join('')}</div>${footer}${itemsOn() ? itemBar(p) : ''}`;
     return;
   }
@@ -2118,7 +2270,7 @@ function draw(kind, id, gamble = false) {
   } else showQuestion();
 }
 let introTimer = null;
-function showQuestion() { clearTimeout(introTimer); if (!current) return; current.intro = false; startTimer(players[turn]); renderGame(); }
+function showQuestion() { clearTimeout(introTimer); if (!current) return; current.intro = false; startTimer(players[turn]); renderGame(); sfx('question'); }
 function reveal() { stopTimer(); revealed = true; renderReveal(); }
 // Players can lock in an answer by clicking it: that reveals the answer, scores it, and shows a Next button
 // ("Change result" falls back to the host's Correct / Wrong buttons)
@@ -2137,7 +2289,7 @@ function stopTimer() { if (timer) clearInterval(timer.id); timer = null; }
 function tick() {
   if (!timer || timer.paused) return;
   timer.left--;
-  if (timer.left <= 5 && timer.left > 0) beep(880, .08);
+  if (timer.left <= (data.settings.timer.warnAt ?? 10) && timer.left > 0) beep(timer.left <= 3 ? 1100 : 880, .08);
   if (timer.left <= 0) { beep(180, .6, .25); stopTimer(); timesUp = true; revealed = true; renderReveal(); }
   renderTimer();
 }
@@ -2145,7 +2297,7 @@ function toggleTimerPause() { if (timer) { timer.paused = !timer.paused; renderT
 function renderTimer() {
   const el = document.getElementById('timer'); if (!el) return;
   if (!timer) { el.innerHTML = ''; return; }
-  const pct = timer.left / timer.total * 100, low = timer.left <= 5;
+  const pct = timer.left / timer.total * 100, low = timer.left <= (data.settings.timer.warnAt ?? 10);
   // Build once, then update in place so the bar animates smoothly
   if (!el.firstChild) el.innerHTML = `<div class="timer" onclick="toggleTimerPause()" title="Click to pause / resume">
     <span class="timerNum"></span><div class="timerBar"><i style="width:100%"></i></div></div>`;
@@ -2192,8 +2344,26 @@ const SFX = {
   block: () => { tone(180, 0, .12, { type: 'square', vol: .1, slide: 120 }); tone(150, .13, .2, { type: 'square', vol: .09, slide: 90 }); },
   win:   () => [[523, 0, .12], [523, .13, .12], [523, .26, .12], [698, .4, .3], [880, .65, .3], [1047, .9, .6]]
            .forEach(([f, t, d]) => tone(f, t, d, { type: 'triangle', vol: .15 })),
+  // game starting: a short rising fanfare
+  start: () => [[392, 0, .14], [523, .12, .14], [659, .24, .14], [784, .36, .4]].forEach(([f, t, d]) => tone(f, t, d, { type: 'square', vol: .06 })),
+  // next player's turn: a soft two-note doorbell
+  turn:  () => { tone(784, 0, .18, { type: 'triangle', vol: .09 }); tone(1175, .13, .3, { type: 'triangle', vol: .09 }); },
+  // question appears: a quick upward swish
+  question: () => tone(300, 0, .22, { type: 'sine', vol: .07, slide: 900 }),
+  // interface: very quiet hover tick and click
+  hover: () => tone(1800, 0, .03, { type: 'sine', vol: .018 }),
+  click: () => tone(900, 0, .05, { type: 'triangle', vol: .05, slide: 600 }),
 };
-function sfx(name) { if (!data.settings.sfx) return; try { SFX[name](); } catch (e) {} }
+const UI_SOUNDS = new Set(['hover', 'click']);
+function sfx(name) { if (!data.settings.sfx || (UI_SOUNDS.has(name) && !data.settings.uiSfx)) return; try { SFX[name](); } catch (e) {} }
+// Hover / click ticks on buttons (one tick per button entered; throttled so sweeping across a grid isn't noisy)
+let lastHoverEl = null, lastHoverAt = 0;
+document.addEventListener('pointerover', e => {
+  const b = e.target.closest?.('button, .chip, .catToggle'); if (!b || b === lastHoverEl || b.disabled) return;
+  lastHoverEl = b; const now = performance.now(); if (now - lastHoverAt < 70) return; lastHoverAt = now; sfx('hover');
+});
+document.addEventListener('pointerout', e => { if (e.target.closest?.('button, .chip, .catToggle') === lastHoverEl && !e.relatedTarget?.closest?.('button, .chip, .catToggle')) lastHoverEl = null; });
+document.addEventListener('click', e => { const b = e.target.closest?.('button'); if (b && !b.disabled && !b.closest('.good, .bad') && !b.matches('.good, .bad')) sfx('click'); }, true);
 
 // Score animations: the scoreboard compares each player's score with the last time it was drawn.
 // Gains fly in as "+N" (from the Correct button, or from the player who lost them), losses drop off as "−N".
@@ -2275,6 +2445,7 @@ function mark(correct) {
   if (current.gamble) { p.lastGamble = p.turnsPlayed; p.gambleLocked = true; }
   else if (correct) p.gambleLocked = false;
   p.turnsPlayed++;
+  (p.history ??= []).push(correct); if (p.history.length > 10) p.history.shift();
   p.boost = null; p.halfGain = false;
   if (p.beginner > 0) p.beginner--;
   const extraNotes = [];
@@ -2326,7 +2497,7 @@ function mark(correct) {
   const prize = correct && current.reward && itemsOn() ? current.reward : null;
   if (prize) { p.items.push(prize); itemStat(prize).earned++; }
   let earned = null;
-  if (itemsOn() && data.settings.items.streaks.includes(p.streak.count)) {
+  if (itemsOn() && streakList(kind).includes(p.streak.count)) {
     earned = randomItem(kind);
     if (earned) { p.items.push(earned); const s = itemStat(earned); s.shown++; s.earned++; }
   }
@@ -2340,7 +2511,7 @@ function mark(correct) {
   const name = p.name, count = p.streak.count;
   const skipped = advanceTurn();
   renderGame();
-  let notes = turnNotes + exodiaNote + skipped.map(n => `<p>⏭️ <b>${esc(n)}</b>'s turn was skipped!</p>`).join('');
+  let notes = turnNotes + exodiaNote + skipped.map(n => `<p>⏭️ <b>${esc(n)}</b>'s turn was skipped!</p>`).join('') + lastPlaceNotes.splice(0).join('');
   if (prize) {
     const it = ITEMS[prize], box = `<div class="bigIcon">🎁${it.icon}</div><h2>Question prize!</h2>
       <p><b>${esc(name)}</b> won <b>${it.name}</b> ${rarityTag(prize)}</p><p class="muted">${esc(itemDesc(prize))}</p>`;
@@ -2355,6 +2526,7 @@ function mark(correct) {
       <p><b>${esc(name)}</b> ${kind === 'hot' ? 'earned' : 'gets a comeback item:'} <b>${it.name}</b> ${rarityTag(earned)}</p>
       <p class="muted">${esc(itemDesc(earned))}</p>${notes}`);
   } else if (notes) modal(notes);
+  setTimeout(() => sfx('turn'), notes || earned || prize ? 120 : 650);
 }
 // Moves to the next player, passing over anyone hit by Skip Turn. Returns names that were skipped.
 // If anyone has reached the target, the highest score wins. On a tie, the player whose turn it is wins
@@ -2396,12 +2568,28 @@ function roundBanner(n) {
   el.innerHTML = `<small>ROUND</small>${n}`;
   document.body.appendChild(el); setTimeout(() => el.remove(), 1600);
 }
+// Last-place help: from round (lastPlaceAfter + 1) on, whoever is last at the start of each round gets a free Common
+// cold-streak item (everyone tied for last gets one; nobody does if all scores are equal)
+let lastPlaceRound = 0, lastPlaceNotes = [];
+function lastPlaceGift() {
+  const after = data.settings.items.lastPlaceAfter || 0;
+  if (!itemsOn() || !after || round <= after || lastPlaceRound === round || players.length < 2) return;
+  lastPlaceRound = round;
+  const low = Math.min(...players.map(p => p.score));
+  if (players.every(p => p.score === low)) return;
+  players.filter(p => p.score === low).forEach(p => {
+    const k = randomItem('cold', 1); if (!k) return;
+    p.items.push(k); const st = itemStat(k); st.shown++; st.earned++;
+    lastPlaceNotes.push(`<p>🪃 Last-place boost: <b>${esc(p.name)}</b> gets <b>${ITEMS[k].icon} ${ITEMS[k].name}</b> for round ${round}.</p>`);
+  });
+  if (lastPlaceNotes.length) setTimeout(() => sfx('item'), 500);
+}
 function advanceTurn() {
   const skipped = [];
   for (let n = 0; n < players.length * 2; n++) {
-    turn = (turn + 1) % players.length; if (turn === 0) round++;
+    turn = (turn + 1) % players.length; if (turn === 0) { round++; lastPlaceGift(); }
     const p = players[turn];
-    if (p.skip > 0) { p.skip--; p.halfGain = false; skipped.push(p.name); continue; }
+    if (p.skip > 0) { p.skip--; p.halfGain = false; if (p.beginner > 0) p.beginner--; skipped.push(p.name); continue; }
     break;
   }
   itemUsedThisTurn = false; pickGroup = null; turnPrizes = {};
@@ -2416,10 +2604,10 @@ function useItem(idx) {
   if (!it.target) {
     if (key === 'double') { p.boost = 'double'; finishItem(p, idx, `<div class="bigIcon">⚡</div><h2>Double Points!</h2><p>${esc(p.name)}'s answer this turn is worth double.</p>`); }
     if (key === 'nuke') {
-      const avg = Math.round(players.reduce((sum, o) => sum + o.score, 0) / players.length);
+      const avg = Math.ceil(players.reduce((sum, o) => sum + o.score, 0) / players.length);
       const lines = players.map(o => `${esc(o.name)}: ${o.score} → <b>${avg}</b>`);
       players.forEach(o => o.score = avg);
-      finishItem(p, idx, `<div class="bigIcon">☢️</div><h2>Nuke!</h2><p>Everyone is reset to the average score.</p><p>${lines.join('<br>')}</p>`);
+      finishItem(p, idx, `<div class="bigIcon">☢️</div><h2>Nuke!</h2><p>Everyone is reset to the average score (rounded up).</p><p>${lines.join('<br>')}</p>`);
     }
     if (key === 'exodia') {
       if (p.exodia) return toast('Exodia is already in progress!');
@@ -2433,7 +2621,7 @@ function useItem(idx) {
     if (key === 'triple') { p.boost = 'triple'; finishItem(p, idx, `<div class="bigIcon">🔱</div><h2>Triple Threat!</h2><p>${esc(p.name)} wins <b>triple</b> points if right… and loses triple if wrong.</p>`); }
     if (key === 'blueshell') blueShell(p, idx);
     if (key === 'storm') stormCloud(p, idx);
-    if (key === 'beginner') { p.beginner = BEGINNER_TURNS; finishItem(p, idx, `<div class="bigIcon">🐣</div><h2>Beginner's Luck!</h2><p>For ${esc(p.name)}'s next ${BEGINNER_TURNS} questions, <b>${esc(tierOf(easiestTierId())?.name || 'the easiest')}</b> questions are worth double.</p>`); }
+    if (key === 'beginner') { const more = p.beginner > 0; p.beginner += BEGINNER_TURNS; finishItem(p, idx, `<div class="bigIcon">🐣</div><h2>Beginner's Luck!</h2><p>${more ? `${esc(p.name)}'s Beginner's Luck is extended to <b>${p.beginner} turns</b>.` : `For ${esc(p.name)}'s next ${BEGINNER_TURNS} turns,`} <b>${esc(tierOf(easiestTierId())?.name || 'the easiest')}</b> questions are worth double (${(tierOf(easiestTierId())?.points ?? 1)} → <b>${(tierOf(easiestTierId())?.points ?? 1) * 2}</b> points).</p>`); }
     if (key === 'catchup') {
       const above = players.filter(o => o.score > p.score).map(o => o.score);
       if (!above.length) return toast("You're already in the lead — save Catch Up for later!");
@@ -2444,22 +2632,57 @@ function useItem(idx) {
     return;
   }
   const others = players.map((o, i) => ({ o, i })).filter(x => x.i !== turn);
-  if (!others.length) return toast('No other players to use this on');
+  if (!others.length && key !== 'catlock') return toast('No other players to use this on');
+  // Category Lock can also be used on yourself: it locks you into a category you like for this one turn
+  const self = key === 'catlock' ? [{ label: `🙋 Myself <small>(1 turn — pick a favorite)</small>`, cls: 'selfTarget', fn: () => pickTarget(idx, turn) }] : [];
   modal(`<div class="bigIcon">${it.icon}</div><h2>${it.name}</h2><p class="muted">${esc(itemDesc(key))}</p><p>Use it on who?</p>`,
-    [...others.map(({ o, i }) => ({ label: `${esc(o.name)} <small>(${o.score} pts)</small>`, fn: () => pickTarget(idx, i) })),
+    [...others.map(({ o, i }) => ({ label: `${esc(o.name)} <small>(${o.score} pts)</small>`, fn: () => pickTarget(idx, i) })), ...self,
      { label: 'Cancel', cls: 'ghost' }]);
 }
 function pickTarget(idx, ti) {
   const p = players[turn], key = p.items[idx];
   if (key !== 'catlock') return applyItem(idx, ti);
-  const top = topChoices(gameQs());
-  const ask = () => modal(`<div class="bigIcon">🎯</div><h2>Lock ${esc(players[ti].name)} to which category?</h2>`,
-    [...top.map(e => e.kind === 'group'
-      ? { label: `${esc(e.group)} ▸`, fn: () => modal(`<div class="bigIcon">🎯</div><h2>Lock ${esc(players[ti].name)} to…</h2>`,
-          [{ label: `Any ${esc(e.group)}`, cls: 'primary', fn: () => applyItem(idx, ti, 'g:' + e.group) },
-           ...e.cats.map(x => ({ label: esc(x.c.name), fn: () => applyItem(idx, ti, x.c.id) })), { label: '← Back', cls: 'ghost', fn: ask }]) }
-      : { label: esc(e.c.name), fn: () => applyItem(idx, ti, e.c.id) }), { label: 'Cancel', cls: 'ghost' }]);
-  ask();
+  if (players[ti].catLock && ti !== turn) return applyItem(idx, ti, players[ti].catLock.id); // already locked: just adds turns
+  catLockPicker(idx, ti);
+}
+// Category Lock picker: families A–Z as tidy cards (click to open), each with an "Any" option and its categories A–Z,
+// plus a search box that filters every category at once
+let lockPick = null;
+function catLockPicker(idx, ti) {
+  lockPick = { idx, ti, open: null, q: '' };
+  const v = players[ti], self = ti === turn;
+  modal(`<div class="bigIcon">🎯</div><h2>${self ? 'Lock yourself' : `Lock ${esc(v.name)}`} to which category?</h2>
+    <p class="muted" style="margin-top:-6px">${self ? 'Only for this turn.' : `For their next ${LOCK_TURNS} turns.`}</p>
+    <input id="lockSearch" class="lockSearch" placeholder="🔍 Search categories…" oninput="lockPick.q=this.value;renderLockPicker()">
+    <div id="lockList" class="lockList"></div>`, [{ label: 'Cancel', cls: 'ghost' }]);
+  document.querySelector('#modal .modalBox').classList.add('wide');
+  renderLockPicker();
+  setTimeout(() => document.getElementById('lockSearch')?.focus(), 30);
+}
+function lockChoose(n) { const { idx, ti, ids } = lockPick; closeModal(); applyItem(idx, ti, ids[n]); }
+function lockToggle(n) { const g = lockPick.groups[n]; lockPick.open = lockPick.open === g ? null : g; renderLockPicker(); }
+function renderLockPicker() {
+  const el = document.getElementById('lockList'); if (!el) return;
+  const top = topChoices(gameQs()), q = lockPick.q.trim().toLowerCase();
+  const groups = top.filter(e => e.kind === 'group').sort((x, y) => az(x.group, y.group));
+  const loose = top.filter(e => e.kind === 'cat').sort((x, y) => az(x.c.name, y.c.name));
+  lockPick.ids = []; lockPick.groups = groups.map(g => g.group); // buttons refer to these by position (names can contain quotes)
+  const chip = (id, label, color, n) => `<button class="lockChip" style="--c:${color}" onclick="lockChoose(${lockPick.ids.push(id) - 1})">${esc(label)}<small>${n}</small></button>`;
+  if (q) { // search: flat list of every matching category (and families whose name matches)
+    const hits = [...groups.filter(g => g.group.toLowerCase().includes(q)).map(g => chip('g:' + g.group, `Any ${g.group}`, g.color, g.count)),
+      ...groups.flatMap(g => g.cats.filter(x => (g.group + ' ' + x.c.name).toLowerCase().includes(q)).sort((a, b) => az(a.c.name, b.c.name))
+        .map(x => chip(x.c.id, `${g.group} › ${x.c.name}`, x.c.color, x.count))),
+      ...loose.filter(e => e.c.name.toLowerCase().includes(q)).map(e => chip(e.c.id, e.c.name, e.c.color, e.count))];
+    el.innerHTML = hits.length ? `<div class="lockChips">${hits.join('')}</div>` : '<p class="muted">No category matches.</p>';
+    return;
+  }
+  el.innerHTML = `<div class="lockFamilies">${groups.map((g, gi) => {
+    const open = lockPick.open === g.group;
+    return `<div class="lockFamily ${open ? 'open' : ''}" style="--c:${g.color}">
+      <button class="lockFamHead" onclick="lockToggle(${gi})"><span>${esc(g.group)}</span><small>${g.cats.length} · ${g.count} q</small></button>
+      ${open ? `<div class="lockChips">${chip('g:' + g.group, `🎲 Any ${g.group}`, g.color, g.count)}${[...g.cats].sort((a, b) => catOrder(a.c, b.c)).map(x => chip(x.c.id, x.c.name, x.c.color, x.count)).join('')}</div>` : ''}
+    </div>`; }).join('')}</div>
+    ${loose.length ? `<div class="lockChips" style="margin-top:10px">${loose.map(e => chip(e.c.id, e.c.name, e.c.color, e.count)).join('')}</div>` : ''}`;
 }
 function applyItem(idx, ti, catId) {
   const p = players[turn], key = p.items[idx], it = ITEMS[key], v = players[ti];
@@ -2470,6 +2693,10 @@ function applyItem(idx, ti, catId) {
   if (key === 'bet') { // not an attack, so Shields don't block it
     bets.push({ from: p, on: v });
     return finishItem(p, idx, `<div class="bigIcon">🤝</div><h2>Side Bet!</h2><p>${esc(p.name)} is betting on <b>${esc(v.name)}</b>. If ${esc(v.name)} gets their next question right, ${esc(p.name)} earns double what they earn. If they get it wrong, ${esc(p.name)} loses double.</p>`);
+  }
+  if (key === 'catlock' && v === p) { // locking yourself: this turn only (or one more turn if you're already locked)
+    if (p.catLock) p.catLock.turns += 1; else p.catLock = { id: catId, turns: 1 };
+    return finishItem(p, idx, `<div class="bigIcon">🎯</div><h2>Category Lock!</h2><p>${esc(p.name)} locks themself into <b>${esc(choiceLabel(p.catLock.id))}</b>${p.catLock.turns > 1 ? ` for ${p.catLock.turns} turns` : ' for this turn'}.</p>`);
   }
   const shieldAt = v.items.indexOf('shield');
   if (shieldAt >= 0) {
@@ -2490,12 +2717,13 @@ function applyItem(idx, ti, catId) {
   } else if (key === 'timecrunch') {
     v.halfTime = true; msg = `<h2>Time Crunch!</h2><p>${esc(v.name)} gets only <b>${Math.ceil(data.settings.timer.seconds / 2)} seconds</b> on their next question.</p>`;
   } else if (key === 'skip') {
-    v.skip++; msg = `<h2>Skip Turn!</h2><p>${esc(v.name)} will miss their next turn.</p>`;
+    v.skip++; msg = `<h2>Skip Turn!</h2><p>${esc(v.name)} will miss their next ${v.skip > 1 ? `<b>${v.skip} turns</b>` : 'turn'}.</p>`;
   } else if (key === 'hardlock') {
-    v.hardLock = LOCK_TURNS; msg = `<h2>Hard Lock!</h2><p>${esc(v.name)} must answer ${esc(tierOf(hardestTierId())?.name || 'the hardest')} questions for their next ${LOCK_TURNS} turns.</p>`;
+    v.hardLock = (v.hardLock || 0) + LOCK_TURNS; msg = `<h2>Hard Lock!</h2><p>${esc(v.name)} must answer ${esc(tierOf(hardestTierId())?.name || 'the hardest')} questions for their next <b>${v.hardLock} turns</b>.</p>`;
   } else if (key === 'catlock') {
-    v.catLock = { id: catId, turns: LOCK_TURNS };
-    msg = `<h2>Category Lock!</h2><p>${esc(v.name)} is locked to <b>${esc(choiceLabel(catId))}</b> for their next ${LOCK_TURNS} turns.</p>`;
+    // already locked: the lock keeps its category and gets 2 more turns
+    if (v.catLock) v.catLock.turns += LOCK_TURNS; else v.catLock = { id: catId, turns: LOCK_TURNS };
+    msg = `<h2>Category Lock!</h2><p>${esc(v.name)} is locked to <b>${esc(choiceLabel(v.catLock.id))}</b> for their next <b>${v.catLock.turns} turns</b>.</p>`;
   }
   finishItem(p, idx, `<div class="bigIcon">${it.icon}</div>${msg}`);
 }
