@@ -138,16 +138,22 @@
   .rewardPill { background: #ffcc33; color: #2a1d00; }
   /* 3.0 streak tracker on the scoreboard: last answers as dots + a meter toward the next streak item */
   .rowHead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .pDot { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; box-shadow: 0 0 0 2px rgba(0,0,0,.35); }
+  .rowHead .pDot { margin-right: -2px; }
+  #liveBoard li { box-shadow: inset 5px 0 0 var(--pc); padding-left: 16px; }
+  #liveBoard li.current { box-shadow: inset 5px 0 0 var(--pc), 0 0 0 2px var(--accent); outline: none; }
+  .rowName { font-weight: 800; }
   .rowName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .rowHead .rowTag { flex: none; margin: 0 auto 0 0; }
   .rowHead b { font-size: 1.15rem; margin-left: auto; }
-  .streakRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 7px; font-size: .8rem; }
+  .streakRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 7px; font-size: .8rem; height: 22px; }
   .streakLbl { font-weight: 800; white-space: nowrap; } .streakLbl.hot { color: #ffb347; } .streakLbl.cold { color: #8fd3ff; }
   .streakBar { height: 4px; border-radius: 2px; background: #33335a; margin-top: 5px; overflow: hidden; }
   .streakBar i { display: block; height: 100%; border-radius: 2px; }
   .streakBar.hot i { background: linear-gradient(90deg, #ffd166, #ff5e3a); } .streakBar.cold i { background: linear-gradient(90deg, #bdf0ff, #4da3ff); }
-  .badgeRow { display: flex; flex-wrap: wrap; gap: 4px 8px; margin-top: 6px; font-size: .85rem; }
-  .board .boardItems { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .badgeRow { display: flex; flex-wrap: nowrap; gap: 8px; margin-top: 6px; font-size: .85rem; height: 22px; align-items: center; overflow: hidden; white-space: nowrap; }
+  .board .boardItems { display: flex; flex-wrap: nowrap; gap: 4px; margin-top: 4px; height: 30px; align-items: center; overflow: hidden; }
+  .moreItems { font-size: .8rem; font-weight: 800; color: var(--muted); margin-left: 2px; }
   .hist { display: flex; gap: 4px; align-items: center; }
   .hist i { width: 16px; height: 16px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 10px; font-style: normal; font-weight: 900; color: #10101f; background: #33335a; }
   .hist i.r { background: #3ddc84; } .hist i.w { background: #ff5c5c; }
@@ -236,6 +242,7 @@
   .turnChip { position: relative; padding: 8px 14px; border-radius: 999px; background: var(--panel); border: 2px solid #33335f; color: var(--muted); font-weight: 600; }
   .turnChip em { font-style: normal; font-size: .62rem; font-weight: 900; letter-spacing: 1px; margin-right: 6px; padding: 2px 6px; border-radius: 6px; vertical-align: middle; }
   .turnChip.now { background: var(--accent); border-color: var(--accent); color: #222; font-weight: 800; transform: scale(1.08); box-shadow: 0 0 18px rgba(255,204,51,.45); }
+  .turnChip .pDot { width: 9px; height: 9px; }
   .turnChip.now em { background: #222; color: var(--accent); }
   .turnChip.next { border-color: var(--blue); color: var(--text); }
   .turnChip.next em { background: var(--blue); color: #08203d; }
@@ -683,7 +690,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '3.1.1';
+const APP_VERSION = '3.2.0';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1788,9 +1795,21 @@ function rememberPlayers() {
   saveRoster();
 }
 const isPlaying = name => players.some(p => p.name.toLowerCase() === name.toLowerCase());
+// Player colors: each player in a game gets a distinct color, remembered by name on this device (no yellow: that's the "your turn" highlight)
+const PLAYER_COLORS = ['#ff6b6b', '#4dabf7', '#51cf66', '#cc5de8', '#ff922b', '#22b8cf', '#f06595', '#94d82d', '#ced4da', '#20c997', '#845ef7', '#b08968'];
+function assignColors(list) {
+  const saved = roster.colors ??= {}, taken = new Set();
+  list.forEach(p => { const c = saved[p.name.toLowerCase()]; if (c && !taken.has(c)) { p.color = c; taken.add(c); } else p.color = null; });
+  list.forEach(p => { if (p.color) return;
+    p.color = PLAYER_COLORS.find(c => !taken.has(c)) ?? PLAYER_COLORS[taken.size % PLAYER_COLORS.length];
+    taken.add(p.color); saved[p.name.toLowerCase()] = p.color; });
+  saveRoster();
+}
+const pc = p => p?.color || 'var(--accent)';
 const MAX_NAME = 16; // keeps names from breaking the scoreboard, turn strip and buttons
 const cleanName = n => String(n).trim().replace(/\s+/g, ' ').slice(0, MAX_NAME).trim();
-function addByName(name) { name = cleanName(name); if (name && !isPlaying(name)) players.push({ name, score: 0 }); }
+const MAX_PLAYERS = 12; // one distinct color each
+function addByName(name) { name = cleanName(name); if (name && !isPlaying(name) && players.length < MAX_PLAYERS) players.push({ name, score: 0 }); }
 function addRecent(i) { addByName(roster.recent[i]); renderSetup(); }
 function addAllRecent() { roster.recent.forEach(addByName); renderSetup(); }
 function addLastLineup() { roster.lastGame.forEach(addByName); renderSetup(); }
@@ -1812,17 +1831,22 @@ function renderSetup() {
   document.getElementById('lastLineupBtn').style.display = roster.lastGame.some(n => !isPlaying(n)) ? '' : 'none';
   document.getElementById('clearPlayersBtn').style.display = players.length ? '' : 'none';
   renderCatPicker(); renderChoicePicker();
+  assignColors(players);
   document.getElementById('playerChips').innerHTML = players.map((p, i) =>
-    `<span class="chip">${esc(p.name)} <b onclick="removePlayer(${i})" title="Remove">✕</b></span>`).join('');
+    `<span class="chip" style="box-shadow: inset 4px 0 0 ${p.color}"><i class="pDot" style="background:${p.color}"></i>${esc(p.name)} <b onclick="removePlayer(${i})" title="Remove">✕</b></span>`).join('');
+  const full = players.length >= MAX_PLAYERS;
   document.getElementById('setupInfo').textContent = players.length
-    ? `${players.length} player(s). First to ${data.settings.targetPoints} points wins.`
-    : 'Add at least one player to begin.';
+    ? `${players.length} of ${MAX_PLAYERS} players${full ? ' (full)' : ''}. First to ${data.settings.targetPoints} points wins.`
+    : `Add 1 to ${MAX_PLAYERS} players to begin.`;
+  document.getElementById('playerName').disabled = full;
+  document.getElementById('playerName').placeholder = full ? `Game is full (${MAX_PLAYERS} players)` : 'Player name (up to 16 characters)';
   setTimeout(() => document.getElementById('playerName').focus(), 50);
 }
 function addPlayer() {
   const el = document.getElementById('playerName'); const name = cleanName(el.value);
   if (!name) return;
   if (isPlaying(name)) return alert('That name is already taken.');
+  if (players.length >= MAX_PLAYERS) return alert(`A game can have up to ${MAX_PLAYERS} players.`);
   players.push({ name, score: 0 }); el.value = ''; renderSetup();
 }
 function removePlayer(i) { players.splice(i, 1); renderSetup(); }
@@ -1840,9 +1864,9 @@ const ITEMS = {
   timecrunch: { icon: '⏳', name: 'Time Crunch',   target: true,  hot: true,  cold: true,  desc: "Halve a player's timer on their next question.", needsTimer: true },
   storm:      { icon: '🌧️', name: 'Storm Cloud',   target: false, hot: false, cold: true,  desc: 'Everyone else earns half points (rounded up) on their next turn.' },
   beginner:   { icon: '🐣', name: "Beginner's Luck", target: false, hot: false, cold: true, desc: 'For your next 5 turns, the easiest questions are worth double for you. Using another adds 5 more turns.' },
-  bet:        { icon: '🤝', name: 'Side Bet',      target: true,  hot: true,  cold: true,  desc: "Bet on a player's next question: if they're right you earn double what they earn, if they're wrong you lose double what it was worth." },
+  bet:        { icon: '🤝', name: 'Side Bet',      target: true,  hot: true,  cold: true,  desc: "Bet on a player's next question: if they get it right, you earn the same points they do. If they get it wrong, you lose nothing." },
   swap:       { icon: '🔄', name: 'Swap',          target: true,  hot: false, cold: true,  desc: 'Swap your score with a player you choose.' },
-  phone:      { icon: '📞', name: 'Phone a Friend', target: true, hot: false, cold: true,  desc: 'Use before picking: choose a helper. If you answer right, you each get half the points (rounded up).' },
+  phone:      { icon: '📞', name: 'Phone a Friend', target: true, hot: false, cold: true,  desc: "Use before picking: choose a friend to answer for you. If they're right, you both get the full points. If they're wrong, they lose the question's points." },
   tax:        { icon: '💸', name: 'Tax',           target: true,  hot: true,  cold: true,  desc: "On a player's next question, half of what they earn (rounded down) goes to you." },
   dodge:      { icon: '💨', name: 'Dodge the Bullet', target: false, hot: true, cold: true, desc: "Use before picking: if you get it wrong, choose a player who loses the question's points." },
   nuke:       { icon: '☢️', name: 'Nuke',          target: false, hot: false, cold: true,  desc: "Everyone's score (yours included) becomes the average of all scores, rounded up." },
@@ -1953,9 +1977,10 @@ let bets = [];
 let pickGroup = null; // category group opened on the pick screen (category mode) // Side Bets waiting to pay out: { from: player, on: player }
 function startGame() {
   if (!players.length) return alert('Add at least one player.');
+  if (players.length > MAX_PLAYERS) players.length = MAX_PLAYERS;
   if (!data.questions.length) return alert('Add some questions first (Edit Questions).');
   if (!gameQs().length) return alert("No questions are in play — turn at least one category and one difficulty back on.");
-  rememberPlayers(); turnPrizes = {};
+  rememberPlayers(); turnPrizes = {}; assignColors(players);
   // games played are counted when a game finishes with a winner (quitting with End game doesn't count)
   players.forEach(p => Object.assign(p, { score: 0, items: [], history: [], streak: { kind: null, count: 0 }, skip: 0, hardLock: 0, catLock: null, boost: null, halfTime: false, halfGain: false, beginner: 0, helper: null, tax: null, dodge: false, exodia: null, turnsPlayed: 0, lastGamble: -Infinity, gambleLocked: false }));
   bets = []; itemsThisGame = {}; lastPlaceRound = 0;
@@ -1979,7 +2004,7 @@ function statusBadges(p) {
   if (p.halfTime) b.push(`<span title="Time Crunch: half time on next question">⏳½</span>`);
   if (p.halfGain) b.push(`<span title="Storm Cloud: half points next turn">🌧️½</span>`);
   if (p.beginner) b.push(`<span class="glowBadge" title="Beginner's Luck: easiest questions worth double, ${p.beginner} turn(s) left">🐣${p.beginner}</span>`);
-  if (p.helper) b.push(`<span title="Phone a Friend: ${esc(p.helper.name)} is helping this turn">📞${esc(p.helper.name)}</span>`);
+  if (p.helper) b.push(`<span title="Phone a Friend: ${esc(p.helper.name)} answers for them this turn">📞${esc(p.helper.name)}</span>`);
   if (p.exodia) b.push(`<span title="Exodia: ${p.exodia.pieces} of ${p.exodia.path.length} pieces">🃏${p.exodia.pieces}/${p.exodia.path.length}</span>`);
   if (data.settings.gamble && (gambleNeedsRight(p) || gambleWait(p))) b.push(`<span title="${gambleNeedsRight(p) ? 'Gamble locked until a correct answer' : `Gamble ready in ${gambleWait(p)} turn(s)`}">🎰${gambleNeedsRight(p) ? '🔒' : '⏳' + gambleWait(p)}</span>`);
   if (p.dodge) b.push(`<span title="Dodge the Bullet ready this turn">💨</span>`);
@@ -1995,13 +2020,20 @@ function streakRow(p) {
   const hist = `<span class="hist" title="Last answers (newest on the right)">${dots.map((r, i) =>
     `<i class="${r === null ? '' : r ? 'r' : 'w'} ${i === 4 && r !== null ? 'last' : ''}">${r === null ? '' : r ? '✓' : '✗'}</i>`).join('')}</span>`;
   const k = p.streak.kind, n = p.streak.count, goal = nextStreakGoal(p);
-  if (!k || !n) return `<div class="streakRow">${hist}</div>`;
+  if (!k || !n) return `<div class="streakRow">${hist}<span class="streakLbl"></span></div><div class="streakBar"><i style="width:0"></i></div>`;
   const icon = k === 'hot' ? '🔥' : '🧊';
   const label = goal && n === goal - 1 ? `<span class="closeTag ${k}" title="${n} ${k === 'hot' ? 'right' : 'wrong'} in a row">${icon} 1 more = item!</span>`
     : `<span class="streakLbl ${k}" title="${n} ${k === 'hot' ? 'right' : 'wrong'} in a row${goal ? ` — an item at ${goal}` : ''}">${icon} ${n}${goal ? `/${goal}` : ' in a row'}</span>`;
   // a thin bar under the dots fills toward the next streak item
-  const bar = goal ? `<div class="streakBar ${k}"><i style="width:${Math.round(n / goal * 100)}%"></i></div>` : '';
+  const bar = `<div class="streakBar ${k}"><i style="width:${goal ? Math.round(n / goal * 100) : 100}%"></i></div>`;
   return `<div class="streakRow">${hist}${label}</div>${bar}`;
+}
+// Every scoreboard row has the same lines (streak, effects, items) at a fixed height, so rows never grow or shrink
+const BOARD_ITEMS_SHOWN = 6;
+function boardItems(p) {
+  const shown = p.items.slice(0, BOARD_ITEMS_SHOWN).map(k => `<span title="${esc(ITEMS[k].name)}">${ITEMS[k].icon}</span>`).join('');
+  const more = p.items.length - BOARD_ITEMS_SHOWN;
+  return shown + (more > 0 ? `<span class="moreItems" title="${esc(p.items.slice(BOARD_ITEMS_SHOWN).map(k => ITEMS[k].name).join(', '))}">+${more}</span>` : '');
 }
 const streakClose = p => { const g = nextStreakGoal(p); return g && p.streak.kind && p.streak.count === g - 1; };
 function renderBoard() {
@@ -2009,11 +2041,11 @@ function renderBoard() {
   document.getElementById('targetInfo').textContent = `First to ${target} points`;
   const order = players.map((p, i) => ({ p, i })).sort((a, b) => b.p.score - a.p.score);
   document.getElementById('liveBoard').innerHTML = order.map(({ p, i }) =>
-    `<li data-pi="${i}" class="${i === turn ? 'current' : players.length > 1 && i === nextPlayerIndex() ? 'next' : ''} ${streakClose(p) ? `close ${p.streak.kind}C` : ''}" style="display:block">
-      <div class="rowHead"><span class="rowName">${esc(p.name)}</span>${i === turn ? '<span class="rowTag now">NOW</span>' : players.length > 1 && i === nextPlayerIndex() ? '<span class="rowTag next">NEXT</span>' : ''}<b>${p.score}</b></div>
+    `<li data-pi="${i}" class="${i === turn ? 'current' : ''}" style="display:block;--pc:${pc(p)}">
+      <div class="rowHead"><i class="pDot" style="background:${pc(p)}"></i><span class="rowName" style="color:${pc(p)}">${esc(p.name)}</span>${i === turn ? '<span class="rowTag now">NOW</span>' : ''}<b>${p.score}</b></div>
       ${streakRow(p)}
-      ${itemsOn() && statusBadges(p) ? `<div class="badgeRow">${statusBadges(p)}</div>` : ''}
-      ${itemsOn() && p.items.length ? `<div class="boardItems">${p.items.map(k => `<span title="${esc(ITEMS[k].name)}">${ITEMS[k].icon}</span>`).join('')}</div>` : ''}
+      ${itemsOn() ? `<div class="badgeRow" title="${esc(statusBadges(p).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())}">${statusBadges(p)}</div>
+      <div class="boardItems">${boardItems(p)}</div>` : ''}
       <div class="progress"><i style="width:${Math.min(100, p.score / target * 100)}%"></i></div></li>`).join('');
   renderTurnInfo();
   animateScores();
@@ -2073,13 +2105,13 @@ function renderGameInner() {
     const hint = !locked && rewardEligible(p) ? `<p class="rewardHint">🎁 Catching up: each ${byCat ? 'category' : 'difficulty'} has a ${data.settings.items.rewardChance}% chance to carry an item each turn. Pick one marked 🎁 and get it right to win that item. (Not Random or Gamble.)</p>` : '';
     const et = tierOf(easiestTierId());
     const luckyBanner = p.beginner > 0 && et ? `<div class="luckyBanner">🐣 Beginner's Luck: ${esc(et.name)} questions are worth <b>${et.points * 2}</b> instead of ${et.points} · ${p.beginner} turn${p.beginner === 1 ? '' : 's'} left</div>` : '';
-    stage.innerHTML = `<div class="turn"><span>${esc(p.name)}</span>, ${heading}</div>${luckyBanner}${hint}
+    stage.innerHTML = `<div class="turn"><span style="color:${pc(p)}">${esc(p.name)}</span>, ${heading}</div>${luckyBanner}${hint}
       <div class="tierPick">${buttons.join('')}</div>${footer}${itemsOn() ? itemBar(p) : ''}`;
     return;
   }
   const t = tierOf(current.tierId), q = current, c = catOf(q.categoryId) || NO_CAT;
   if (q.intro) {
-    stage.innerHTML = `<div class="turn"><span>${esc(p.name)}</span>, here's your next question…</div>
+    stage.innerHTML = `<div class="turn"><span style="color:${pc(p)}">${esc(p.name)}</span>, here's your next question…</div>
       <div class="intro">
         <div class="introLabel">Category</div>
         ${c.group ? `<div class="introGroup">${esc(c.group)}</div>` : ''}<div class="introBig" style="background:${c.color}">${esc(c.name)}</div>
@@ -2091,7 +2123,7 @@ function renderGameInner() {
       </div>`;
     return;
   }
-  stage.innerHTML = `<div class="turn"><span>${esc(p.name)}</span> ·
+  stage.innerHTML = `<div class="turn"><span style="color:${pc(p)}">${esc(p.name)}</span> ·
       <span class="pill" style="background:${c.color}">${esc(catLabel(c))}</span>
       <span class="pill" style="background:${t.color}">${esc(t.name)} · ${t.points} pts</span>
       ${stakeBadge(p)} ${rewardPill(q)}</div>
@@ -2228,7 +2260,7 @@ const gambleNeedsRight = p => data.settings.gambleNeedsWin && p.gambleLocked;
 function stakeBadge(p) {
   const tags = [current.gamble && '🎰 Gamble ×2', current.random && data.settings.randomBonus > 0 && `🎲 Random +${data.settings.randomBonus}`, p.boost === 'double' && '⚡ Double ×2', p.boost === 'triple' && '🔱 Triple ×3', p.halfGain && '🌧️ Storm ½',
     p.beginner > 0 && current.tierId === easiestTierId() && "🐣 Beginner's Luck ×2",
-    p.helper && `📞 split with ${esc(p.helper.name)}`, p.tax && `💸 taxed ½`, p.dodge && '💨 Dodge ready'].filter(Boolean);
+    p.helper && `📞 ${esc(p.helper.name)} answers`, p.tax && `💸 taxed ½`, p.dodge && '💨 Dodge ready'].filter(Boolean);
   if (!tags.length) return '';
   const st = stakes(p);
   return `<span class="pill stakePill">${tags.join(' · ')}: +${st.win}${st.lose ? ` / −${st.lose}` : ''}</span>`;
@@ -2464,12 +2496,16 @@ function mark(correct) {
   if (p.beginner > 0) p.beginner--;
   const extraNotes = [];
   let kept = gained; // what the answerer keeps after splitting with a helper
-  // Phone a Friend: answerer and helper each get half the points, rounded up
+  // Phone a Friend: the friend gives the answer that counts. Right: both get the full points. Wrong: the friend
+  // loses the question's points (the caller just gets nothing), so the friend has every reason to really try.
   if (p.helper) {
-    if (gained) {
-      const half = Math.ceil(gained / 2);
-      p.score -= gained - half; p.helper.score += half; kept = half;
-      extraNotes.push(`<p>📞 <b>${esc(p.helper.name)}</b> helped out: ${esc(p.name)} and ${esc(p.helper.name)} each get <b>${half}</b>.</p>`);
+    const h = p.helper;
+    if (correct) {
+      h.score += gained;
+      extraNotes.push(`<p>📞 <b>${esc(h.name)}</b> came through: ${esc(p.name)} and ${esc(h.name)} both get <b>+${gained}</b>!</p>`);
+    } else {
+      const lost = Math.min(tierOf(current.tierId).points, h.score); h.score -= lost;
+      extraNotes.push(`<p>📞 <b>${esc(h.name)}</b> got it wrong and loses <b>${lost}</b> point${lost === 1 ? '' : 's'}.</p>`);
     }
     p.helper = null;
   }
@@ -2481,14 +2517,12 @@ function mark(correct) {
   }
 
   if (p.hardLock > 0) p.hardLock--;
-  // Side Bets placed on this player pay out double what they earned, or cost double what the question was worth to them
+  // Side Bets placed on this player pay out the same points they earned; a wrong answer costs the bettor nothing
+  // (so the player can't throw the question to hurt the bettor without losing their own points too)
   const betNotes = bets.filter(b => b.on === p).map(b => {
-    if (!correct) {
-      const lost = Math.min(st.win * 2, b.from.score); b.from.score -= lost;
-      return `<p>🤝 <b>${esc(b.from.name)}</b>'s bet on ${esc(p.name)} went bust: <b>−${lost}</b>.</p>`;
-    }
-    b.from.score += gained * 2;
-    return `<p>🤝 <b>${esc(b.from.name)}</b>'s bet on ${esc(p.name)} paid off: <b>+${gained * 2}</b>!</p>`;
+    if (!correct) return `<p>🤝 <b>${esc(b.from.name)}</b>'s bet on ${esc(p.name)} didn't pay off this time.</p>`;
+    b.from.score += gained;
+    return `<p>🤝 <b>${esc(b.from.name)}</b>'s bet on ${esc(p.name)} paid off: <b>+${gained}</b>!</p>`;
   }).join('');
   bets = bets.filter(b => b.on !== p);
   const turnNotes = dodgeNote + extraNotes.join('') + betNotes;
@@ -2567,7 +2601,7 @@ function renderTurnInfo() {
   const next = players.length > 1 ? nextPlayerIndex() : -1;
   document.getElementById('turnStrip').innerHTML = players.map((p, i) => {
     const tag = i === turn ? '<em>NOW</em>' : i === next ? '<em>NEXT</em>' : p.skip > 0 ? '<em>SKIPPED</em>' : '';
-    return `<span class="turnChip ${i === turn ? 'now' : i === next ? 'next' : ''} ${p.skip > 0 ? 'skipped' : ''}">${tag}${esc(p.name)}</span>`;
+    return `<span class="turnChip ${i === turn ? 'now' : i === next ? 'next' : ''} ${p.skip > 0 ? 'skipped' : ''}" style="--pc:${pc(p)}">${tag}<i class="pDot" style="background:${pc(p)}"></i>${esc(p.name)}</span>`;
   }).join('<span class="turnArrow">›</span>');
   if (round !== shownRound) {
     if (shownRound) { pulse(document.getElementById('roundBadge'), 'bump'); roundBanner(round); }
@@ -2702,11 +2736,11 @@ function applyItem(idx, ti, catId) {
   const p = players[turn], key = p.items[idx], it = ITEMS[key], v = players[ti];
   if (key === 'phone') { // a friendly item, so Shields don't block it
     p.helper = v;
-    return finishItem(p, idx, `<div class="bigIcon">📞</div><h2>Phone a Friend!</h2><p><b>${esc(v.name)}</b> can help ${esc(p.name)} with this question. If it's right, they each get half the points (rounded up).</p>`);
+    return finishItem(p, idx, `<div class="bigIcon">📞</div><h2>Phone a Friend!</h2><p><b>${esc(v.name)}</b> answers ${esc(p.name)}'s next question. If ${esc(v.name)} is right, they <b>both</b> get the full points. If ${esc(v.name)} is wrong, ${esc(v.name)} loses the question's points.</p>`);
   }
   if (key === 'bet') { // not an attack, so Shields don't block it
     bets.push({ from: p, on: v });
-    return finishItem(p, idx, `<div class="bigIcon">🤝</div><h2>Side Bet!</h2><p>${esc(p.name)} is betting on <b>${esc(v.name)}</b>. If ${esc(v.name)} gets their next question right, ${esc(p.name)} earns double what they earn. If they get it wrong, ${esc(p.name)} loses double.</p>`);
+    return finishItem(p, idx, `<div class="bigIcon">🤝</div><h2>Side Bet!</h2><p>${esc(p.name)} is betting on <b>${esc(v.name)}</b>. If ${esc(v.name)} gets their next question right, ${esc(p.name)} earns the same points. If they get it wrong, ${esc(p.name)} loses nothing.</p>`);
   }
   if (key === 'catlock' && v === p) { // locking yourself: this turn only (or one more turn if you're already locked)
     if (p.catLock) p.catLock.turns += 1; else p.catLock = { id: catId, turns: 1 };

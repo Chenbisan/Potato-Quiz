@@ -1,5 +1,12 @@
 # What's new in Potato Quiz
 
+## 3.2.0 — 2026-10-17
+- **Player colors:** every player gets their own color, shown on the setup screen, the turn bar, the scoreboard and "your turn" prompts. Players keep the same color from game to game.
+- A game can have up to **12 players**.
+- **Clearer scoreboard:** player boxes stay the same size all game, and only the player whose turn it is is highlighted. Who's next is still shown in the turn bar at the top, and the "1 more = item!" tag still shows who's close to an item.
+- **Side Bet is fairer:** if the player you bet on gets it right, you earn the same points they do. If they get it wrong, you lose nothing, so nobody can throw a question just to hurt you.
+- **Phone a Friend, reworked:** your friend gives the answer that counts. If they're right, you both get the full points; if they're wrong, they lose the question's points. Your friend has every reason to really try.
+
 ## 3.1.1 — 2026-10-17
 - **Tidier scoreboard:** each player's row now stacks neatly, with the score, the last answers and streak, active effects, and items on their own lines, so nothing gets squeezed. The scoreboard is also a little wider.
 - Player names are limited to 16 characters so they always fit on screen.
