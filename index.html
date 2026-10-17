@@ -610,8 +610,8 @@
       </div>
       <div class="setting">
         <div class="setName">🧊 Cold streak: wrong answers in a row that give a comeback item</div>
-        <div class="ctrl"><input id="itemColdStreaks" placeholder="2, 4, 6" style="width:160px" onchange="saveItemSettings()"></div>
-        <div class="help">Shorter than the hot streak so players who are behind get help sooner. Default 2, 4, 6.</div>
+        <div class="ctrl"><input id="itemColdStreaks" placeholder="2, 3, 4, 5" style="width:160px" onchange="saveItemSettings()"></div>
+        <div class="help">Shorter than the hot streak so players who are behind get help sooner. Default 2, 3, 4, 5.</div>
       </div>
       <div class="setting">
         <div class="setName">🪃 Last-place boost</div>
@@ -647,6 +647,11 @@
   <div class="card itemsDep" data-stab="itemlist">
     <h3 class="cardTitle">📋 Item list</h3>
     <div class="help" style="margin-top:0">Set each item's rarity and where it can come from. Untick all three boxes to turn an item off completely.</div>
+    <div class="row" style="margin-top:10px;justify-content:space-between;align-items:center">
+      <div class="chips" id="itemFilter" style="margin:0"></div>
+      <label class="row" style="gap:6px;margin:0">Sort <select id="itemSort" onchange="itemListView.sort = this.value; saveItemView(); renderItemSettings()">
+        <option value="rarityAsc">Rarity: Common first</option><option value="rarityDesc">Rarity: Legendary first</option><option value="name">Name A–Z</option></select></label>
+    </div>
     <div class="row" style="margin-top:10px"><button class="small" onclick="setAllItems(true)">✓ Tick all</button>
       <button class="small" onclick="setAllItems(false)">✕ Untick all</button>
       <button class="small ghost" onclick="resetItemSettings()">↩ Reset items to default</button></div>
@@ -691,7 +696,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '3.2.1';
+const APP_VERSION = '3.3.0';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -702,7 +707,7 @@ for (const [oldKey, newKey] of [['teamQuizData_v1', KEY], ['teamQuizPlayers_v1',
   } catch (e) {}
 }
 // Bump when a settings migration is added in upgrade(); a reset starts at this rev so no migration re-runs
-const SETTINGS_REV = 7;
+const SETTINGS_REV = 8;
 let SEED_VERSION = 10; // set from questions.json's "version" at startup; // 10: every starter question gets 2 extra wrong answers for 6-answer games; 5: category groups; 6: more families + Disney+, Theme Parks, Generations; 7: every category in a family (General Knowledge, Cars, Pop Culture); 8: pre-1990 questions most players won't know moved to Obscure; 9: regional culture families
 // Tier difficulty is their order in the list (easiest first, hardest last); points only decide scoring
 const OBSCURE_TIER = { id: 't4', name: 'Obscure', points: 10, color: '#b36bff' };
@@ -1027,13 +1032,20 @@ function upgrade(d) {
     if (d.settings.randomBonus === 2) d.settings.randomBonus = 1;
     d.settings.rev = 6;
   }
-  if (d.settings.rev < SETTINGS_REV) {
+  if (d.settings.rev < 7) {
     // 3.0: item sources were rebalanced (every item can be a question prize), so the item list goes back to the new
     // defaults once; the prize chance moves from the old default 20% to 35%, and the timer ticks for the last 10 seconds
     if (d.settings.items) {
       delete d.settings.items.pools;
       if (d.settings.items.rewardChance === 20) d.settings.items.rewardChance = 35;
     }
+    d.settings.rev = 7;
+  }
+  if (d.settings.rev < SETTINGS_REV) {
+    // 3.3: Exodia, Nuke and Swap stop being question prizes (they all were by default in 3.0–3.2)
+    for (const k of NO_PRIZE) if (d.settings.items?.pools?.[k]) d.settings.items.pools[k].reward = false;
+    // cold streaks still on the 3.0 default (2, 4, 6) move to the new default (2, 3, 4, 5)
+    if (d.settings.items?.coldStreaks?.join() === '2,4,6') d.settings.items.coldStreaks = [2, 3, 4, 5];
     d.settings.rev = SETTINGS_REV;
   }
   if (!d.categories) {
@@ -1112,6 +1124,7 @@ function upgrade(d) {
   d.settings.uiSfx ??= true;      // small interface sounds: hovering and clicking buttons, turn changes
   d.settings.items ??= defaultItemSettings();
   const itemDefaults = defaultItemSettings();
+  d.settings.items.enabled ??= true; d.settings.items.streaks ??= [...itemDefaults.streaks];
   d.settings.items.pools ??= itemDefaults.pools;
   for (const k in ITEMS) d.settings.items.pools[k] ??= itemDefaults.pools[k];
   d.settings.items.rarity ??= {}; for (const k in ITEMS) d.settings.items.rarity[k] ??= DEFAULT_RARITY[k] ?? 1;
@@ -1307,14 +1320,26 @@ function renderItemSettings() {
     <span class="rarityTag" style="--rc:${RARITIES[r].color}">${RARITIES[r].stars} ${RARITIES[r].name}</span>
     <input type="number" min="0" max="100" value="${st.rarityWeights[r] ?? 0}"
       onchange="data.settings.items.rarityWeights[${r}] = Math.max(0, parseInt(this.value) || 0); save(); toast('Saved')"></div>`).join('');
-  document.getElementById('itemTable').innerHTML = Object.entries(ITEMS).map(([k, it]) => `<tr>
+  // Item list view: filter by source (🔥 / 🧊 / 🎁 ticked) and sort (Common first by default); remembered on this device
+  const v = itemListView, FILTERS = [['all', 'All'], ['hot', '🔥 Hot streak'], ['cold', '🧊 Cold streak'], ['reward', '🎁 Prize'], ['off', '⛔ Off']];
+  document.getElementById('itemFilter').innerHTML = FILTERS.map(([f, label]) =>
+    `<button class="small ${v.filter === f ? 'primary' : 'ghost'}" onclick="itemListView.filter='${f}'; saveItemView(); renderItemSettings()">${label}</button>`).join('');
+  document.getElementById('itemSort').value = v.sort;
+  let rows = Object.entries(ITEMS).filter(([k]) => { const pl = st.pools[k];
+    return v.filter === 'all' || (v.filter === 'off' ? !pl.hot && !pl.cold && !pl.reward : pl[v.filter]); });
+  if (v.sort === 'rarityDesc') rows.sort((a, b) => itemRarity(b[0]) - itemRarity(a[0]) || az(a[1].name, b[1].name));
+  else if (v.sort === 'name') rows.sort((a, b) => az(a[1].name, b[1].name));
+  else rows.sort((a, b) => itemRarity(a[0]) - itemRarity(b[0]) || az(a[1].name, b[1].name));
+  document.getElementById('itemTable').innerHTML = (rows.length ? '' : `<tr><td colspan="6" class="muted" style="text-align:center;padding:16px">No items match this filter.</td></tr>`) + rows.map(([k, it]) => `<tr>
     <td style="white-space:nowrap"><b>${it.icon} ${it.name}</b></td>
-    <td><select onchange="data.settings.items.rarity['${k}'] = +this.value; save(); toast('Saved')">${[1, 2, 3].map(r =>
+    <td><select onchange="data.settings.items.rarity['${k}'] = +this.value; save(); toast('Saved'); renderItemSettings()">${[1, 2, 3].map(r =>
       `<option value="${r}" ${itemRarity(k) === r ? 'selected' : ''}>${RARITIES[r].stars} ${RARITIES[r].name}</option>`).join('')}</select></td>
     <td class="muted">${esc(itemDesc(k))}${it.needsTimer ? ' <i>(only appears when the timer is on)</i>' : ''}</td>
     ${['hot', 'cold', 'reward'].map(kind => `<td style="text-align:center"><input type="checkbox" ${st.pools[k][kind] ? 'checked' : ''}
-      onchange="data.settings.items.pools['${k}'].${kind} = this.checked; save(); toast('Saved')"></td>`).join('')}</tr>`).join('');
+      onchange="data.settings.items.pools['${k}'].${kind} = this.checked; save(); toast('Saved'); if (itemListView.filter !== 'all') renderItemSettings()"></td>`).join('')}</tr>`).join('');
 }
+let itemListView = (() => { try { return { filter: 'all', sort: 'rarityAsc', ...JSON.parse(localStorage.getItem('potatoQuizItemView') || '{}') }; } catch (e) { return { filter: 'all', sort: 'rarityAsc' }; } })();
+function saveItemView() { try { localStorage.setItem('potatoQuizItemView', JSON.stringify(itemListView)); } catch (e) {} }
 function setAllItems(on) {
   for (const k in ITEMS) data.settings.items.pools[k] = { hot: on, cold: on, reward: on };
   save(); renderItemSettings(); toast(on ? 'All items on' : 'All items off');
@@ -1882,11 +1907,13 @@ const DEFAULT_RARITY = { pickpocket: 1, skip: 1, shield: 1, double: 1, timecrunc
   heist: 2, hardlock: 2, catlock: 2, triple: 2, storm: 2, tax: 2, catchup: 2, blueshell: 2, exodia: 3, nuke: 3, swap: 3 };
 const itemRarity = k => data.settings.items.rarity?.[k] ?? DEFAULT_RARITY[k] ?? 1;
 const LOCK_TURNS = 2, BLUE_SHELL_POINTS = 10, BEGINNER_TURNS = 5, EXODIA_PIECES = 5; // minimum; Exodia grows to one piece per tier if there are more tiers than this
+const NO_PRIZE = ['exodia', 'nuke', 'swap']; // not question prizes by default
 const defaultItemSettings = () => ({
-  enabled: true, streaks: [3, 5, 7], coldStreaks: [2, 4, 6], // hot = right in a row; cold = wrong in a row (shorter, for comebacks)
+  enabled: true, streaks: [3, 5, 7], coldStreaks: [2, 3, 4, 5], // hot = right in a row; cold = wrong in a row (shorter, for comebacks)
   // question prizes go to trailing players, so every item can be a prize (before 3.0 only hot-streak items could,
   // which left Exodia as the only Legendary prize and Nuke / Swap almost never showing up)
-  pools: Object.fromEntries(Object.entries(ITEMS).map(([k, it]) => [k, { hot: it.hot, cold: it.cold, reward: true }])),
+  // (except the Legendaries, which are too strong to win off a single question)
+  pools: Object.fromEntries(Object.entries(ITEMS).map(([k, it]) => [k, { hot: it.hot, cold: it.cold, reward: !NO_PRIZE.includes(k) }])),
   rewards: true, rewardChance: 35, rewardAfterRounds: 3, // prizes start once this many rounds are done (0 = from the start)
   // question prizes on/off, and the % chance that a question a trailing player picks carries an item prize
   rarity: { ...DEFAULT_RARITY }, rarityWeights: { 1: 60, 2: 30, 3: 10 },

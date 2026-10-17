@@ -1,5 +1,10 @@
 # What's new in Potato Quiz
 
+## 3.3.0 — 2026-10-17
+- **Item list upgrades:** items are sorted by rarity (Common first), or switch to Legendary first or A–Z. Filter to what can come from 🔥 hot streaks, 🧊 cold streaks, 🎁 prizes, or what's turned off.
+- **Legendaries aren't question prizes anymore:** Exodia, Nuke and Swap only come from streaks now. (You can still tick them as prizes on the Item list tab.)
+- **Even more comeback help:** wrong answers in a row now give an item at **2, 3, 4 and 5** (was 2, 4, 6).
+
 ## 3.2.1 — 2026-10-17
 - The item list has its own **📋 Item list** tab in Settings, so the Items tab is shorter.
 
