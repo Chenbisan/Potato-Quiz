@@ -3,6 +3,14 @@
 All notable changes to Potato Quiz. Versions follow `major.minor.patch`:
 **minor** for new features or question batches, **patch** for fixes and small tweaks.
 
+## 2.3.0 — 2026-10-16
+Playtest improvements:
+- **Click an answer:** players can tap a multiple-choice answer instead of pressing Reveal. Their pick is marked, wrong picks turn red, and the matching Correct/Wrong button is highlighted for the host to confirm. The Reveal button still works too.
+- **Late answers:** when the timer runs out, the host can still mark the answer correct if a player called it in time. On by default; turn it off in Settings › Timer.
+- **🌍 Culture on/off** button on the setup screen turns all the regional Culture families on or off at once.
+- **Bigger item icons** on item cards and on the scoreboard.
+- **Phone a Friend** no longer appears in 2-player games, since the only "friend" would be your opponent.
+
 ## 2.2.0 — 2026-10-16
 - **New Animals family** with 8 categories: General, Mammals, Birds, Ocean Life, Reptiles & Amphibians, Insects & Bugs, Pets & Dog Breeds, and Dinosaurs & Prehistoric (296 questions).
 - **7,754 new questions** across every family. The bank is now 18,425 questions, and each family grew by about 240–300. Thin categories got the most, such as History › General, Disney › General, TV › General, Cartoons and Horror.

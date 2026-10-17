@@ -96,6 +96,12 @@
   .question { font-size: 1.8rem; text-align: center; margin: 20px 0 26px; line-height: 1.35; }
   .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
   .choices div { background: var(--panel2); padding: 14px; border-radius: 10px; font-size: 1.15rem; }
+  .choices.pickable div { cursor: pointer; transition: transform .1s, box-shadow .1s; }
+  .choices.pickable div:hover { transform: translateY(-2px); box-shadow: 0 0 0 2px var(--accent); }
+  .choices div.picked { box-shadow: 0 0 0 3px #fff; }
+  .choices div.wrongPick { background: var(--bad); color: #fff; font-weight: 700; }
+  .pickTag { font-size: .7em; font-weight: 700; text-transform: uppercase; opacity: .85; margin-left: 6px; }
+  .actions button.suggest { box-shadow: 0 0 0 3px #fff, 0 0 14px rgba(255,255,255,.6); }
   .choices div.right { background: var(--good); color: #04210f; font-weight: 700; }
   .answer { text-align: center; font-size: 1.5rem; color: var(--good); font-weight: 800; margin-bottom: 20px; }
   .actions { display: flex; justify-content: center; gap: 14px; }
@@ -121,7 +127,8 @@
   .mediaPreview .qImg { max-height: 160px; }
   .zoom { position: fixed; inset: 0; background: rgba(0,0,0,.92); display: flex; align-items: center; justify-content: center; z-index: 10; cursor: zoom-out; }
   .zoom img { max-width: 95vw; max-height: 95vh; }
-  .badges { display: flex; justify-content: space-between; font-size: .85rem; margin-top: 4px; gap: 6px; }
+  .badges { display: flex; justify-content: space-between; align-items: center; font-size: .85rem; margin-top: 4px; gap: 6px; }
+  .boardItems { font-size: 1.45rem; line-height: 1; letter-spacing: 2px; }
   .itemBar { margin-top: 22px; padding-top: 16px; border-top: 1px solid #2f2f5c; }
   .itemList { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
   .prizeBadge { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #1b1b3a; color: #fff; border: 2px solid #ffcc33; font-size: .85em; box-shadow: 0 0 8px rgba(255,204,51,.7); animation: prizePulse 1.6s ease-in-out infinite; }
@@ -132,6 +139,8 @@
   .itemCard { text-align: left; background: #2d2d63; border: 1px solid #4a4a8a; padding: 10px 12px; border-radius: 10px; font-weight: 700; }
   .itemCard small { display: block; font-weight: 400; color: var(--muted); font-size: .8rem; margin-top: 3px; }
   .itemCard.passive { border-style: dashed; }
+  .itemIcon { font-size: 1.9em; line-height: 1; vertical-align: middle; margin-right: 2px; }
+  .prizeBadge { font-size: 1em !important; }
   .tierPick .lockedBtn { background: repeating-linear-gradient(45deg, #ff5e5e, #ff5e5e 14px, #e04848 14px, #e04848 28px); grid-column: 1 / -1; }
   .modal { position: fixed; inset: 0; background: rgba(5,5,20,.75); display: flex; align-items: center; justify-content: center; z-index: 20; padding: 16px; }
   .modalBox { background: var(--panel); border: 1px solid #44447a; border-radius: var(--radius); padding: 28px; max-width: 480px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.5); animation: pop .25s ease-out; }
@@ -270,6 +279,7 @@
       <h3 style="margin:0">Categories in this game <span class="muted" style="font-size:.9rem;font-weight:400">— click to turn on/off</span></h3>
       <div class="row"><button class="small" id="allCatsBtn" onclick="allCatsOn()">Turn all on</button>
         <button class="small" id="allCatsOffBtn" onclick="allCatsOff()">Turn all off</button>
+        <button class="small" id="cultureBtn" onclick="toggleCulture()">🌍 Culture off</button>
         <button class="small ghost" id="expandAllBtn" onclick="expandAllGroups()">Expand all</button></div>
     </div>
     <div class="chips" id="catPicker"></div>
@@ -515,8 +525,9 @@
       <label>Seconds to answer</label>
       <input type="number" id="timerSecs" min="5" max="600" style="width:120px" onchange="saveTimerSettings()">
       <label class="switch" style="margin-top:12px"><input type="checkbox" id="timerSound" onchange="saveTimerSettings()"> Tick sound for the last 5 seconds and a buzzer at zero</label>
+      <label class="switch" style="margin-top:12px"><input type="checkbox" id="timerLate" onchange="saveTimerSettings()"> Host can still mark an answer correct after time runs out (for last-second answers)</label>
       <p class="muted">The clock starts when the question appears and stops when you click Reveal answer. Click the clock to pause it.
-        If time runs out, the answer is shown and it counts as wrong.</p>
+        If time runs out, the answer is shown; it counts as wrong unless the host-override option above is on.</p>
     </div>
   </div>
   <div class="card" data-stab="items">
@@ -602,7 +613,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '2.2.0';
+const APP_VERSION = '2.3.0';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -849,6 +860,7 @@ function writeSave(d) {
 function upgrade(d) {
   d.settings ??= {}; d.settings.targetPoints ??= 60; d.settings.pickMode ??= 'tier'; d.settings.gamble ??= true;
   d.settings.timer ??= { enabled: true, seconds: 30, sound: true };
+  d.settings.timer.lateCorrect ??= true;
   d.settings.introSeconds ??= 2.5;
   d.settings.fx ??= true;  // animations: screen transitions, flying points
   d.settings.sfx ??= true; // sound effects
@@ -1080,6 +1092,7 @@ function renderSettings() {
   document.getElementById('timerOn').checked = tm.enabled;
   document.getElementById('timerSecs').value = tm.seconds;
   document.getElementById('timerSound').checked = tm.sound;
+  document.getElementById('timerLate').checked = !!tm.lateCorrect;
   document.getElementById('timerBody').style.opacity = tm.enabled ? 1 : .45;
   renderItemSettings();
 }
@@ -1169,6 +1182,7 @@ function saveTimerSettings() {
   const tm = data.settings.timer;
   tm.enabled = document.getElementById('timerOn').checked;
   tm.sound = document.getElementById('timerSound').checked;
+  tm.lateCorrect = document.getElementById('timerLate').checked;
   const v = parseInt(document.getElementById('timerSecs').value);
   if (v >= 5) tm.seconds = Math.min(600, v);
   save(); renderSettings(); toast('Saved');
@@ -1444,6 +1458,13 @@ function allCatsOff() {
   if (data.questions.some(q => !catOf(q.categoryId))) ids.push('');
   roster.offCats = ids; saveRoster(); renderCatPicker();
 }
+// All the regional "… Culture" families at once
+const cultureCatIds = () => data.categories.filter(c => /culture$/i.test(c.group || '')).map(c => c.id);
+function toggleCulture() {
+  const ids = cultureCatIds(), off = offCats(), allOn = ids.every(id => !off.includes(id));
+  roster.offCats = allOn ? [...new Set([...off, ...ids])] : off.filter(id => !ids.includes(id));
+  saveRoster(); renderCatPicker();
+}
 function allCatsOn() { roster.offCats = []; saveRoster(); renderCatPicker(); }
 // Which families are expanded on the setup screen (remembered on this device; all start collapsed)
 const openGroups = () => new Set(roster.openGroups ??= []);
@@ -1480,6 +1501,9 @@ function renderCatPicker() {
     </div>`;
   }).join('') + (loose.length ? `<div class="catGroup open"><div class="catGroupRow"><span class="groupMeta" style="cursor:default">Other categories</span></div>
       <div class="catGroupSubs">${loose.map(e => chip(e.c, e.count, e.c.name)).join('')}</div></div>` : '');
+  const cIds = cultureCatIds();
+  document.getElementById('cultureBtn').style.display = cIds.length ? '' : 'none';
+  document.getElementById('cultureBtn').textContent = cIds.every(id => !off.includes(id)) ? '🌍 Culture off' : '🌍 Culture on';
   document.getElementById('expandAllBtn').textContent = groups.length && groups.every(g => open.has(g.group)) ? 'Collapse all' : 'Expand all';
   const total = gameQs().length;
   document.getElementById('catPickerInfo').textContent = total
@@ -1655,7 +1679,8 @@ const rand = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
 function randomItem(kind) {
   const multiTier = rankedTiers().length > 1; // Hard Lock / Beginner's Luck do nothing with a single difficulty in play
   const pool = Object.keys(ITEMS).filter(k => data.settings.items.pools[k]?.[kind] && (!ITEMS[k].needsTimer || data.settings.timer.enabled)
-    && (multiTier || !['hardlock', 'beginner'].includes(k)));
+    && (multiTier || !['hardlock', 'beginner'].includes(k))
+    && (players.length > 2 || k !== 'phone')); // with 2 players the only friend is your opponent
   if (!pool.length) return null;
   // pick a rarity tier by weight (only tiers that have an eligible item), then an item in that tier
   const w = data.settings.items.rarityWeights, tiers = [1, 2, 3].filter(r => pool.some(k => itemRarity(k) === r) && (w[r] ?? 0) > 0);
@@ -1768,7 +1793,7 @@ function renderBoard() {
     `<li data-pi="${i}" class="${i === turn ? 'current' : players.length > 1 && i === nextPlayerIndex() ? 'next' : ''}" style="display:block">
       <div style="display:flex;justify-content:space-between"><span>${esc(p.name)}${i === turn ? ' <span class="rowTag now">NOW</span>' : players.length > 1 && i === nextPlayerIndex() ? ' <span class="rowTag next">NEXT</span>' : ''}</span><b>${p.score}</b></div>
       ${itemsOn() && (p.items.length || statusBadges(p)) ? `<div class="badges"><span>${statusBadges(p)}</span>
-        <span title="${p.items.map(k => ITEMS[k].name).join(', ')}">${p.items.map(k => ITEMS[k].icon).join('')}</span></div>` : ''}
+        <span class="boardItems">${p.items.map(k => `<span title="${esc(ITEMS[k].name)}">${ITEMS[k].icon}</span>`).join('')}</span></div>` : ''}
       <div class="progress"><i style="width:${Math.min(100, p.score / target * 100)}%"></i></div></li>`).join('');
   renderTurnInfo();
   animateScores();
@@ -1868,8 +1893,8 @@ function itemBar(p) {
     <div class="itemList">${p.items.map((k, i) => {
       const it = ITEMS[k];
       return it.passive
-        ? `<div class="itemCard passive" title="${esc(itemDesc(k))}">${it.icon} ${it.name}<small>Active — ${esc(itemDesc(k).charAt(0).toLowerCase() + itemDesc(k).slice(1))}</small></div>`
-        : `<button class="itemCard" title="${esc(itemDesc(k))}" onclick="useItem(${i})" ${itemUsedThisTurn ? 'disabled' : ''}>${it.icon} ${it.name} ${rarityTag(k)}<small>${esc(itemDesc(k))}</small></button>`;
+        ? `<div class="itemCard passive" title="${esc(itemDesc(k))}"><span class="itemIcon">${it.icon}</span> ${it.name}<small>Active — ${esc(itemDesc(k).charAt(0).toLowerCase() + itemDesc(k).slice(1))}</small></div>`
+        : `<button class="itemCard" title="${esc(itemDesc(k))}" onclick="useItem(${i})" ${itemUsedThisTurn ? 'disabled' : ''}><span class="itemIcon">${it.icon}</span> ${it.name} ${rarityTag(k)}<small>${esc(itemDesc(k))}</small></button>`;
     }).join('')}</div></div>`;
 }
 // Answer choices for a question: 4 (answer + first 3 wrong) or 6 in a "harder" game.
@@ -1943,12 +1968,16 @@ function answerIndex() {
 // Only redraws the choices/answer area, so a playing audio clip isn't interrupted
 function renderReveal() {
   const q = current, choices = q.shuffled, st = stakes(players[turn]);
+  const late = data.settings.timer.lateCorrect; // host may still mark it correct after time's up
+  const pickedRight = q.picked == null ? null : choices[q.picked] === q.answer;
   document.getElementById('qReveal').innerHTML = `
-    ${choices ? `<div class="choices">${choices.map((c, i) =>
-      `<div class="${revealed && c === q.answer ? 'right' : ''}"><b>${'ABCDEF'[i]}.</b> ${esc(c)}</div>`).join('')}</div>` : ''}
-    ${revealed ? `${timesUp ? `<div class="timesUp">⏰ Time's up!</div>` : ''}<div class="answer">✅ ${esc(q.answer)}</div>
-      <div class="actions">${timesUp ? '' : `<button class="good" onclick="mark(true)">Correct (+${st.win})</button>`}
-      <button class="bad" onclick="mark(false)">${timesUp ? 'Continue — counts as wrong' : 'Wrong'}${st.lose ? ` (−${st.lose})` : ''}</button></div>`
+    ${choices ? `<div class="choices ${revealed ? '' : 'pickable'}">${choices.map((c, i) => {
+      const cls = [revealed && c === q.answer && 'right', revealed && q.picked === i && c !== q.answer && 'wrongPick', q.picked === i && 'picked'].filter(Boolean).join(' ');
+      return `<div class="${cls}" ${revealed ? '' : `onclick="pickChoice(${i})" title="Lock in this answer"`}><b>${'ABCDEF'[i]}.</b> ${esc(c)}${q.picked === i ? ' <span class="pickTag">picked</span>' : ''}</div>`;
+    }).join('')}</div>` : ''}
+    ${revealed ? `${timesUp ? `<div class="timesUp">⏰ Time's up!${late ? ' <small>If they answered just in time, you can still mark it correct.</small>' : ''}</div>` : ''}<div class="answer">✅ ${esc(q.answer)}</div>
+      <div class="actions">${timesUp && !late ? '' : `<button class="good ${pickedRight === true ? 'suggest' : ''}" onclick="mark(true)">Correct (+${st.win})</button>`}
+      <button class="bad ${pickedRight === false ? 'suggest' : ''}" onclick="mark(false)">${timesUp && !late ? 'Continue — counts as wrong' : 'Wrong'}${st.lose ? ` (−${st.lose})` : ''}</button></div>`
       : `<div class="actions"><button class="primary" onclick="reveal()">Reveal answer</button></div>`}`;
 }
 function countLabel(match) {
@@ -2029,6 +2058,8 @@ function draw(kind, id, gamble = false) {
 let introTimer = null;
 function showQuestion() { clearTimeout(introTimer); if (!current) return; current.intro = false; startTimer(players[turn]); renderGame(); }
 function reveal() { stopTimer(); revealed = true; renderReveal(); }
+// Players can lock in an answer by clicking it: that reveals the answer and highlights the matching mark button
+function pickChoice(i) { if (revealed || !current) return; current.picked = i; reveal(); }
 
 // ---------- Timer ----------
 let timer = null, timesUp = false, audioCtx;
@@ -2318,6 +2349,7 @@ function advanceTurn() {
 function useItem(idx) {
   const p = players[turn], key = p.items[idx], it = ITEMS[key];
   if (itemUsedThisTurn || current) return;
+  if (key === 'phone' && players.length <= 2) return toast('Phone a Friend needs at least 3 players');
   if (!it.target) {
     if (key === 'double') { p.boost = 'double'; finishItem(p, idx, `<div class="bigIcon">⚡</div><h2>Double Points!</h2><p>${esc(p.name)}'s answer this turn is worth double.</p>`); }
     if (key === 'nuke') {
