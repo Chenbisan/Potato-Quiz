@@ -1,5 +1,8 @@
 # What's new in Potato Quiz
 
+## 3.12.0 — 2026-10-18
+- **🦸 New Superheroes & Comics family:** 8 categories and about 2,200 questions: General, Marvel Cinematic Universe, X-Men, Spider-Man, DC & Batman, Villains, Comic History, and Superhero TV & Games. Films, shows, games and comics, from Golden Age first issues to Superman (2025) and Spider-Man: Brand New Day. Movies › Marvel & Superheroes is now Superheroes & Comics › General, and superhero questions from other categories moved here.
+
 ## 3.11.0 — 2026-10-17
 - **🧙 New Fantasy & Sci-Fi Worlds family:** 8 categories and about 3,900 questions: General, Harry Potter, Lord of the Rings, Star Wars, Star Trek, Game of Thrones, Hunger Games & YA Dystopia, and Doctor Who. Books, films, shows, casts and behind-the-scenes, including House of the Dragon, The Rings of Power and A Knight of the Seven Kingdoms. Franchise questions from Movies › Star Wars & Sci-Fi moved here, and that category is now **Movies › Sci-Fi**.
 
