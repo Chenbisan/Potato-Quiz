@@ -7,11 +7,12 @@
 <style>
   :root {
     --bg: #12122a; --panel: #1d1d3f; --panel2: #26264f; --text: #f3f3ff; --muted: #a3a3c8;
+    --glow: #23235a; --line: #44447a; --line-soft: #2f2f5c; --deep: #0f0f26; --deep2: #2a2a52; --shadow: rgba(0,0,0,.3); --title: var(--accent);
     --accent: #ffcc33; --good: #2ecc71; --bad: #ff5e5e; --blue: #4da3ff; --radius: 14px;
   }
   * { box-sizing: border-box; }
   body { margin: 0; font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-    background: radial-gradient(circle at top, #23235a, var(--bg) 70%); color: var(--text); min-height: calc(100vh / var(--z, 1)); }
+    background: radial-gradient(circle at top, var(--glow), var(--bg) 70%); color: var(--text); min-height: calc(100vh / var(--z, 1)); }
   .screen { display: none; max-width: 1000px; margin: 0 auto; padding: 32px 20px; }
   .screen.active { display: block; animation: screenIn .4s ease-out; }
   @keyframes screenIn { from { opacity: 0; transform: translateY(16px); } }
@@ -29,22 +30,22 @@
   .board li.hit { animation: hit .6s ease-out; }
   @keyframes hit { 0%, 100% { transform: none; } 20% { transform: translateX(-6px); background: #6b2323; } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
   body.fxOff .screen.active, body.fxOff .stageIn, body.fxOff .answer { animation: none; }
-  h1 { font-size: 3rem; margin: 0 0 8px; text-align: center; color: var(--accent); letter-spacing: 1px; }
+  h1 { font-size: 3rem; margin: 0 0 8px; text-align: center; color: var(--title); letter-spacing: 1px; }
   h2 { margin-top: 0; }
   .sub { text-align: center; color: var(--muted); margin-bottom: 40px; }
-  .card { background: var(--panel); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(0,0,0,.3); }
+  .card { background: var(--panel); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; box-shadow: 0 8px 24px var(--shadow); }
   button { font: inherit; cursor: pointer; border: none; border-radius: 10px; padding: 10px 18px; background: var(--panel2); color: var(--text); transition: transform .08s, filter .15s; }
   button:hover { filter: brightness(1.2); }
   button:active { transform: scale(.97); }
   button.primary { background: var(--accent); color: #222; font-weight: 700; }
   button.good { background: var(--good); color: #082; color: #04210f; font-weight: 700; }
   button.bad { background: var(--bad); color: #2a0505; font-weight: 700; }
-  button.ghost { background: transparent; border: 1px solid #44447a; }
+  button.ghost { background: transparent; border: 1px solid var(--line); }
   button.small { padding: 6px 12px; font-size: .9rem; }
   button:disabled { opacity: .4; cursor: not-allowed; }
   .menu { display: flex; flex-direction: column; gap: 16px; max-width: 360px; margin: 0 auto; }
   .menu button { font-size: 1.3rem; padding: 18px; }
-  input, select, textarea { font: inherit; background: #0f0f26; color: var(--text); border: 1px solid #3a3a6a; border-radius: 8px; padding: 9px 12px; }
+  input, select, textarea { font: inherit; background: var(--deep); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; }
   textarea { width: 100%; resize: vertical; min-height: 60px; }
   label { display: block; color: var(--muted); font-size: .9rem; margin: 12px 0 4px; }
   .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -68,14 +69,14 @@
   .tableScroll { overflow-x: auto; }
   .tabs button.on { background: var(--accent); color: #222; font-weight: 700; }
   table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #2f2f5c; vertical-align: top; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
   th { color: var(--muted); font-weight: 600; font-size: .85rem; text-transform: uppercase; }
   .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .8rem; font-weight: 700; color: #111; }
   .muted { color: var(--muted); }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
   .chip { background: var(--panel2); padding: 6px 12px; border-radius: 999px; display: flex; gap: 8px; align-items: center; }
   .chip b { cursor: pointer; color: var(--bad); }
-  .chip.recent { cursor: pointer; border: 1px dashed #55558a; background: transparent; }
+  .chip.recent { cursor: pointer; border: 1px dashed var(--line); background: transparent; }
   .chip.recent:hover { background: var(--panel2); border-color: var(--accent); }
   .chip.recent b { color: var(--muted); font-weight: 400; }
   .chip.recent b:hover { color: var(--bad); }
@@ -115,7 +116,7 @@
   .board li.current { outline: 2px solid var(--accent); }
   .board li.next { outline: 2px dashed var(--blue); }
   .board ol { list-style: none; padding: 0; margin: 0; }
-  .progress { height: 6px; background: #0f0f26; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .progress { height: 6px; background: var(--deep); border-radius: 3px; margin-top: 6px; overflow: hidden; }
   .progress i { display: block; height: 100%; background: var(--accent); }
 
   /* Winner */
@@ -134,9 +135,9 @@
   .zoom img { max-width: 95vw; max-height: 95vh; }
   .badges { display: flex; justify-content: space-between; align-items: center; font-size: .85rem; margin-top: 4px; gap: 6px; }
   .boardItems { font-size: 1.45rem; line-height: 1; letter-spacing: 2px; }
-  .itemBar { margin-top: 22px; padding-top: 16px; border-top: 1px solid #2f2f5c; }
+  .itemBar { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line-soft); }
   .itemList { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
-  .prizeBadge { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #1b1b3a; color: #fff; border: 2px solid #ffcc33; font-size: .85em; box-shadow: 0 0 8px rgba(255,204,51,.7); animation: prizePulse 1.6s ease-in-out infinite; }
+  .prizeBadge { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: var(--deep2); color: #fff; border: 2px solid #ffcc33; font-size: .85em; box-shadow: 0 0 8px rgba(255,204,51,.7); animation: prizePulse 1.6s ease-in-out infinite; }
   @keyframes prizePulse { 50% { transform: scale(1.12); } }
   .rewardPill { background: #ffcc33; color: #2a1d00; }
   /* 3.0 streak tracker on the scoreboard: last answers as dots + a meter toward the next streak item */
@@ -153,7 +154,7 @@
   .coffeeLink { color: var(--muted); text-decoration: none; border-bottom: 1px dotted currentColor; }
   .coffeeLink:hover { color: var(--accent); }
   .coffeePop { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60; display: flex; gap: 12px; align-items: center; max-width: calc(100vw - 32px);
-    background: var(--panel); border: 1px solid #55558a; border-left: 4px solid #ff6b8a; border-radius: 12px; padding: 12px 16px; box-shadow: 0 10px 30px rgba(0,0,0,.45);
+    background: var(--panel); border: 1px solid var(--line); border-left: 4px solid #ff6b8a; border-radius: 12px; padding: 12px 16px; box-shadow: 0 10px 30px rgba(0,0,0,.45);
     animation: coffeeIn .35s ease-out; cursor: pointer; text-align: left; }
   .coffeePop small { display: block; color: var(--muted); margin-top: 2px; }
   .coffeePop .cpIcon { font-size: 1.6rem; }
@@ -193,17 +194,17 @@
   .streakLbl { font-weight: 800; white-space: nowrap; } .streakLbl.hot { color: #ffb347; } .streakLbl.cold { color: #8fd3ff; }
   .infoRow { display: flex; align-items: center; gap: 8px; margin-top: 4px; height: 22px; }
   #liveBoard .slot { width: 19px; height: 19px; font-size: .8rem; border-radius: 5px; }
-  #liveBoard .bag { gap: 2px; padding-right: 6px; border-right: 1px solid #3a3a68; }
+  #liveBoard .bag { gap: 2px; padding-right: 6px; border-right: 1px solid var(--line); }
   .fxRow { display: flex; gap: 4px; flex: 1; justify-content: flex-end; overflow: hidden; white-space: nowrap; min-width: 0; }
   .fx { display: inline-flex; align-items: center; gap: 2px; font-size: .74rem; font-weight: 800; padding: 1px 6px; border-radius: 999px; line-height: 1.5; border: 1px solid; white-space: nowrap; }
   .fx.buff { background: rgba(61,220,132,.16); border-color: #3ddc84; color: #b9f6d3; }
   .fx.debuff { background: rgba(255,92,92,.16); border-color: #ff5c5c; color: #ffc9c9; }
   .fx.info { background: rgba(160,170,200,.14); border-color: #8a90b0; color: #d6daf0; }
-  .fx.more { background: #33335a; border-color: #55558a; color: var(--text); }
+  .fx.more { background: var(--deep2); border-color: var(--line); color: var(--text); }
   .bagRow { display: flex; align-items: center; gap: 8px; margin-top: 2px; height: 24px; font-size: .9rem; }
   .bag { display: inline-flex; gap: 3px; flex: none; }
-  .slot { width: 22px; height: 22px; border-radius: 6px; border: 1px dashed #4a4a7a; display: inline-grid; place-items: center; font-size: .95rem; line-height: 1; }
-  .slot.full { border: 1px solid #6a6aa8; background: #2a2a52; }
+  .slot { width: 22px; height: 22px; border-radius: 6px; border: 1px dashed var(--line); display: inline-grid; place-items: center; font-size: .95rem; line-height: 1; }
+  .slot.full { border: 1px solid var(--line); background: var(--deep2); }
   .boardScroll { overflow: hidden; scroll-behavior: auto; }
   .game.fitted { align-items: stretch; }
   .game.fitted .leftCol { min-height: 0; }
@@ -219,7 +220,7 @@
   @keyframes fxSlide { 0%, 15% { transform: translateX(0); } 85%, 100% { transform: translateX(var(--over)); } }
   .leftCol { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
   .leftCol #stage { flex: 1; }
-  .feed { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 6px 12px; border-radius: 10px; background: var(--panel); border: 1px solid #2f2f5c; }
+  .feed { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 6px 12px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line-soft); }
   .feedLines { flex: 1; height: 66px; overflow: hidden; display: flex; flex-direction: column; gap: 2px; }
   .feedLine { font-size: .85rem; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
   .feedLine:first-child { color: var(--text); }
@@ -235,7 +236,7 @@
   .icBody { min-width: 0; }
   .itemCardPop .icTimer { position: absolute; left: 10px; right: 10px; bottom: 4px; margin: 0; }
   .itemCardPop .icDesc { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; margin-top: 1px; }
-  .itemCardPop { pointer-events: auto; position: relative; background: var(--panel); border: 1px solid #55558a; border-left: 4px solid var(--accent); border-radius: 12px; padding: 7px 10px 8px;
+  .itemCardPop { pointer-events: auto; position: relative; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 12px; padding: 7px 10px 8px;
     box-shadow: 0 10px 30px rgba(0,0,0,.45); animation: cardIn .35s ease-out; }
   .itemCardPop.leaving { transition: opacity .4s, transform .4s; opacity: 0; transform: translateX(30px); }
   @keyframes cardIn { from { opacity: 0; transform: translateX(40px); } }
@@ -243,14 +244,14 @@
   .icHead { display: flex; gap: 10px; align-items: center; padding-right: 18px; }
   .icIcon { font-size: 1.6rem; line-height: 1; }
   .icDesc { margin-top: 4px; font-size: .8rem; line-height: 1.3; color: var(--text); opacity: .9; }
-  .icTimer { height: 3px; background: #2a2a52; border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .icTimer { height: 3px; background: var(--deep2); border-radius: 2px; margin-top: 6px; overflow: hidden; }
   .icTimer i { display: block; height: 100%; background: var(--accent); animation: icTime 10s linear forwards; }
   @keyframes icTime { from { width: 100%; } to { width: 0; } }
   .bagFull .zone { text-align: left; margin-top: 14px; padding: 12px; border-radius: 12px; background: var(--panel2); }
   .bagFull .newZone { border: 2px solid var(--accent); background: rgba(255,204,51,.08); }
   .zoneHead { font-weight: 800; margin-bottom: 8px; }
   .bagGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
-  .pickCard { width: 100%; display: flex; align-items: flex-start; gap: 10px; text-align: left; padding: 10px; border-radius: 10px; background: var(--panel); color: var(--text); border: 1px solid #44447a; }
+  .pickCard { width: 100%; display: flex; align-items: flex-start; gap: 10px; text-align: left; padding: 10px; border-radius: 10px; background: var(--panel); color: var(--text); border: 1px solid var(--line); }
   .pickCard:hover { border-color: var(--bad); box-shadow: 0 0 0 2px rgba(255,92,92,.35); }
   .pickCard .pcIcon { font-size: 1.6rem; line-height: 1; }
   .pickCard .pcBody { flex: 1; }
@@ -267,11 +268,11 @@
   .board .boardItems { display: flex; flex-wrap: nowrap; gap: 2px; align-items: center; flex: none; font-size: 1.2rem; letter-spacing: 0; }
   .moreItems { font-size: .8rem; font-weight: 800; color: var(--muted); margin-left: 2px; }
   .hist { display: flex; gap: 4px; align-items: center; }
-  .hist i { width: 14px; height: 14px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 9px; font-style: normal; font-weight: 900; color: #10101f; background: #33335a; }
+  .hist i { width: 14px; height: 14px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 9px; font-style: normal; font-weight: 900; color: #10101f; background: var(--deep2); }
   .hist i.r { background: #3ddc84; } .hist i.w { background: #ff5c5c; }
   .hist i.last { width: 17px; height: 17px; font-size: 11px; box-shadow: 0 0 0 2px #fff6; }
   .meter { display: flex; align-items: center; gap: 3px; }
-  .meter b { width: 13px; height: 9px; border-radius: 3px; background: #33335a; }
+  .meter b { width: 13px; height: 9px; border-radius: 3px; background: var(--deep2); }
   .meter.hot b.f { background: linear-gradient(#ffd166, #ff5e3a); box-shadow: 0 0 6px #ff7a3a; }
   .meter.cold b.f { background: linear-gradient(#bdf0ff, #4da3ff); box-shadow: 0 0 6px #4da3ff; }
   .meter span { margin-left: 4px; font-weight: 800; white-space: nowrap; }
@@ -311,7 +312,7 @@
   .gameMenu { position: relative; flex: none; }
   .menuBtn { font-size: 1.35rem; line-height: 1; width: 46px; height: 42px; padding: 0; display: grid; place-items: center; }
   .menuDrop { display: none; position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; min-width: 190px; padding: 6px; border-radius: 12px;
-    background: var(--panel); border: 1px solid #44447a; box-shadow: 0 14px 34px rgba(0,0,0,.5); }
+    background: var(--panel); border: 1px solid var(--line); box-shadow: 0 14px 34px rgba(0,0,0,.5); }
   .menuDrop.open { display: grid; gap: 4px; animation: pop .15s ease-out; }
   .menuDrop button { text-align: left; background: none; color: var(--text); padding: 10px 12px; border-radius: 8px; font-weight: 700; }
   .menuDrop button:hover { background: var(--panel2); }
@@ -330,7 +331,7 @@
   .prizeBadge { font-size: 1em !important; }
   .tierPick .lockedBtn { background: repeating-linear-gradient(45deg, #ff5e5e, #ff5e5e 14px, #e04848 14px, #e04848 28px); grid-column: 1 / -1; }
   .modal { position: fixed; inset: 0; background: rgba(5,5,20,.75); display: flex; align-items: center; justify-content: center; z-index: 20; padding: 16px; }
-  .modalBox { background: var(--panel); border: 1px solid #44447a; border-radius: var(--radius); padding: 28px; max-width: 480px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.5); animation: pop .25s ease-out; }
+  .modalBox { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; max-width: 480px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.5); animation: pop .25s ease-out; }
   .modalBox h2 { margin: 6px 0; }
   .modalBox .actions button small { font-weight: 400; opacity: .7; }
   .bigIcon { font-size: 3.4rem; }
@@ -340,26 +341,26 @@
   .timer { max-width: 420px; margin: 0 auto 4px; cursor: pointer; user-select: none; }
   .timerNum { display: block; text-align: center; font-size: 1.6rem; font-weight: 800; font-variant-numeric: tabular-nums; }
   .timerNum small { font-size: .8rem; color: var(--bad); }
-  .timerBar { height: 10px; background: #0f0f26; border-radius: 5px; overflow: hidden; margin-top: 4px; }
+  .timerBar { height: 10px; background: var(--deep); border-radius: 5px; overflow: hidden; margin-top: 4px; }
   .timerBar i { display: block; height: 100%; background: var(--good); transition: width 1s linear, background .3s; }
   .timer.low .timerNum { color: var(--bad); animation: pulse .5s infinite alternate; }
   .timer.low .timerBar i { background: var(--bad); }
   .timer.paused { opacity: .55; }
   @keyframes pulse { to { transform: scale(1.12); } }
   .timesUp { text-align: center; font-size: 1.8rem; font-weight: 900; color: var(--bad); margin-bottom: 6px; }
-  .catToggle { border-radius: 999px; padding: 7px 14px; background: transparent; border: 2px solid #44447a; color: var(--muted); text-decoration: line-through; }
+  .catToggle { border-radius: 999px; padding: 7px 14px; background: transparent; border: 2px solid var(--line); color: var(--muted); text-decoration: line-through; }
   .catToggle.on { background: var(--c); border-color: var(--c); color: #111; font-weight: 700; text-decoration: none; }
   .catToggle small { opacity: .7; margin-left: 4px; }
   .turnOrder { text-align: left; display: inline-block; font-size: 1.25rem; line-height: 1.8; margin: 8px 0 0; padding-left: 28px; }
   .turnOrder li:first-child { color: var(--accent); font-weight: 800; }
   .tierPick .exodiaBtn { background: linear-gradient(135deg, #3a2a00, #8a6a10); color: #ffe27a; border: 2px solid #ffcc33; grid-column: 1 / -1; }
   .exodiaPieces { display: flex; justify-content: center; gap: 10px; margin-top: 18px; }
-  .exodiaPieces span { width: 44px; height: 58px; border-radius: 8px; border: 2px dashed #55558a; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: var(--muted); }
+  .exodiaPieces span { width: 44px; height: 58px; border-radius: 8px; border: 2px dashed var(--line); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: var(--muted); }
   .exodiaPieces span.got { border: 2px solid var(--accent); background: #3a2a00; }
   .intro { text-align: center; padding: 6px 0 4px; }
   .introLabel { color: var(--muted); font-size: .85rem; text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 6px; }
   .introBig { display: inline-block; padding: 12px 28px; border-radius: 14px; font-size: 1.7rem; font-weight: 900; color: #111; animation: pop .3s ease-out; }
-  .introBar { width: min(260px, 80%); height: 6px; margin: 22px auto 0; background: #0f0f26; border-radius: 3px; overflow: hidden; }
+  .introBar { width: min(260px, 80%); height: 6px; margin: 22px auto 0; background: var(--deep); border-radius: 3px; overflow: hidden; }
   .introBar i { display: block; height: 100%; width: 100%; background: var(--accent); transform-origin: left; animation: introShrink linear forwards; }
   @keyframes introShrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
   .gameTop { gap: 14px; margin-bottom: 8px; }
@@ -399,7 +400,7 @@
   .turnChip.next em { background: var(--blue); color: #08203d; }
   .turnChip.skipped { opacity: .5; text-decoration: line-through; }
   .turnChip.skipped em { background: var(--bad); color: #2a0505; }
-  .turnArrow { color: #55558a; font-size: 1.2rem; }
+  .turnArrow { color: var(--line); font-size: 1.2rem; }
   @media (max-width: 760px) {
     .gameTop { flex-wrap: wrap; }
     .turnStrip { order: 3; flex-basis: 100%; flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; padding: 6px 2px; }
@@ -413,7 +414,7 @@
   .roundBanner small { display: block; font-size: 1.4rem; letter-spacing: 6px; color: var(--text); }
   @keyframes roundIn { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.5); } 20% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
     75% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -60%) scale(1); } }
-  .catGroup { width: 100%; padding: 6px 0; border-top: 1px solid #2f2f5c; }
+  .catGroup { width: 100%; padding: 6px 0; border-top: 1px solid var(--line-soft); }
   .catGroupRow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .catGroup .groupHead { font-weight: 800; }
   .groupArrow { width: 34px; height: 34px; padding: 0; border-radius: 8px; background: var(--panel2); color: var(--text); flex: none; display: grid; place-items: center; }
@@ -440,6 +441,47 @@
   .toast.show { opacity: 1; }
   .confetti { position: fixed; top: -10px; width: 10px; height: 14px; animation: fall linear forwards; pointer-events: none; }
   @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+
+  /* ☀️ Light theme: warm cream and peach, white cards, brown text (the bright game buttons stay the same) */
+  :root[data-theme="light"] {
+    --bg: #fff4e6; --panel: #ffffff; --panel2: #fff0db; --text: #3b2a1c; --muted: #8b735c;
+    --glow: #ffdcb8; --line: #e6cba6; --line-soft: #f1e0c8; --deep: #f7e8d3; --deep2: #f2dfc4; --shadow: rgba(170, 110, 50, .16); --title: #e8790c;
+    color-scheme: light;
+  }
+  [data-theme="light"] button:hover { filter: brightness(.96); }
+  /* plain buttons: white with a soft edge (low specificity, so colored buttons keep their colors) */
+  :where([data-theme="light"]) button { background: #fff; border: 1px solid var(--line-soft); box-shadow: 0 2px 6px var(--shadow); }
+  :where([data-theme="light"]) button.ghost { background: transparent; box-shadow: none; border-color: var(--line); }
+  :where([data-theme="light"]) .tierPick button, :where([data-theme="light"]) .menuDrop button, :where([data-theme="light"]) .lockChip { border: 0; }
+  [data-theme="light"] .newsHead { color: #d9620f; }
+  [data-theme="light"] input, [data-theme="light"] select, [data-theme="light"] textarea { background: #fffaf3; }
+  [data-theme="light"] .fx.buff { background: rgba(46,204,113,.14); border-color: #2fb36a; color: #17663a; }
+  [data-theme="light"] .fx.debuff { background: rgba(255,92,92,.12); border-color: #e05252; color: #a3201a; }
+  [data-theme="light"] .fx.info { background: rgba(120,110,95,.1); border-color: #b9a78f; color: #5f5243; }
+  [data-theme="light"] .streakLbl.hot { color: #d9620f; } [data-theme="light"] .streakLbl.cold { color: #1f73b8; }
+  [data-theme="light"] .slot.full { background: #fff7ec; }
+  [data-theme="light"] .turnChip { background: #fff; }
+  [data-theme="light"] .turnChip.next { color: var(--text); }
+  [data-theme="light"] .feedLine.fresh { color: var(--text); }
+  [data-theme="light"] .rarityTag { background: rgba(255,255,255,.7); filter: brightness(.8); }
+  [data-theme="light"] .flyPts { text-shadow: 0 2px 6px rgba(120,80,40,.35); }
+  [data-theme="light"] .modal { background: rgba(80, 50, 20, .35); }
+  [data-theme="light"] .lockedBtn, [data-theme="light"] .exodiaBtn { color: #2a1a00; }
+  [data-theme="light"] .news { background: linear-gradient(135deg, #fff1d6, #ffe6ea); border-color: #f2c66a; }
+  [data-theme="light"] .tierPick .gambleBtn { background: linear-gradient(135deg, #3b2a12, #6b4a10); }
+  [data-theme="light"] .noFx { opacity: .8; }
+  [data-theme="light"] #liveBoard li::before { opacity: .28; }
+  [data-theme="light"] .itemCard { background: #fff; border-color: var(--line); box-shadow: 0 2px 8px var(--shadow); }
+  [data-theme="light"] .itemCard small { color: var(--muted); }
+  [data-theme="light"] .selfTarget { background: #fff7e6; }
+  [data-theme="light"] .luckyBanner { background: #fff3c2; color: #7a5200; box-shadow: 0 0 0 2px #f5c242; }
+  [data-theme="light"] .tierPick .exodiaBtn { background: linear-gradient(135deg, #ffe08a, #ffc23d); color: #4a3000; }
+  [data-theme="light"] .exodiaPieces span.got { background: #ffe9a8; }
+  [data-theme="light"] .turnChip { border-color: var(--line); }
+  [data-theme="light"] .stakePill, [data-theme="light"] .rewardHint { color: #7a5200; }
+  @keyframes bumpLight { 30% { transform: scale(1.06); background: #d8f5e2; } }
+  @keyframes hitLight { 0%, 100% { transform: none; } 20% { transform: translateX(-6px); background: #ffd9d9; } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
+  [data-theme="light"] .board li.bump { animation-name: bumpLight; } [data-theme="light"] .board li.hit { animation-name: hitLight; }
 </style>
 </head>
 <body>
@@ -517,6 +559,7 @@
     <div class="gameMenu">
       <button class="ghost menuBtn" onclick="toggleGameMenu(event)" title="Menu" aria-label="Menu" aria-haspopup="true">☰</button>
       <div class="menuDrop" id="gameMenu" role="menu">
+        <button role="menuitem" id="themeMenuBtn" onclick="closeGameMenu(); toggleTheme()">☀️ Light mode</button>
         <button role="menuitem" onclick="closeGameMenu(); restartGame()">🔄 Restart game</button>
         <button role="menuitem" class="danger" onclick="closeGameMenu(); quitGame()">✕ End game</button>
       </div>
@@ -732,6 +775,12 @@
     <label class="switch"><input type="checkbox" id="fxOn" onchange="saveFxSettings()"> Animations — screen transitions and points flying to / dropping off players</label>
     <label class="switch" style="margin-top:10px"><input type="checkbox" id="sfxOn" onchange="saveFxSettings()"> Sound effects — right / wrong answers, points, items, game start, each new turn and the winner</label>
     <div class="setting" style="margin-top:12px">
+      <div class="setName">🎨 Theme</div>
+      <div class="ctrl"><select id="themeSel" onchange="data.settings.theme = this.value; save(); applyTheme(); toast('Saved')">
+        <option value="dark">🌙 Dark</option><option value="light">☀️ Light (warm and bright)</option></select></div>
+      <div class="help">You can also switch it during a game from the ☰ menu.</div>
+    </div>
+    <div class="setting" style="margin-top:12px">
       <div class="setName">🔍 Screen size</div>
       <div class="ctrl"><select id="uiScaleSel" onchange="saveFxSettings()">
         <option value="auto">Auto (fits your window)</option><option value="1">100%</option><option value="1.1">110%</option><option value="1.25">125%</option><option value="1.4">140%</option><option value="1.6">160%</option></select></div>
@@ -875,7 +924,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '3.7.1';
+const APP_VERSION = '3.8.0';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -918,7 +967,22 @@ const SEED_CATEGORIES = [
   { id: 'cat_sports_combat', name: "Combat Sports", color: '#4dd6a8', group: 'Sports' },
   { id: 'cat_sports_esports', name: "Esports", color: '#5bdabe', group: 'Sports' },
   { id: 'cat_sports_target', name: "Archery & Target Sports", color: '#69ddd2', group: 'Sports' },
-  { id: 'cat_dentistry', name: "Dentistry", color: '#7fe7ff', group: "Medicine", was: "Dentistry", v: 6 },
+  // bank version 14: Dentistry becomes its own family (clinical sub-categories are written for dental hygienists)
+  { id: 'cat_dentistry', name: "General", color: '#7fe7ff', group: "Dentistry", was: "Dentistry", v: 6 },
+  { id: 'cat_dent_anatomy', name: "Tooth Anatomy & Numbering", color: '#2fd4c4', group: "Dentistry" },
+  { id: 'cat_dent_headneck', name: "Head & Neck Anatomy", color: '#38d8cb', group: "Dentistry" },
+  { id: 'cat_dent_perio', name: "Periodontics", color: '#41dcd2', group: "Dentistry" },
+  { id: 'cat_dent_instruments', name: "Instruments & Instrumentation", color: '#4ae0d9', group: "Dentistry" },
+  { id: 'cat_dent_radiology', name: "Radiography", color: '#53e3df', group: "Dentistry" },
+  { id: 'cat_dent_prevention', name: "Prevention & Fluoride", color: '#5ce6e4', group: "Dentistry" },
+  { id: 'cat_dent_pathology', name: "Oral Pathology", color: '#65e9e8', group: "Dentistry" },
+  { id: 'cat_dent_pharm', name: "Pharmacology & Anesthesia", color: '#6eebec', group: "Dentistry" },
+  { id: 'cat_dent_safety', name: "Infection Control & Emergencies", color: '#77edf0', group: "Dentistry" },
+  { id: 'cat_dent_materials', name: "Dental Materials", color: '#80eff3', group: "Dentistry" },
+  { id: 'cat_dent_specialties', name: "Specialties & Procedures", color: '#89f1f6', group: "Dentistry" },
+  { id: 'cat_dent_community', name: "Community Health & Ethics", color: '#92f3f9', group: "Dentistry" },
+  { id: 'cat_dent_biomed', name: "Biomedical Sciences", color: '#9bf5fb', group: "Dentistry" },
+  { id: 'cat_dent_cases', name: "Patient Cases", color: '#a4f7fd', group: "Dentistry" },
   { id: 'cat_math', name: "General", color: '#4da3ff', group: "Math", was: "Math", v: 6, split: true },
   { id: 'cat_math_arithmetic', name: "Arithmetic & Numbers", color: '#0fa5ff', group: "Math" },
   { id: 'cat_math_geometry', name: "Geometry", color: '#38a6fe', group: "Math" },
@@ -1086,6 +1150,16 @@ const SEED_CATEGORIES = [
   { id: 'cat_sports_extreme', name: "Cycling & Extreme Sports", color: '#2cc36c', group: "Sports" },
   { id: 'cat_medicine_health', name: "Health & Nutrition", color: '#41dbfe', group: "Medicine" },
   { id: 'cat_medicine_history', name: "Medical History", color: '#5be0ff', group: "Medicine" },
+  // bank version 14
+  { id: 'cat_medicine_diseases', name: "Diseases & Conditions", color: '#2fb8f0', group: "Medicine" },
+  { id: 'cat_medicine_drugs', name: "Drugs & Pharmacy", color: '#38bdf2', group: "Medicine" },
+  { id: 'cat_medicine_firstaid', name: "First Aid & Emergencies", color: '#41c2f4', group: "Medicine" },
+  { id: 'cat_medicine_mind', name: "Mental Health & the Brain", color: '#4ac7f6', group: "Medicine" },
+  { id: 'cat_medicine_terms', name: "Medical Terms", color: '#53ccf8', group: "Medicine" },
+  { id: 'cat_medicine_careers', name: "Doctors, Nurses & Hospitals", color: '#5cd1fa', group: "Medicine" },
+  { id: 'cat_medicine_public', name: "Vaccines & Public Health", color: '#65d6fc', group: "Medicine" },
+  { id: 'cat_medicine_tech', name: "Medical Tech & Breakthroughs", color: '#6edbfe', group: "Medicine" },
+  { id: 'cat_medicine_screen', name: "Medical TV & Movies", color: '#77dfff', group: "Medicine" },
   { id: 'cat_math_puzzles', name: "Puzzles & Logic", color: '#0f83ff', group: "Math" },
   { id: 'cat_history_wars', name: "World Wars", color: '#b48341', group: "History" },
   { id: 'cat_history_explorers', name: "Explorers & Empires", color: '#bf9050', group: "History" },
@@ -1288,6 +1362,14 @@ function upgrade(d) {
         if (w && (q.wrong || []).length === 3 && q.wrong.every((x, i) => x === w[i])) q.wrong = [...w];
       });
     }
+    if (fromVersion < 14) {
+      // 3.8: Dentistry leaves Medicine and becomes its own family (its old category becomes Dentistry › General,
+      // unless the player renamed it); categories are put back in the bank's order so new ones sit with their family
+      const dent = d.categories.find(c => c.id === 'cat_dentistry');
+      if (dent?.group === 'Medicine') { dent.group = 'Dentistry'; if (dent.name === 'Dentistry') dent.name = 'General'; }
+      const order = new Map(SEED_CATEGORIES.map((c, i) => [c.id, i]));
+      d.categories = d.categories.map((c, i) => [c, order.get(c.id) ?? 10000 + i]).sort((x, y) => x[1] - y[1]).map(x => x[0]);
+    }
     if (fromVersion < 4 && d.settings.targetPoints === 10) d.settings.targetPoints = 30; // old default → new default
     // If the user deleted or renamed tiers, map seed tiers onto theirs by difficulty rank
     const ranked = d.tiers; // already in difficulty order (see the version-9 step)
@@ -1302,7 +1384,8 @@ function upgrade(d) {
   d.settings.timer.warnAt ??= 10; // the clock ticks (and turns red) for this many final seconds
   d.settings.uiSfx ??= true;
   d.settings.itemCardSeconds ??= 10; // item-gained cards stay this long
-  d.settings.uiScale ??= 'auto';     // screen size: 'auto' or a fixed zoom like 1.25      // small interface sounds: hovering and clicking buttons, turn changes
+  d.settings.uiScale ??= 'auto';     // screen size: 'auto' or a fixed zoom like 1.25
+  d.settings.theme ??= 'dark';       // 'dark' or 'light'      // small interface sounds: hovering and clicking buttons, turn changes
   d.settings.items ??= defaultItemSettings();
   const itemDefaults = defaultItemSettings();
   d.settings.items.enabled ??= true; d.settings.items.streaks ??= [...itemDefaults.streaks];
@@ -1467,6 +1550,7 @@ function renderSettings() {
   document.getElementById('uiSfxOn').checked = data.settings.uiSfx;
   document.getElementById('itemCardSecs').value = data.settings.itemCardSeconds ?? 10;
   document.getElementById('uiScaleSel').value = String(data.settings.uiScale ?? 'auto');
+  document.getElementById('themeSel').value = data.settings.theme === 'light' ? 'light' : 'dark';
   document.getElementById('timerLate').checked = !!tm.lateCorrect;
   document.getElementById('timerBody').style.opacity = tm.enabled ? 1 : .45;
   renderItemSettings();
@@ -2054,6 +2138,9 @@ function assignColors(list) {
   saveRoster();
 }
 const pc = p => p?.color || 'var(--accent)';
+// player color for text: in light mode a deeper shade, so light colors (white, mint, pink…) stay readable on cream
+const isLight = () => document.documentElement.dataset.theme === 'light';
+const pcText = p => isLight() ? `color-mix(in srgb, ${pc(p)} 62%, #2b1a0a)` : pc(p);
 // Setup screen: tap a player's color dot to choose any of the 24 colors not already used by another player
 function pickColor(i) {
   const p = players[i]; if (!p) return;
@@ -2301,10 +2388,15 @@ function startGame() {
   // Random turn order each game (Fisher–Yates shuffle)
   for (let i = players.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [players[i], players[j]] = [players[j], players[i]]; }
   turn = 0; round = 1; used.clear(); current = null; itemUsedThisTurn = false; shownScores = new Map(); shownRound = 0;
+  // the scoreboard starts at the top and holds still until the turn order is closed, then a few more seconds
+  boardDir = 1; boardPauseUntil = Infinity;
+  const startBoard = () => { document.getElementById('boardScroll').scrollTop = 0; boardPauseUntil = performance.now() + BOARD_START_DELAY; };
   go('game'); renderGame(); sfx('start');
   if (players.length > 1) modal(`<div class="bigIcon">🎲</div><h2>Turn order</h2>
-    <ol class="turnOrder">${players.map(p => `<li>${esc(p.name)}</li>`).join('')}</ol>`, [{ label: "Let's go!", cls: 'primary' }]);
+    <ol class="turnOrder">${players.map(p => `<li>${esc(p.name)}</li>`).join('')}</ol>`, [{ label: "Let's go!", cls: 'primary', fn: startBoard }]);
+  else startBoard();
 }
+const BOARD_START_DELAY = 3000; // ms the scoreboard waits at the top when a game starts
 function rematch() { startGame(); }
 // ☰ game menu (top right of the game screen) — add more entries to the #gameMenu list as needed
 function toggleGameMenu(e) { e.stopPropagation(); document.getElementById('gameMenu').classList.toggle('open'); }
@@ -2379,7 +2471,7 @@ function resolveOverflow() {
       <span class="pcIcon">${ITEMS[k].icon}</span><span class="pcBody"><b>${ITEMS[k].name}</b> ${rarityTag(k)}<small>${esc(itemDesc(k))}</small></span>
       <span class="pcDrop">Drop</span></button>`;
   const max = maxItems(), newOnes = p.items.slice(max);
-  modal(`<div class="bagFull"><h2 style="margin-top:0">🎒 <span style="color:${pc(p)}">${esc(p.name)}</span>'s bag is full</h2>
+  modal(`<div class="bagFull"><h2 style="margin-top:0">🎒 <span style="color:${pcText(p)}">${esc(p.name)}</span>'s bag is full</h2>
     <p class="muted" style="margin-top:-8px">You can hold ${max} items. Tap the one you want to drop.</p>
     <div class="zone newZone"><div class="zoneHead">✨ New item</div>${newOnes.map((k, j) => card(k, max + j, true)).join('')}</div>
     <div class="zone"><div class="zoneHead">🎒 In your bag (${max} of ${max})</div><div class="bagGrid">${p.items.slice(0, max).map((k, i) => card(k, i, false)).join('')}</div></div></div>`, []);
@@ -2388,7 +2480,7 @@ function resolveOverflow() {
 function dropItem(pi, i) {
   const p = players[pi], k = p?.items[i]; if (!k) return;
   p.items.splice(i, 1); itemStat(k).unused++; saveStats();
-  logEvent(`🗑️ <b style="color:${pc(p)}">${esc(p.name)}</b> dropped <b>${ITEMS[k].name}</b> (bag full)`);
+  logEvent(`🗑️ <b style="color:${pcText(p)}">${esc(p.name)}</b> dropped <b>${ITEMS[k].name}</b> (bag full)`);
   closeModal(); renderGame(); resolveOverflow();
 }
 const streakClose = p => { const g = nextStreakGoal(p); return g && p.streak.kind && p.streak.count === g - 1; };
@@ -2399,7 +2491,7 @@ function renderBoard() {
   // every row has the same 3 lines whatever the game size; the board scrolls itself when it's taller than the screen
   document.getElementById('liveBoard').innerHTML = order.map(({ p, i }) =>
     `<li data-pi="${i}" class="${i === turn ? 'current' : ''}" style="display:block;--pc:${pc(p)};--prog:${Math.min(100, Math.max(0, p.score / target * 100))}%">
-      <div class="rowHead"><i class="pDot" style="background:${pc(p)}"></i><span class="rowName" style="color:${pc(p)}" title="${esc(p.name)}">${esc(p.name)}</span>
+      <div class="rowHead"><i class="pDot" style="background:${pc(p)}"></i><span class="rowName" style="color:${pcText(p)}" title="${esc(p.name)}">${esc(p.name)}</span>
         <span class="rowRight">${streakLabel(p)}<b>${p.score}</b></span></div>
       <div class="infoRow">${itemsOn() ? boardBag(p) : ''}<span class="fxRow"><span class="fxTrack">${effectList(p).map(x => effectTag(x)).join('') || '<span class="noFx">no effects</span>'}</span></span></div></li>`).join('');
   renderTurnInfo();
@@ -2461,11 +2553,11 @@ function showFeedHistory() {
 // Item gained: a card slides in over the right end of the activity bar (above the question area, never over the scoreboard) for ~10 s (doesn't block anything) and the bar logs it
 function itemGained(p, k, how) {
   const it = ITEMS[k], secs = data.settings.itemCardSeconds ?? 10; // how long the card stays (Settings › Effects)
-  logEvent(`${it.icon} <b style="color:${pc(p)}">${esc(p.name)}</b> ${how} <b>${it.name}</b>`);
+  logEvent(`${it.icon} <b style="color:${pcText(p)}">${esc(p.name)}</b> ${how} <b>${it.name}</b>`);
   const box = document.getElementById('itemCards'); if (!box) return;
   const card = document.createElement('div'); card.className = 'itemCardPop';
   card.innerHTML = `<button class="close" title="Dismiss">✕</button><span class="icIcon">${it.icon}</span><div class="icBody">
-      <div class="icTop"><b style="color:${pc(p)}">${esc(p.name)}</b> <span class="muted">${how}</span> <b>${it.name}</b> ${rarityTag(k)}</div>
+      <div class="icTop"><b style="color:${pcText(p)}">${esc(p.name)}</b> <span class="muted">${how}</span> <b>${it.name}</b> ${rarityTag(k)}</div>
       <div class="icDesc">${esc(itemDesc(k))}</div></div><div class="icTimer"><i style="animation-duration:${secs}s"></i></div>`;
   card.querySelector('.close').onclick = () => card.remove();
   const feed = document.getElementById('feed'), z = +(document.documentElement.dataset.zoom || 1);
@@ -2535,13 +2627,13 @@ function renderGameInner() {
     const luckyBanner = p.beginner > 0 && et ? `<div class="luckyBanner">🐣 Beginner's Luck: ${esc(et.name)} questions are worth <b>${et.points * 2}</b> instead of ${et.points} · ${p.beginner} turn${p.beginner === 1 ? '' : 's'} left</div>` : '';
     const myFx = effectList(p).filter(x => !x.text.startsWith("Beginner's Luck")); // Beginner's Luck has its own banner
     const fxBox = myFx.length ? `<div class="myFx"><span class="muted">Affecting you:</span> ${myFx.map(x => effectTag(x, true)).join('')}</div>` : '';
-    stage.innerHTML = `<div class="turn"><span style="color:${pc(p)}">${esc(p.name)}</span>, ${heading}</div>${luckyBanner}${fxBox}${hint}
+    stage.innerHTML = `<div class="turn"><span style="color:${pcText(p)}">${esc(p.name)}</span>, ${heading}</div>${luckyBanner}${fxBox}${hint}
       <div class="tierPick">${buttons.join('')}</div>${footer}${itemsOn() ? itemBar(p) : ''}`;
     return;
   }
   const t = tierOf(current.tierId), q = current, c = catOf(q.categoryId) || NO_CAT;
   if (q.intro) {
-    stage.innerHTML = `<div class="turn"><span style="color:${pc(p)}">${esc(p.name)}</span>, here's your next question…</div>
+    stage.innerHTML = `<div class="turn"><span style="color:${pcText(p)}">${esc(p.name)}</span>, here's your next question…</div>
       <div class="intro">
         <div class="introLabel">Category</div>
         ${c.group ? `<div class="introGroup">${esc(c.group)}</div>` : ''}<div class="introBig" style="background:${c.color}">${esc(c.name)}</div>
@@ -2553,7 +2645,7 @@ function renderGameInner() {
       </div>`;
     return;
   }
-  stage.innerHTML = `<div class="turn"><span style="color:${pc(p)}">${esc(p.name)}</span> ·
+  stage.innerHTML = `<div class="turn"><span style="color:${pcText(p)}">${esc(p.name)}</span> ·
       <span class="pill" style="background:${c.color}">${esc(catLabel(c))}</span>
       <span class="pill" style="background:${t.color}">${esc(t.name)} · ${t.points} pts</span>
       ${stakeBadge(p)} ${rewardPill(q)}</div>
@@ -2810,7 +2902,18 @@ function beep(freq, dur, vol = .12) {
 }
 
 // ---------- Effects: sounds & animations ----------
-function applyFx() { document.body.classList.toggle('fxOff', !data.settings.fx); applyScale(); }
+function applyFx() { document.body.classList.toggle('fxOff', !data.settings.fx); applyTheme(); applyScale(); }
+// ☀️ / 🌙 theme (Settings › Effects or the in-game ☰ menu), remembered on this device
+function applyTheme() {
+  const light = data.settings.theme === 'light';
+  document.documentElement.dataset.theme = light ? 'light' : 'dark';
+  const btn = document.getElementById('themeMenuBtn'); if (btn) btn.textContent = light ? '🌙 Dark mode' : '☀️ Light mode';
+  const sel = document.getElementById('themeSel'); if (sel) sel.value = light ? 'light' : 'dark';
+}
+function toggleTheme() {
+  data.settings.theme = data.settings.theme === 'light' ? 'dark' : 'light'; save(); applyTheme();
+  if (document.getElementById('game').classList.contains('active')) renderGame(); // player-name shades follow the theme
+}
 // Screen size: 'auto' grows the whole game with the window (a laptop lands around 125%, never below 100%, at most 140%);
 // a number is a fixed size for TVs / projectors. Uses CSS zoom on the page.
 const uiScale = () => { const v = data.settings.uiScale ?? 'auto';
@@ -3007,7 +3110,7 @@ function mark(correct) {
   { const c = catOf(current.categoryId), where = c ? (c.group ? `${c.group} › ${c.name}` : c.name) : 'Uncategorized';
     const pts = correct ? ` (+${st.win})` : st.lose ? ` (−${st.lose})` : '', goal = nextStreakGoal(p);
     const streak = `${kind === 'hot' ? '🔥' : '🧊'} ${p.streak.count}${goal ? '/' + goal : ''}`;
-    logEvent(`${correct ? '✅' : '❌'} <b style="color:${pc(p)}">${esc(p.name)}</b> answered ${esc(tierOf(current.tierId)?.name || '')} · ${esc(where)} <b>${correct ? 'right' : 'wrong'}</b>${pts} · ${streak}`); }
+    logEvent(`${correct ? '✅' : '❌'} <b style="color:${pcText(p)}">${esc(p.name)}</b> answered ${esc(tierOf(current.tierId)?.name || '')} · ${esc(where)} <b>${correct ? 'right' : 'wrong'}</b>${pts} · ${streak}`); }
   const prize = correct && current.reward && itemsOn() ? current.reward : null;
   if (prize) { p.items.push(prize); itemStat(prize).earned++; }
   let earned = null;
@@ -3268,7 +3371,7 @@ function stormCloud(p, idx) {
 function finishItem(p, idx, html, sound = 'use') {
   sfx(sound);
   { const it = ITEMS[p.items[idx]], body = plainText(html.replace(/<h2>.*?<\/h2>/, '').replace(/<div class="bigIcon">.*?<\/div>/, ''));
-    logEvent(`${it.icon} <b style="color:${pc(p)}">${esc(p.name)}</b> used <b>${it.name}</b>${body ? ' — ' + esc(body.length > 110 ? body.slice(0, 107) + '…' : body) : ''}`); }
+    logEvent(`${it.icon} <b style="color:${pcText(p)}">${esc(p.name)}</b> used <b>${it.name}</b>${body ? ' — ' + esc(body.length > 110 ? body.slice(0, 107) + '…' : body) : ''}`); }
   itemStat(p.items[idx]).used++; saveStats();
   p.items.splice(idx, 1); itemUsedThisTurn = true;
   renderGame();

@@ -1,5 +1,12 @@
 # What's new in Potato Quiz
 
+## 3.8.0 — 2026-10-17
+- **🦷 New Dentistry family:** Dentistry is now its own family with 15 categories and about 4,800 questions. The clinical ones (Periodontics, Pharmacology & Anesthesia, Radiography, Head & Neck Anatomy, Oral Pathology, Patient Cases and more) are written at dental-hygiene board level, perfect for a game night with hygienists. Turn on just the Dentistry family for an all-dental quiz. Dentistry › General keeps the fun facts for everyone.
+- **🩺 Bigger Medicine family:** 9 new categories (Diseases & Conditions, Drugs & Pharmacy, First Aid & Emergencies, Mental Health & the Brain, Medical Terms, Doctors, Nurses & Hospitals, Vaccines & Public Health, Medical Tech & Breakthroughs, and Medical TV & Movies), now about 3,500 questions in all.
+- **☀️ Light mode:** a warm, bright look with cream and peach backgrounds and white cards. Switch between light and dark in Settings › Effects › Theme, or from the ☰ menu during a game.
+- When a game starts, the scoreboard waits at the top for a few seconds before it starts scrolling, so everyone can see the line-up first.
+- **🌏 Words in their own language:** foreign words, dishes, phrases and titles now appear in their native script with the pronunciation in parentheses, like 짜장면 (jajangmyeon), رمضان كريم (Ramadan Kareem) or συρτάκι (sirtaki). Accents in European words were tidied up too.
+
 ## 3.7.1 — 2026-10-17
 - Small touch-ups to the main menu.
 
