@@ -550,6 +550,33 @@
   .pcModalBtns button.wide { grid-column: 1 / -1; text-align: left; }
   .pcModalBtns button.picked { outline: 3px solid var(--accent); }
   .joinErr { color: var(--bad); font-weight: 700; min-height: 1.3em; margin: 8px 0 0; }
+  /* Player stats */
+  .statTiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .statTile { background: var(--panel); border-radius: var(--radius); padding: 14px 16px; display: flex; gap: 12px; align-items: center; box-shadow: 0 8px 24px var(--shadow); }
+  .stIcon { font-size: 1.9rem; }
+  .stLabel { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .stBig { font-size: 1.35rem; font-weight: 800; line-height: 1.2; }
+  .stSmall { font-size: .82rem; color: var(--muted); }
+  .statSortRow { gap: 10px; align-items: center; margin-bottom: 12px; }
+  .statSortRow .chips { margin: 0; }
+  .pCards { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
+  .pCard { background: var(--panel); border-radius: var(--radius); padding: 16px 18px; box-shadow: 0 8px 24px var(--shadow), inset 5px 0 0 var(--pc); }
+  .pHead { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .pRank { font-size: 1.5rem; min-width: 1.6em; text-align: center; font-weight: 800; color: var(--muted); }
+  .pName { font-size: 1.25rem; font-weight: 800; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pWins { text-align: right; line-height: 1.1; }
+  .pWins b { font-size: 1.5rem; }
+  .pWins small { display: block; color: var(--muted); font-size: .78rem; }
+  .pBar { margin: 8px 0; }
+  .pBarTop { display: flex; justify-content: space-between; font-size: .85rem; color: var(--muted); margin-bottom: 4px; }
+  .pBarTop b { color: var(--text); }
+  .pBarTrack { height: 8px; border-radius: 4px; background: var(--deep); overflow: hidden; }
+  .pBarTrack i { display: block; height: 100%; border-radius: 4px; background: var(--pc); }
+  .pCounts { display: flex; gap: 14px; flex-wrap: wrap; font-size: .9rem; margin-top: 10px; }
+  .pFams { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .pFam { font-size: .82rem; padding: 4px 10px; border-radius: 999px; background: var(--panel2); }
+  .pFam.good b { color: var(--good); }
+  .pFam.bad b { color: var(--bad); }
 </style>
 </head>
 <body>
@@ -794,13 +821,11 @@
     <p class="muted" id="itemStatsInfo"></p>
     <div class="row"><button class="small bad" onclick="resetItemStats()">Reset item stats</button></div>
   </div>
-  <div class="card" id="statsP">
-    <div class="tableScroll"><table><thead><tr><th>Player</th><th>Games</th><th>Wins</th><th>Win %</th><th>Correct</th><th>Incorrect</th><th>% Correct</th>
-      <th title="Category family this player gets right most often (at least 3 answers)">💪 Best category</th><th title="Category family this player gets wrong most often (at least 3 answers)">😬 Worst category</th>
-      <th title="Times this player activated Exodia">🃏 Exodia used</th><th title="Times this player completed Exodia for an instant win">🃏 Exodia won</th></tr></thead>
-      <tbody id="statsTable"></tbody></table></div>
-    <p class="muted" id="statsInfo"></p>
-    <p class="muted" style="margin-top:-6px">Best and worst categories are by family (e.g. Anime, Movies) and need at least 3 answers in that family. They start counting from version 3.5.</p>
+  <div id="statsP">
+    <div class="statTiles" id="statTiles"></div>
+    <div class="row statSortRow"><span class="muted">Sort by</span><div class="chips" id="statSort"></div></div>
+    <div class="pCards" id="pCards"></div>
+    <p class="muted" style="margin-top:14px">💪 best and 😬 worst categories are by family (e.g. Anime, Movies) and need at least 3 answers in that family. They start counting from version 3.5.</p>
     <div class="row"><button class="small bad" onclick="resetPlayerStats()">Reset player stats</button></div>
   </div>
 </section>
@@ -1016,7 +1041,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '4.0.3';
+const APP_VERSION = '4.0.4';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -2249,16 +2274,40 @@ function famBestWorst(ps) {
   return [best, worst && worst.name !== best.name ? worst : null];
 }
 const famCell = (f, icon) => f ? `<span class="famCell"><b>${icon} ${esc(f.name)}</b><small>${Math.round(f.rate * 100)}% · ${f.r}/${f.n}</small></span>` : '<span class="muted">—</span>';
+// Player stats: a highlights row, then a card per player (sortable)
+let statSort = 'wins';
+const STAT_SORTS = { wins: '🏆 Wins', winRate: '📈 Win rate', acc: '🎯 Accuracy', games: '🎮 Games' };
+const accOf = p => (p.correct + p.wrong) ? p.correct / (p.correct + p.wrong) : -1;
+const winOf = p => p.games ? p.wins / p.games : -1;
 function renderStats() {
-  const rows = Object.values(stats.players).sort((a, b) => b.wins - a.wins || (b.correct / (b.correct + b.wrong || 1)) - (a.correct / (a.correct + a.wrong || 1)));
-  document.getElementById('statsTable').innerHTML = rows.map(p => `<tr><td><b>${esc(p.name)}</b></td><td>${p.games}</td><td>${p.wins}</td>
-    <td>${pct(p.wins, p.games)}</td><td>${p.correct}</td><td>${p.wrong}</td><td>${pct(p.correct, p.correct + p.wrong)}</td>
-    ${(([b, w]) => `<td>${famCell(b, '💪')}</td><td>${famCell(w, '😬')}</td>`)(famBestWorst(p))}
-    <td>${p.exodiaUsed || 0}</td><td>${p.exodiaWins || 0}</td></tr>`).join('')
-    || '<tr><td colspan="11" class="muted">No games played yet.</td></tr>';
-  const shown = Object.values(stats.seen).reduce((a, b) => a + b, 0);
-  const ex = exodiaStats();
-  document.getElementById('statsInfo').textContent = `${shown} questions shown so far · ${Object.keys(stats.seen).length} different questions seen · 🃏 Exodia completed ${ex.completed} time${ex.completed === 1 ? '' : 's'} (out of ${ex.activated} attempt${ex.activated === 1 ? '' : 's'}).`;
+  const list = Object.values(stats.players), byWins = (a, b) => b.wins - a.wins || accOf(b) - accOf(a);
+  const order = { wins: byWins, winRate: (a, b) => winOf(b) - winOf(a) || byWins(a, b), acc: (a, b) => accOf(b) - accOf(a) || byWins(a, b), games: (a, b) => b.games - a.games || byWins(a, b) }[statSort];
+  const rows = [...list].sort(order), colorOf = p => ({ color: roster.colors?.[p.name.toLowerCase()] || null });
+  const nameTag = p => `<b style="color:${pcText(colorOf(p))}">${esc(p.name)}</b>`;
+  // highlights
+  const top = [...list].sort(byWins)[0], sharp = list.filter(p => p.correct + p.wrong >= 20).sort((a, b) => accOf(b) - accOf(a))[0];
+  const shown = Object.values(stats.seen).reduce((a, b) => a + b, 0), ex = exodiaStats();
+  const tile = (icon, label, big, small) => `<div class="statTile"><div class="stIcon">${icon}</div><div><div class="stLabel">${label}</div><div class="stBig">${big}</div><div class="stSmall">${small}</div></div></div>`;
+  document.getElementById('statTiles').innerHTML = list.length ? [
+    tile('🏆', 'Most wins', top && top.wins ? nameTag(top) : '—', top && top.wins ? `${top.wins} win${top.wins === 1 ? '' : 's'} in ${top.games} game${top.games === 1 ? '' : 's'}` : 'No winners yet'),
+    tile('🎯', 'Sharpest', sharp ? nameTag(sharp) : '—', sharp ? `${Math.round(accOf(sharp) * 100)}% right · ${sharp.correct + sharp.wrong} answers` : 'Needs 20+ answers'),
+    tile('❓', 'Questions played', shown.toLocaleString(), `${Object.keys(stats.seen).length.toLocaleString()} different questions`),
+    tile('🃏', 'Exodia', `${ex.completed} of ${ex.activated}`, ex.activated ? 'completed out of attempts' : 'Nobody has tried it yet')].join('') : '';
+  document.getElementById('statSort').innerHTML = Object.entries(STAT_SORTS).map(([k, l]) =>
+    `<button class="small ${k === statSort ? 'primary' : 'ghost'}" onclick="statSort='${k}';renderStats()">${l}</button>`).join('');
+  document.querySelector('.statSortRow').style.display = list.length > 1 ? '' : 'none';
+  // player cards
+  const medals = ['🥇', '🥈', '🥉'], bar = (label, v, txt) => `<div class="pBar"><div class="pBarTop"><span>${label}</span><b>${txt}</b></div><div class="pBarTrack"><i style="width:${Math.max(0, v) * 100}%"></i></div></div>`;
+  document.getElementById('pCards').innerHTML = rows.map((p, i) => {
+    const [best, worst] = famBestWorst(p), c = colorOf(p).color || 'var(--accent)', answers = p.correct + p.wrong;
+    return `<div class="pCard" style="--pc:${c}">
+      <div class="pHead"><span class="pRank">${medals[i] || i + 1}</span><span class="pName" style="color:${pcText(colorOf(p))}">${esc(p.name)}</span>
+        <span class="pWins"><b>${p.wins}</b> win${p.wins === 1 ? '' : 's'}<small>${p.games} game${p.games === 1 ? '' : 's'}</small></span></div>
+      ${bar('Win rate', winOf(p), pct(p.wins, p.games))}
+      ${bar('Accuracy', accOf(p), pct(p.correct, answers))}
+      <div class="pCounts"><span>✅ ${p.correct} right</span><span>❌ ${p.wrong} wrong</span>${p.exodiaUsed ? `<span title="Exodia: completed out of attempts">🃏 ${p.exodiaWins || 0}/${p.exodiaUsed}</span>` : ''}</div>
+      ${best || worst ? `<div class="pFams">${best ? `<span class="pFam good" title="${best.r} of ${best.n} right">💪 ${esc(best.name)} <b>${Math.round(best.rate * 100)}%</b></span>` : ''}${worst ? `<span class="pFam bad" title="${worst.r} of ${worst.n} right">😬 ${esc(worst.name)} <b>${Math.round(worst.rate * 100)}%</b></span>` : ''}</div>` : ''}
+    </div>`; }).join('') || '<div class="card muted" style="text-align:center">No games played yet. Finish a game and everyone\'s stats show up here.</div>';
 }
 function statsTab(t) {
   document.getElementById('statsP').style.display = t === 'p' ? '' : 'none';

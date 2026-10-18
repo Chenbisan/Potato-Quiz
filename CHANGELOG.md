@@ -1,5 +1,8 @@
 # What's new in Potato Quiz
 
+## 4.0.4 — 2026-10-18
+- **📊 New player stats:** a highlights row (most wins, sharpest player, questions played, Exodia record) and a card for each player in their color, with win rate and accuracy bars, right and wrong answers, and their best and worst categories. Sort by wins, win rate, accuracy or games.
+
 ## 4.0.3 — 2026-10-18
 - Fixed: opening the site again in a tab you'd hosted in before jumped straight to the setup screen with your old room. It now opens on the main menu. Reloading while hosting still reopens your room.
 
