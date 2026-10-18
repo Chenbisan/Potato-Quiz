@@ -1,5 +1,8 @@
 # What's new in Potato Quiz
 
+## 3.13.0 — 2026-10-18
+- **📺 Much bigger Television family:** about 5,300 new questions and 12 new show categories: The Office, Friends, The Big Bang Theory (with Young Sheldon), Parks and Recreation, Brooklyn Nine-Nine, House, How I Met Your Mother, Modern Family, The Simpsons, Breaking Bad & Better Call Saul, The Boys, and Crime & Action (Reacher, The Rookie and more). General, Sitcoms, Dramas, Streaming Originals, Reality & Game Shows, Cartoons, and Kids & Teen Shows all grew too. The Boys questions moved here from Superheroes & Comics.
+
 ## 3.12.0 — 2026-10-18
 - **🦸 New Superheroes & Comics family:** 8 categories and about 2,200 questions: General, Marvel Cinematic Universe, X-Men, Spider-Man, DC & Batman, Villains, Comic History, and Superhero TV & Games. Films, shows, games and comics, from Golden Age first issues to Superman (2025) and Spider-Man: Brand New Day. Movies › Marvel & Superheroes is now Superheroes & Comics › General, and superhero questions from other categories moved here.
 

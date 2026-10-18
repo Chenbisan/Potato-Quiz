@@ -959,7 +959,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '3.12.0';
+const APP_VERSION = '3.13.0';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1243,6 +1243,19 @@ const SEED_CATEGORIES = [
   { id: 'cat_tv_streaming', name: "Streaming Originals", color: '#26bce4', group: "Television" },
   { id: 'cat_tv_scifi', name: "Sci-Fi & Fantasy TV", color: '#3cc3e6', group: "Television" },
   { id: 'cat_tv_talk', name: "Late Night & Talk Shows", color: '#53cae9', group: "Television" },
+  // bank version 18: Television expansion (show categories)
+  { id: 'cat_tv_office', name: "The Office", color: '#f2c14e', group: "Television" },
+  { id: 'cat_tv_friends', name: "Friends", color: '#ff8fab', group: "Television" },
+  { id: 'cat_tv_bigbang', name: "The Big Bang Theory", color: '#ff9a3c', group: "Television" },
+  { id: 'cat_tv_parks', name: "Parks and Recreation", color: '#8fd16a', group: "Television" },
+  { id: 'cat_tv_b99', name: "Brooklyn Nine-Nine", color: '#7ab8ff', group: "Television" },
+  { id: 'cat_tv_house', name: "House", color: '#c9a0ff', group: "Television" },
+  { id: 'cat_tv_theboys', name: "The Boys", color: '#ff6b6b', group: "Television" },
+  { id: 'cat_tv_crime', name: "Crime & Action", color: '#b8c4d0', group: "Television" },
+  { id: 'cat_tv_himym', name: "How I Met Your Mother", color: '#ffcf5c', group: "Television" },
+  { id: 'cat_tv_modernfamily', name: "Modern Family", color: '#5fd3a8', group: "Television" },
+  { id: 'cat_tv_simpsons', name: "The Simpsons", color: '#ffe24a', group: "Television" },
+  { id: 'cat_tv_breakingbad', name: "Breaking Bad & Better Call Saul", color: '#9be36a', group: "Television" },
   // After Dark: adults-only (18+) family, hidden unless the After Dark switch on the setup screen is on
   { id: 'cat_afterdark', name: "General", color: '#e0245e', group: "After Dark", nsfw: true },
   { id: 'cat_afterdark_sex', name: "Sex & Bodies", color: '#c2185b', group: "After Dark", nsfw: true },
@@ -1458,6 +1471,11 @@ function upgrade(d) {
       // Superheroes & Comics family; categories go back into the bank's order
       const sh = d.categories.find(c => c.id === 'cat_movies_superhero');
       if (sh?.group === 'Movies') { sh.group = 'Superheroes & Comics'; if (sh.name === 'Marvel & Superheroes') sh.name = 'General'; }
+      const order = new Map(SEED_CATEGORIES.map((c, i) => [c.id, i]));
+      d.categories = d.categories.map((c, i) => [c, order.get(c.id) ?? 10000 + i]).sort((x, y) => x[1] - y[1]).map(x => x[0]);
+    }
+    if (fromVersion < 18) {
+      // 3.13: Television gains show categories; categories go back into the bank's order so they sit with their family
       const order = new Map(SEED_CATEGORIES.map((c, i) => [c.id, i]));
       d.categories = d.categories.map((c, i) => [c, order.get(c.id) ?? 10000 + i]).sort((x, y) => x[1] - y[1]).map(x => x[0]);
     }
