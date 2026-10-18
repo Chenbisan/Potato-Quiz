@@ -845,8 +845,8 @@
     <h3 class="cardTitle">📱 Playing on phones</h3>
     <div class="setting">
       <div class="setName">Move on after a phone answer</div>
-      <div class="ctrl"><input type="number" id="phoneAutoNext" min="0" max="30" step="0.5" style="width:90px" onchange="const v = +this.value; if (v >= 0) { data.settings.phoneAutoNext = Math.min(30, v); save(); toast('Saved'); }"><span class="unit">seconds (0 = the player taps Next)</span></div>
-      <div class="help">When a player answers on their phone, the result shows for this long and then the game goes on by itself.</div>
+      <div class="ctrl"><input type="number" id="phoneAutoNext" min="0" max="30" step="0.5" style="width:90px" onchange="const v = +this.value; if (v >= 0) { data.settings.phoneAutoNext = Math.min(30, v); save(); toast('Saved'); }"><span class="unit">seconds (0 = the host taps Next on the TV)</span></div>
+      <div class="help">When a player answers on their phone, the result shows for this long and then the game goes on by itself. Phones never show a Next button.</div>
     </div>
   </div>
   <div class="card" data-stab="game">
@@ -1017,7 +1017,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '4.0-beta.2'; // hidden test copy at /beta/ — not linked from the live game
+const APP_VERSION = '4.0-beta.3'; // hidden test copy at /beta/ — not linked from the live game
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -2762,7 +2762,7 @@ function phoneTurnHtml(T) {
       : `${T.timesUp ? '<div class="pcResult">⏰ Time\'s up!</div>' : ''}<p>Answer: <b>${esc(T.answer)}</b></p><p class="muted">The host will mark it on the TV.</p>`) : '';
   return `${bar}${pills}${timerHtml}<div class="pcQ">${esc(T.q)}</div>
     ${T.choices ? choicesHtml(!T.revealed) : (T.revealed ? '' : '<p class="muted">Say your answer out loud! The host will mark it.</p>')}
-    ${result}${T.canNext && T.picked != null ? `<button class="primary big" onclick="phoneTap('next')">Next ▶${T.autoNext ? ` <small>(auto in ${T.autoNext}s)</small>` : ''}</button>` : ''}`;
+    ${result}${T.revealed && T.picked != null && !T.timesUp ? `<p class="muted">${T.autoNext ? `Next turn in ${T.autoNext}s…` : 'The host will continue on the TV.'}</p>` : ''}`;
 }
 
 // ---------- Items ----------
