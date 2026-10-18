@@ -1,5 +1,8 @@
 # What's new in Potato Quiz
 
+## 4.2.2 — 2026-10-18
+- The game start sound is much gentler. It used a buzzy, harsh tone that could hurt your ears. It's the same little fanfare, now smoother and a bit quieter.
+
 ## 4.2.1 — 2026-10-18
 - **🔊 Volume in the ☰ menu:** change the overall volume mid-game without leaving the game. It's the same setting as Settings › Audio › Master.
 - Sound effects are a bit softer by default (70%). If you hadn't changed the effects volume, yours is lowered to match. If you had, it's left as you set it.

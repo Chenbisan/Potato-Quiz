@@ -1102,7 +1102,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '4.2.1';
+const APP_VERSION = '4.2.2';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -4053,7 +4053,7 @@ const SFX = {
   win:   () => [[523, 0, .12], [523, .13, .12], [523, .26, .12], [698, .4, .3], [880, .65, .3], [1047, .9, .6]]
            .forEach(([f, t, d]) => tone(f, t, d, { type: 'triangle', vol: .15 })),
   // game starting: a short rising fanfare
-  start: () => [[392, 0, .14], [523, .12, .14], [659, .24, .14], [784, .36, .4]].forEach(([f, t, d]) => tone(f, t, d, { type: 'square', vol: .06 })),
+  start: () => [[392, 0, .14], [523, .12, .14], [659, .24, .14], [784, .36, .4]].forEach(([f, t, d]) => tone(f, t, d, { type: 'triangle', vol: .12 })), // smooth, not buzzy: it plays right after a quiet screen
   // next player's turn: a soft two-note doorbell
   turn:  () => { tone(784, 0, .18, { type: 'triangle', vol: .09 }); tone(1175, .13, .3, { type: 'triangle', vol: .09 }); },
   // question appears: a quick upward swish
@@ -4063,9 +4063,11 @@ const SFX = {
   click: () => tone(900, 0, .05, { type: 'triangle', vol: .05, slide: 600 }),
 };
 const UI_SOUNDS = new Set(['hover', 'click']);
+// fine-tuning after the automatic leveling, for sounds that feel louder than they measure (start: first sound after the quiet setup screen)
+const SFX_TRIM = { start: .7 };
 function sfx(name) {
   if (!data?.settings?.sfx || (UI_SOUNDS.has(name) && !data.settings.uiSfx)) return; // no settings yet on a phone that came in by a join link
-  try { sfxNorm = SFX_LEVEL[name] ?? 1; SFX[name](); } catch (e) {} finally { sfxNorm = 1; }
+  try { sfxNorm = (SFX_LEVEL[name] ?? 1) * (SFX_TRIM[name] ?? 1); SFX[name](); } catch (e) {} finally { sfxNorm = 1; }
 }
 // Loudness normalizing: each effect is played once into a silent offline context and measured (loudest 100 ms, RMS),
 // then scaled toward the middle (median) loudness so none jumps out. Button ticks are left alone so they stay quiet on purpose.
