@@ -1,5 +1,13 @@
 # What's new in Potato Quiz
 
+## 4.1.2 — 2026-10-18
+- **Fairer question mix:** every family you have turned on now gets an even share of questions, and so does every category inside a family. Big families like Television and Dentistry no longer crowd out the smaller ones. It's still random, though: any family can come up next, even the one you just had.
+- The Join a game screen now has a **← Menu** button, like the other screens, so you can get back to the main menu if you opened it by mistake or can't find the game.
+- **Louder sound:** music and sound effects were much too quiet, even at full volume. They're now about 5× louder, at the level of a normal app or video, and still evenly matched, with the music sitting under the effects. Lots of sounds at once no longer crackle.
+- Fixed: the How to Play "Got it!" button was hidden below the bottom of the box, so it looked like there was no way out. It's now always visible at the bottom of tall pop-ups, and Esc closes How to Play too.
+- The main menu now fits on one screen without scrolling, on any size of screen.
+- **Question stats:** new Top 500 and Top 1000 options, plus filters for family, category and difficulty.
+
 ## 4.1.1 — 2026-10-18
 - Fixed: in phone games, when your bag was full the "drop an item" choice went to the next player's phone, so they could drop your items and your own choice didn't count. Now it goes to your phone, and everyone else sees that you're choosing.
 

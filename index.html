@@ -45,6 +45,9 @@
   button:disabled { opacity: .4; cursor: not-allowed; }
   .menu { display: flex; flex-direction: column; gap: 16px; max-width: 360px; margin: 0 auto; }
   .menu button { font-size: 1.3rem; padding: 18px; }
+  /* short windows: tighter spacing on the main menu so it fits without shrinking the text as much */
+  #menu.tight { padding-top: 16px; padding-bottom: 8px; } #menu.tight .sub { margin-bottom: 18px; } #menu.tight .news { margin-bottom: 14px; }
+  #menu.tight .menu { gap: 10px; } #menu.tight .menu button { padding: 12px; } #menu.tight #menuStats { margin-top: 16px !important; } #menu.tight #menuStats + .sub { margin-top: -12px !important; }
   input, select, textarea { font: inherit; background: var(--deep); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; }
   textarea { width: 100%; resize: vertical; min-height: 60px; }
   label { display: block; color: var(--muted); font-size: .9rem; margin: 12px 0 4px; }
@@ -291,6 +294,8 @@
   .glowBadge { border-radius: 6px; padding: 0 3px; box-shadow: 0 0 0 1px #ffe066, 0 0 10px rgba(255,224,102,.8); }
   /* Category Lock picker */
   .modalBox.wide { max-width: 760px; max-height: calc(88vh / var(--z, 1)); overflow-y: auto; }
+  /* tall pop-ups scroll, so keep their buttons pinned to the bottom where they can always be seen */
+  .modalBox.wide > .actions { position: sticky; bottom: -28px; margin-bottom: -28px; padding: 14px 0 28px; background: var(--panel); border-top: 1px solid var(--line); z-index: 1; }
   .lockSearch { width: 100%; box-sizing: border-box; margin: 6px 0 12px; }
   .lockFamilies { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; text-align: left; }
   .lockFamily { border-radius: 10px; background: var(--panel2); border-left: 5px solid var(--c); overflow: hidden; }
@@ -515,6 +520,7 @@
   .roomUrl { font-size: .9rem; word-break: break-all; }
   .phoneTag { font-size: .85em; }
   #join .joinBox { max-width: 440px; margin: 0 auto; text-align: center; }
+  #join .joinTop { text-align: right; min-height: 8px; }
   #join h1 { font-size: 2.3rem; }
   #join input { width: 100%; box-sizing: border-box; font-size: 1.2rem; text-align: center; }
   #join .codeInput { font-size: 2.2rem; letter-spacing: .35em; text-transform: uppercase; font-weight: 800; }
@@ -664,7 +670,7 @@
 <button id="musicBtn" class="musicBtn" onclick="toggleMusic()" aria-label="Music on or off">🎵</button>
 
 <!-- JOIN (on a player's phone) -->
-<section id="join" class="screen"><div class="joinBox"><h1>🥔 Potato Quiz</h1><div id="joinBody"></div></div></section>
+<section id="join" class="screen"><div class="joinBox"><div class="joinTop"><button id="joinBack" class="ghost" onclick="phoneExit()">← Menu</button></div><h1>🥔 Potato Quiz</h1><div id="joinBody"></div></div></section>
 
 <!-- GAME -->
 <section id="game" class="screen">
@@ -817,7 +823,12 @@
         <option value="wrong">Most often answered incorrectly</option>
         <option value="seen">Most seen</option>
       </select>
-      <select id="qsTop" onchange="renderQuestionStats()"><option value="10">Top 10</option><option value="50">Top 50</option><option value="100">Top 100</option></select>
+      <select id="qsTop" onchange="renderQuestionStats()"><option value="10">Top 10</option><option value="50">Top 50</option><option value="100">Top 100</option><option value="500">Top 500</option><option value="1000">Top 1000</option></select>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <select id="qsFam" onchange="document.getElementById('qsCat').value = ''; renderQuestionStats()" title="Family"></select>
+      <select id="qsCat" onchange="renderQuestionStats()" title="Category"></select>
+      <select id="qsTier" onchange="renderQuestionStats()" title="Difficulty"></select>
     </div>
     <table style="margin-top:12px"><thead><tr><th>#</th><th>Question</th><th>Answer</th><th>Category</th><th>Difficulty</th><th>Seen</th><th>% Correct</th></tr></thead>
       <tbody id="qStatsTable"></tbody></table>
@@ -840,7 +851,7 @@
     <div class="statTiles" id="statTiles"></div>
     <div class="row statSortRow"><span class="muted">Sort by</span><div class="chips" id="statSort"></div></div>
     <div class="pCards" id="pCards"></div>
-    <p class="muted" style="margin-top:14px">💪 best and 😬 worst categories are by family (e.g. Anime, Movies) and need at least 3 answers in that family. They start counting from version 3.5.</p>
+    <p class="muted" style="margin-top:14px">💪 best and 😬 worst categories are by family (e.g. Anime, Movies) and need at least 3 answers in that family.</p>
     <div class="row"><button class="small bad" onclick="resetPlayerStats()">Reset player stats</button></div>
   </div>
 </section>
@@ -1080,7 +1091,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '4.1.1';
+const APP_VERSION = '4.1.2';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1765,6 +1776,20 @@ function renderMenu() {
   renderNews();
   document.getElementById('menuStats').textContent =
     `${data.questions.filter(playable).length} questions · ${data.tiers.length} tiers · ${data.categories.length} categories · first to ${data.settings.targetPoints} points wins`;
+  fitMenu();
+}
+// The main menu shrinks evenly to fit the window's height, so everything shows without scrolling
+// (down to 60% size; on a very short screen it scrolls instead of getting too small to read)
+function fitMenu() {
+  const m = document.getElementById('menu');
+  if (!m?.classList.contains('active')) return;
+  m.style.zoom = ''; m.classList.remove('tight');
+  const need = () => innerHeight / document.documentElement.scrollHeight; // the window vs the page's full height (1 = fits)
+  if (need() < .9) m.classList.add('tight'); // tighten the spacing first, then shrink what's left
+  let fit = 1;
+  for (let i = 0; i < 3 && document.documentElement.scrollHeight > innerHeight + 1 && fit > .6; i++) { // shrink, re-measure, correct (not everything scales evenly)
+    fit = Math.max(.6, fit * need() * .995); m.style.zoom = fit.toFixed(3);
+  }
 }
 
 // ---------- Settings ----------
@@ -2378,9 +2403,26 @@ async function resetItemStats() {
   stats.items = {}; stats.exodia = { activated: 0, completed: 0, failed: 0 }; saveStats(); renderItemStats(); toast('Item stats reset');
 }
 // Question rankings: most correct / most incorrect (by % correct, then by how often answered) or most seen
+// Family / Category / Difficulty filters for the question list ('' = all). Picking a family narrows the category list to it.
+const statFam = c => c ? (c.group || c.name) : '';
+function fillQsFilters() {
+  const famSel = document.getElementById('qsFam'), catSel = document.getElementById('qsCat'), tierSel = document.getElementById('qsTier');
+  const fam = famSel.value, cat = catSel.value, tier = tierSel.value;
+  const fams = [...new Set(data.categories.map(statFam))].sort((a, b) => a.localeCompare(b));
+  famSel.innerHTML = `<option value="">All families</option>` + fams.map(f => `<option value="${esc(f)}">${esc(f)}</option>`).join('');
+  famSel.value = fams.includes(fam) ? fam : '';
+  const cats = data.categories.filter(c => !famSel.value || statFam(c) === famSel.value).sort((a, b) => catLabel(a).localeCompare(catLabel(b)));
+  catSel.innerHTML = `<option value="">All categories</option>` + cats.map(c => `<option value="${esc(c.id)}">${esc(famSel.value ? c.name : catLabel(c))}</option>`).join('');
+  catSel.value = cats.some(c => c.id === cat) ? cat : '';
+  tierSel.innerHTML = `<option value="">All difficulties</option>` + data.tiers.map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
+  tierSel.value = data.tiers.some(t => t.id === tier) ? tier : '';
+  return { fam: famSel.value, cat: catSel.value, tier: tierSel.value };
+}
 function renderQuestionStats() {
   const view = document.getElementById('qsView').value, top = +document.getElementById('qsTop').value;
-  const byId = new Map(data.questions.map(q => [q.id, q]));
+  const f = fillQsFilters();
+  const byId = new Map(data.questions.filter(q => (!f.tier || q.tierId === f.tier) && (!f.cat || q.categoryId === f.cat)
+    && (!f.fam || statFam(catOf(q.categoryId)) === f.fam)).map(q => [q.id, q]));
   let ids;
   if (view === 'seen') ids = Object.keys(stats.seen).filter(id => byId.has(id)).sort((a, b) => seenCount(b) - seenCount(a));
   else {
@@ -2396,7 +2438,7 @@ function renderQuestionStats() {
       <td><span class="pill" style="background:${t.color}">${esc(t.name)}</span></td>
       <td>${seenCount(id)}</td>
       <td>${r === null ? '<span class="muted">—</span>' : Math.round(r * 100) + '%'} <small class="muted">${stats.answered[id] ? `${stats.right[id] || 0}/${stats.answered[id]}` : ''}</small></td></tr>`;
-  }).join('') || '<tr><td colspan="7" class="muted">No questions have been answered yet — play a game first.</td></tr>';
+  }).join('') || `<tr><td colspan="7" class="muted">${f.fam || f.cat || f.tier ? 'No questions match these filters yet.' : 'No questions have been answered yet — play a game first.'}</td></tr>`;
   document.getElementById('qStatsInfo').textContent = ids.length ? `Showing ${ids.length} question${ids.length === 1 ? '' : 's'}.` : '';
 }
 async function resetPlayerStats() { if (await ask('Games, wins and correct/incorrect counts go back to zero for every player.', { title: 'Reset player stats?', icon: '📊', ok: 'Reset', danger: true })) { stats.players = {}; saveStats(); renderStats(); } }
@@ -2676,11 +2718,13 @@ async function phoneConnect() {
   const code = cleanCode(document.getElementById('joinCode')?.value ?? phone.code);
   if (code.length !== 4) { phone.err = 'Room codes are 4 letters.'; return renderJoin(); }
   phone.code = code; phone.err = ''; phone.state = 'finding'; renderJoin();
-  try { phone.ch = await openChannel(code, onPhoneMsg, { onUp: () => { phoneSend('hello'); if (['in', 'playing'].includes(phone.state)) phoneRejoin(); } }); }
-  catch (e) { phone.state = 'code'; phone.err = e.message; return renderJoin(); }
-  phone.ch.send({ t: 'hello' });
+  const me = phone; let ch;
+  try { ch = await openChannel(code, onPhoneMsg, { onUp: () => { phoneSend('hello'); if (['in', 'playing'].includes(phone?.state)) phoneRejoin(); } }); }
+  catch (e) { if (phone !== me) return; phone.state = 'code'; phone.err = e.message; return renderJoin(); }
+  if (phone !== me) return ch.close(); // went back to the menu (or started over) while connecting
+  phone.ch = ch; phone.ch.send({ t: 'hello' });
   clearTimeout(phone.wait);
-  phone.wait = setTimeout(() => { if (phone.state !== 'finding') return;
+  phone.wait = setTimeout(() => { if (phone !== me || phone.state !== 'finding') return;
     phone.ch.close(); phone.ch = null; phone.state = 'code'; phone.err = `No game found with code ${code}. Check the code on the TV.`; renderJoin(); }, 5000);
 }
 function phoneSend(t, extra) { phone?.ch?.send({ t, pid: myPid(), ...extra }); }
@@ -2693,6 +2737,14 @@ function phoneSubmit() {
 function phonePickColor(c) { phone.color = c; phone.name = document.getElementById('joinName')?.value ?? phone.name; renderJoin(); }
 function phoneWatch() { phone.state = 'watching'; phone.err = ''; phone.canWatch = false; phoneSend('hello'); renderJoin(); }
 function phoneLeave() { phoneSend('leave'); phone.ch?.close(); phoneJoin(''); }
+// ← Menu on the join screen: stop looking for / leave the room and go back to the main menu
+function phoneExit() {
+  if (['in', 'playing', 'watching'].includes(phone?.state)) phoneSend('leave');
+  clearTimeout(phone?.wait); phone?.ch?.close(); phone = null; isPhoneView = false;
+  document.getElementById('joinBanner')?.remove();
+  if (!data) { location.href = location.pathname; return; } // came in by a join link: the menu needs the question bank, so load the site
+  go('menu'); renderMusicButtons();
+}
 function onPhoneMsg(m) {
   if (!phone || !m || typeof m !== 'object') return;
   phone.heard = Date.now(); if (phone.lost) { phone.lost = false; renderJoinBanner(); }
@@ -2739,6 +2791,7 @@ function renderJoin() {
   const others = list.filter(o => o.name.toLowerCase() !== (P.state === 'in' || P.state === 'playing' ? P.name.toLowerCase() : '\u0000'));
   const chips = items => items.length ? `<div class="joinList">${items.map(o => `<span class="chip" style="box-shadow: inset 4px 0 0 ${o.color}">${o.phone ? '<span class="phoneTag">📱</span>' : ''}${esc(o.name)}</span>`).join('')}</div>` : '';
   const err = `<p class="joinErr">${esc(P.err || '')}</p>`;
+  document.getElementById('joinBack').hidden = ['in', 'playing', 'watching'].includes(P.state); // there, Leave is the way out
   if (P.state === 'code' || P.state === 'finding') {
     el.innerHTML = `<p class="sub">Enter the room code shown on the TV.</p>
       <input id="joinCode" class="codeInput" maxlength="4" autocomplete="off" autocapitalize="characters" value="${esc(P.code)}" placeholder="ABCD"
@@ -3068,6 +3121,7 @@ function howToPlay(after) {
   closeGameMenu?.();
   modal(howToHTML(), [{ label: 'Got it!', cls: 'primary', fn: after }]);
   document.querySelector('#modal .modalBox').classList.add('wide', 'howBox');
+  document.getElementById('modal').dataset.esc = ''; // Esc closes it too
 }
 // Tap-to-explain: tapping an item, effect, streak or answer marker on the scoreboard (or the "Affecting you" tags) shows
 // what it means in a small bubble next to it. Hover tooltips still work too.
@@ -3096,6 +3150,7 @@ document.addEventListener('click', e => {
   else if (!e.target.closest?.('#tipPop')) hideTip();
 }, true);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') hideTip(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelector('#modal[data-esc] .actions button')?.click(); });
 document.addEventListener('scroll', hideTip, true);
 // owner: the player this pop-up is asking (e.g. whose bag is full). Their phone answers it, not whoever's turn it is.
 let modalOwner = null;
@@ -3572,6 +3627,40 @@ function prizeFor(key) {
 }
 const prizeBadge = key => { const k = prizeFor(key); return k ? `<span class="prizeBadge" title="Prize: ${esc(ITEMS[k].name)} — get it right to keep it">🎁${ITEMS[k].icon}</span>` : ''; };
 const rewardPill = q => q.reward ? `<span class="pill rewardPill" title="${esc(itemDesc(q.reward))}">🎁 Prize: ${ITEMS[q.reward].icon} ${ITEMS[q.reward].name}</span>` : '';
+// Picking a question from a pool, in three steps so big families (Television, Dentistry…) don't crowd out small ones:
+//  1. family: random, but every family in the pool starts with the same chance, nudged toward an even share —
+//     one that has come up more than the others so far is a bit less likely, one that's behind is a bit more likely
+//  2. category within that family: the same idea
+//  3. question within that category: ones shown more often (ever, on this device) are less likely: 1 / (1 + times seen)
+// Families that are turned off simply aren't in the pool. The tallies live in stats (this device), so it evens out across games.
+const famOf = q => { const c = catOf(q.categoryId); return c ? (c.group || c.id) : ''; };
+function weightedPick(list, weight) {
+  const w = list.map(weight); let r = Math.random() * w.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < list.length; i++) { r -= w[i]; if (r <= 0) return list[i]; }
+  return list[list.length - 1];
+}
+function groupBy(list, key) { const m = new Map(); for (const x of list) { const k = key(x); if (!m.has(k)) m.set(k, []); m.get(k).push(x); } return m; }
+// tally: option -> draws so far. An option's odds are e^-(strength × (its tally - the average)), with the gap capped at
+// ±1 draw, so nothing is ever ruled out or certain and the next family can't be predicted. Strength grows with the number
+// of options, (options - 10) / 55, which keeps every option within about a third of a fair share of each other over
+// 1,000 draws however many families/categories there are (10 or fewer are already that even by pure chance: strength 0).
+// A tally is kept within 3 draws of the average, so a family that was off for a while catches up gently.
+const EVEN_MEMORY = 3;
+function evenPick(options, tally) {
+  const avg = () => options.reduce((s, o) => s + (tally[o] || 0), 0) / options.length;
+  const strength = Math.max(0, (options.length - 10) / 55);
+  let m = avg(); for (const o of options) tally[o] = Math.min(m + EVEN_MEMORY, Math.max(m - EVEN_MEMORY, tally[o] || 0));
+  m = avg();
+  const x = weightedPick(options, o => Math.exp(-strength * Math.max(-1, Math.min(1, tally[o] - m))));
+  tally[x]++; return x;
+}
+function pickQuestion(pool) {
+  const fams = groupBy(pool, famOf);
+  const fam = evenPick([...fams.keys()], stats.famTally ??= {});
+  const cats = groupBy(fams.get(fam), q => q.categoryId || '');
+  const cat = evenPick([...cats.keys()], (stats.catTally ??= {})[fam] ??= {});
+  return weightedPick(cats.get(cat), q => 1 / (1 + seenCount(q.id)));
+}
 // kind: 'tier' | 'cat' | 'any' | 'lock'; gamble = the Gamble button (random question, double or nothing)
 let catsThisGame = {}, famsThisGame = {}; // how often each category / family has been drawn in the current game
 function draw(kind, id, gamble = false) {
@@ -3585,13 +3674,7 @@ function draw(kind, id, gamble = false) {
     pool = gameQs().filter(match);
     toast('All of these questions used — reshuffling');
   }
-  // Questions shown more often (ever, on this device) are less likely: 1 / (1 + times seen). On top of that, for variety
-  // within a game, each time a category has already come up this game halves its chance, and each time its family
-  // has come up trims it a little more (only matters when the pick spans several categories, e.g. a difficulty or Random)
-  const famOf = q => { const c = catOf(q.categoryId); return c ? (c.group || c.id) : ''; };
-  const weights = pool.map(q => 1 / (1 + seenCount(q.id)) * 0.5 ** (catsThisGame[q.categoryId || ''] || 0) * 0.8 ** (famsThisGame[famOf(q)] || 0));
-  let pick = Math.random() * weights.reduce((a, b) => a + b, 0), q = pool[pool.length - 1];
-  for (let i = 0; i < pool.length; i++) { pick -= weights[i]; if (pick <= 0) { q = pool[i]; break; } }
+  const q = pickQuestion(pool);
   stats.seen[q.id] = seenCount(q.id) + 1; saveStats();
   catsThisGame[q.categoryId || ''] = (catsThisGame[q.categoryId || ''] || 0) + 1; famsThisGame[famOf(q)] = (famsThisGame[famOf(q)] || 0) + 1;
   used.add(q.id);
@@ -3678,15 +3761,21 @@ function beep(freq, dur, vol = .12) {
 }
 
 // ---------- Audio: mixer and background music ----------
-// master ← effects channel (all sound effects) + music channel (background music, lowpassed for warmth)
+// output ← limiter ← loudness boost ← master ← effects channel (all sound effects) + music channel (background music, lowpassed for warmth)
 let audioBus = null;
 const MUSIC_HEADROOM = .32; // music at 100% still sits well under the effects
+// The synth voices are generated quietly, so the whole mix is lifted to normal app/video loudness (+14 dB: effects peak
+// around -16 dB RMS at 100%), and a limiter catches overlapping sounds so they never clip or crackle.
+const OUTPUT_BOOST = 5;
 function bus() {
   audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
   if (!audioBus) {
     const master = audioCtx.createGain(), fx = audioCtx.createGain(), music = audioCtx.createGain(), warm = audioCtx.createBiquadFilter();
     warm.type = 'lowpass'; warm.frequency.value = 3200; warm.connect(music);
-    fx.connect(master); music.connect(master); master.connect(audioCtx.destination);
+    const boost = audioCtx.createGain(), limiter = audioCtx.createDynamicsCompressor();
+    boost.gain.value = OUTPUT_BOOST;
+    limiter.threshold.value = -3; limiter.knee.value = 0; limiter.ratio.value = 20; limiter.attack.value = .002; limiter.release.value = .12;
+    fx.connect(master); music.connect(master); master.connect(boost); boost.connect(limiter); limiter.connect(audioCtx.destination);
     audioBus = { master, fx, music, musicIn: warm };
     applyVolumes(true);
   }
@@ -3807,8 +3896,9 @@ function applyScale() {
   document.documentElement.dataset.zoom = z;
   document.documentElement.style.setProperty('--z', z); // vh-based sizes divide by this so they still fit the window
   if (typeof fitBoard === 'function') { fitBoard(); slideEffects(); }
+  fitMenu();
 }
-addEventListener('resize', () => { if ((data.settings.uiScale ?? 'auto') === 'auto') applyScale(); });
+addEventListener('resize', () => { if ((data.settings.uiScale ?? 'auto') === 'auto') applyScale(); else fitMenu(); clearTimeout(fitMenu.t); fitMenu.t = setTimeout(fitMenu, 150); }); // and again once resizing settles
 const fxOn = () => data.settings.fx && !matchMedia('(prefers-reduced-motion: reduce)').matches;
 // Sound effects play into sfxOut: normally the mixer's effects channel, or an offline context while they're measured
 let sfxOut = null, sfxNorm = 1;
@@ -3848,7 +3938,7 @@ const SFX = {
 };
 const UI_SOUNDS = new Set(['hover', 'click']);
 function sfx(name) {
-  if (!data.settings.sfx || (UI_SOUNDS.has(name) && !data.settings.uiSfx)) return;
+  if (!data?.settings?.sfx || (UI_SOUNDS.has(name) && !data.settings.uiSfx)) return; // no settings yet on a phone that came in by a join link
   try { sfxNorm = SFX_LEVEL[name] ?? 1; SFX[name](); } catch (e) {} finally { sfxNorm = 1; }
 }
 // Loudness normalizing: each effect is played once into a silent offline context and measured (loudest 100 ms, RMS),
