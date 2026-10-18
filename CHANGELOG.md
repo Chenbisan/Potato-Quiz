@@ -1,5 +1,8 @@
 # What's new in Potato Quiz
 
+## 3.13.1 — 2026-10-18
+- Messages and confirmations (like "No questions in play" or "End this game?") now appear as in-game pop-ups that match the game's look, instead of plain browser boxes.
+
 ## 3.13.0 — 2026-10-18
 - **📺 Much bigger Television family:** about 5,300 new questions and 12 new show categories: The Office, Friends, The Big Bang Theory (with Young Sheldon), Parks and Recreation, Brooklyn Nine-Nine, House, How I Met Your Mother, Modern Family, The Simpsons, Breaking Bad & Better Call Saul, The Boys, and Crime & Action (Reacher, The Rookie and more). General, Sitcoms, Dramas, Streaming Originals, Reality & Game Shows, Cartoons, and Kids & Teen Shows all grew too. The Boys questions moved here from Superheroes & Comics.
 

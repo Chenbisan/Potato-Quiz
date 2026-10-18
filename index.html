@@ -959,7 +959,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '3.13.0';
+const APP_VERSION = '3.13.1';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1333,7 +1333,7 @@ function toSave(d) {
 }
 function writeSave(d) {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(toSave(d))); return true; }
-  catch (e) { alert('Could not save: ' + e.message); return false; }
+  catch (e) { notice(esc(e.message), { title: "Couldn't save", icon: '⚠️' }); return false; }
 }
 // Fill in fields added in later versions so older saved data keeps working
 function upgrade(d) {
@@ -1665,8 +1665,8 @@ function renderSettings() {
   renderItemSettings();
 }
 // Settings are split into tabs; the last one opened is remembered on this device
-function resetSettings() {
-  if (!confirm('Reset all settings to the default values? Questions, categories, tiers, players and stats stay as they are.')) return;
+async function resetSettings() {
+  if (!await ask('Every setting goes back to its default. Questions, categories, tiers, players and stats stay as they are.', { title: 'Reset all settings?', icon: '⚙️', ok: 'Reset settings', danger: true })) return;
   data.settings = { rev: SETTINGS_REV };
   upgrade(data); // fills in every default
   save(); renderSettings(); toast('Settings reset to default');
@@ -1685,7 +1685,7 @@ function resetEverything() {
     <p class="muted">Players and stats are kept. If you might want your questions later, export a backup first (Settings › Data › Backup).</p>`,
     [{ label: '⬇ Export a backup first', fn: exportData },
      { label: 'Reset everything', cls: 'bad', fn: async () => {
-        if (!confirm('Last check: reset everything? Your added and edited questions will be gone for good.')) return;
+        if (!await ask('Your added and edited questions will be gone for good.', { title: 'Last check', icon: '⚠️', ok: 'Reset everything', danger: true })) return;
         await mediaClear();
         try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
         data = upgrade(defaultData()); save(); renderSettings(); toast('Everything reset to default');
@@ -1741,8 +1741,8 @@ function setAllItems(on) {
   for (const k in ITEMS) data.settings.items.pools[k] = { hot: on, cold: on, reward: on };
   save(); renderItemSettings(); toast(on ? 'All items on' : 'All items off');
 }
-function resetItemSettings() {
-  if (!confirm('Put every item option back to the default (streaks, prizes, rarity, item list)? Other settings stay as they are.')) return;
+async function resetItemSettings() {
+  if (!await ask('Streaks, prizes, rarity and the item list go back to their defaults. Other settings stay as they are.', { title: 'Reset item options?', icon: '🎁', ok: 'Reset items', danger: true })) return;
   data.settings.items = defaultItemSettings(); save(); renderItemSettings(); toast('Item settings reset');
 }
 function saveItemSettings() {
@@ -1810,12 +1810,12 @@ async function importData(input) {
   try {
     const d = JSON.parse(await f.text());
     if (!d.tiers || !d.questions) throw new Error('Not a Potato Quiz file');
-    if (!confirm(`Replace your current questions with ${d.questions.length} imported questions?`)) return;
+    if (!await ask(`Your current questions will be replaced with the <b>${d.questions.length}</b> questions in this file.`, { title: 'Import questions?', icon: '📥', ok: 'Replace questions', danger: true })) return;
     const files = d.mediaFiles || {}; delete d.mediaFiles;
     await mediaClear();
     for (const [id, url] of Object.entries(files)) await mediaPut(id, await (await fetch(url)).blob());
     data = upgrade(d); save(); renderSettings(); toast('Imported!');
-  } catch (e) { alert('Import failed: ' + e.message); }
+  } catch (e) { notice(esc(e.message), { title: 'Import failed', icon: '⚠️' }); }
   finally { input.value = ''; }
 }
 
@@ -1886,8 +1886,8 @@ function pickMedia(input) {
   const f = input.files[0]; input.value = '';
   if (!f) return;
   const type = f.type.startsWith('image/') ? 'image' : f.type.startsWith('audio/') ? 'audio' : null;
-  if (!type) return alert('Please choose a picture or an audio file.');
-  if (f.size > MAX_MEDIA_MB * 1024 * 1024) return alert(`That file is ${(f.size / 1048576).toFixed(1)} MB. Please keep files under ${MAX_MEDIA_MB} MB (trim long songs to a short clip).`);
+  if (!type) return notice('Please choose a picture or an audio file.', { title: "That file won't work", icon: '🖼️' });
+  if (f.size > MAX_MEDIA_MB * 1024 * 1024) return notice(`That file is ${(f.size / 1048576).toFixed(1)} MB. Please keep files under ${MAX_MEDIA_MB} MB (trim long songs to a short clip).`, { title: 'File too big', icon: '📦' });
   setFormMedia({ type, name: f.name, blob: f });
 }
 async function setFormMedia(m) {
@@ -1899,14 +1899,14 @@ async function setFormMedia(m) {
 }
 async function saveQuestion() {
   const text = qText.value.trim(), answer = qAnswer.value.trim();
-  if (!text || !answer) return alert('Please enter both a question and an answer.');
-  if (!data.tiers.length) return alert('Create a difficulty tier first.');
+  if (!text || !answer) return notice('Please enter both a question and an answer.', { title: 'Almost there', icon: '✏️' });
+  if (!data.tiers.length) return notice('Create a difficulty tier first.', { title: 'No difficulty tiers', icon: '🎚️' });
   const old = editingId ? data.questions.find(x => x.id === editingId).media : null;
   let media = null;
   if (formMedia?.blob) {
     media = { id: uid(), type: formMedia.type, name: formMedia.name };
     try { await mediaPut(media.id, formMedia.blob); }
-    catch (e) { return alert('Could not save the file: ' + e.message); }
+    catch (e) { return notice(esc(e.message), { title: "Couldn't save the file", icon: '⚠️' }); }
   } else if (formMedia) media = old;
   if (old && old.id !== media?.id) mediaDel(old.id);
   const q = { text, answer, media, tierId: qTier.value, categoryId: qCat.value, wrong: [qW1, qW2, qW3, qW4, qW5].map(el => el.value.trim()).filter(Boolean) };
@@ -1926,8 +1926,8 @@ function resetQForm() {
   editingId = null; [qText, qAnswer, qW1, qW2, qW3, qW4, qW5].forEach(el => el.value = ''); setFormMedia(null);
   qFormTitle.textContent = 'Add a question'; qSaveBtn.textContent = 'Add question'; qCancelBtn.style.display = 'none';
 }
-function deleteQuestion(id) {
-  if (!confirm('Delete this question?')) return;
+async function deleteQuestion(id) {
+  if (!await ask("This question will be removed from your game.", { title: 'Delete this question?', icon: '🗑️', ok: 'Delete', danger: true })) return;
   removeQuestions(q => q.id === id); save(); renderQuestions(); renderTiers();
 }
 function showImpossible() { edTab('q'); document.getElementById('qFilter').value = IMPOSSIBLE_TIER.id; document.getElementById('qCatFilter').value = '*'; document.getElementById('qTypeFilter').value = ''; renderQuestions(); document.getElementById('qTable').scrollIntoView({ block: 'start', behavior: 'smooth' }); }
@@ -1977,10 +1977,10 @@ function tierDragEnd() { tierDragFrom = null; document.querySelectorAll('.tierRo
 function addTier() {
   data.tiers.push({ id: uid(), name: 'New tier', points: 8, color: '#4da3ff' }); save(); renderEditor();
 }
-function delTier(id) {
+async function delTier(id) {
   const n = data.questions.filter(q => q.tierId === id).length;
-  if (data.tiers.length === 1) return alert('You need at least one tier.');
-  if (!confirm(n ? `This tier has ${n} question(s). Deleting it will also delete those questions. Continue?` : 'Delete this tier?')) return;
+  if (data.tiers.length === 1) return notice('A game needs at least one difficulty tier.', { title: "Can't delete the last tier", icon: '🎚️' });
+  if (!await ask(n ? `This tier has <b>${n}</b> question${n === 1 ? '' : 's'}. Deleting it also deletes ${n === 1 ? 'that question' : 'those questions'}.` : 'This tier has no questions.', { title: 'Delete this tier?', icon: '🗑️', ok: 'Delete', danger: true })) return;
   data.tiers = data.tiers.filter(t => t.id !== id);
   removeQuestions(q => q.tierId === id);
   save(); renderEditor();
@@ -1999,9 +1999,9 @@ function renderCats() {
 }
 function updCat(id, key, val) { const c = catOf(id); if (key === 'group' && !val) delete c.group; else c[key] = val; save(); toast('Category saved'); renderEditor(); }
 function addCat() { data.categories.push({ id: uid(), name: 'New category', color: '#4da3ff' }); save(); renderEditor(); }
-function delCat(id) {
+async function delCat(id) {
   const n = data.questions.filter(q => q.categoryId === id).length;
-  if (!confirm(n ? `This category has ${n} question(s). They'll be kept but become Uncategorized. Continue?` : 'Delete this category?')) return;
+  if (!await ask(n ? `This category has <b>${n}</b> question${n === 1 ? '' : 's'}. ${n === 1 ? "It'll be kept but become" : "They'll be kept but become"} Uncategorized.` : 'This category has no questions.', { title: 'Delete this category?', icon: '🗑️', ok: 'Delete', danger: true })) return;
   data.categories = data.categories.filter(c => c.id !== id);
   data.questions.forEach(q => { if (q.categoryId === id) q.categoryId = ''; });
   save(); renderEditor();
@@ -2026,8 +2026,8 @@ const nsfwIds = () => new Set(data.categories.filter(isNsfwCat).map(c => c.id));
 const visibleQs = () => { const hide = nsfwOn() ? null : nsfwIds(); return data.questions.filter(q => playable(q) && !hide?.has(q.categoryId)); };
 const gameQs = () => { const off = new Set(offCats()), offT = new Set(offTiers()), hide = nsfwOn() ? null : nsfwIds();
   return data.questions.filter(q => playable(q) && !off.has(q.categoryId || '') && !offT.has(q.tierId) && !hide?.has(q.categoryId)); };
-function toggleNsfw() {
-  if (!nsfwOn() && !confirm('After Dark has adults-only (18+) questions about sex, dating and partying.\n\nTurn it on only if everyone playing is an adult and is OK with it.')) return;
+async function toggleNsfw() {
+  if (!nsfwOn() && !await ask('After Dark has adults-only (18+) questions about sex, dating and partying.<br><br>Turn it on only if everyone playing is an adult and is OK with it.', { title: 'Turn on After Dark?', icon: '🔞', ok: 'Everyone is 18+' })) return;
   roster.nsfw = !nsfwOn(); saveRoster(); renderCatPicker();
   toast(nsfwOn() ? '🔞 After Dark is on' : 'After Dark is off');
 }
@@ -2211,8 +2211,8 @@ function renderItemStats() {
   document.getElementById('itemStatsInfo').textContent = (total ? `${total} items shown so far. Unused counts items still held when a game finished.` : 'No items have shown up yet — play a game with items on.')
     + ` 🃏 Exodia: ${ex.activated} started · ${ex.completed} completed · ${ex.failed} failed.`;
 }
-function resetItemStats() {
-  if (!confirm('Reset all item stats?')) return;
+async function resetItemStats() {
+  if (!await ask('Every item and Exodia count goes back to zero.', { title: 'Reset item stats?', icon: '📊', ok: 'Reset', danger: true })) return;
   stats.items = {}; stats.exodia = { activated: 0, completed: 0, failed: 0 }; saveStats(); renderItemStats(); toast('Item stats reset');
 }
 // Question rankings: most correct / most incorrect (by % correct, then by how often answered) or most seen
@@ -2237,8 +2237,8 @@ function renderQuestionStats() {
   }).join('') || '<tr><td colspan="7" class="muted">No questions have been answered yet — play a game first.</td></tr>';
   document.getElementById('qStatsInfo').textContent = ids.length ? `Showing ${ids.length} question${ids.length === 1 ? '' : 's'}.` : '';
 }
-function resetPlayerStats() { if (confirm('Reset all player stats (games, wins, correct/incorrect)?')) { stats.players = {}; saveStats(); renderStats(); } }
-function resetSeenCounts() { if (confirm('Reset every question\'s "seen" count to 0?')) { stats.seen = {}; stats.answered = {}; stats.right = {}; saveStats(); toast('Counts reset'); } }
+async function resetPlayerStats() { if (await ask('Games, wins and correct/incorrect counts go back to zero for every player.', { title: 'Reset player stats?', icon: '📊', ok: 'Reset', danger: true })) { stats.players = {}; saveStats(); renderStats(); } }
+async function resetSeenCounts() { if (await ask('Every question\'s "seen" count goes back to 0.', { title: 'Reset seen counts?', icon: '👀', ok: 'Reset', danger: true })) { stats.seen = {}; stats.answered = {}; stats.right = {}; saveStats(); toast('Counts reset'); } }
 function saveRoster() { try { localStorage.setItem(PKEY, JSON.stringify(roster)); } catch (e) {} }
 const MAX_RECENT = 40;
 function rememberPlayers() {
@@ -2321,8 +2321,8 @@ function renderSetup() {
 function addPlayer() {
   const el = document.getElementById('playerName'); const name = cleanName(el.value);
   if (!name) return;
-  if (isPlaying(name)) return alert('That name is already taken.');
-  if (players.length >= MAX_PLAYERS) return alert(`A game can have up to ${MAX_PLAYERS} players.`);
+  if (isPlaying(name)) return notice(`<b>${esc(name)}</b> is already playing. Try a different name.`, { title: 'Name taken', icon: '🙋' });
+  if (players.length >= MAX_PLAYERS) return notice(`A game can have up to ${MAX_PLAYERS} players.`, { title: 'Game is full', icon: '👥' });
   players.push({ name, score: 0 }); el.value = ''; renderSetup();
 }
 function removePlayer(i) { players.splice(i, 1); renderSetup(); }
@@ -2560,16 +2560,24 @@ function modal(html, buttons = [{ label: 'Continue', cls: 'primary' }]) {
   document.body.appendChild(o);
 }
 function closeModal() { document.getElementById('modal')?.remove(); }
+// In-game versions of the browser's alert() and confirm(), so messages match the rest of the game
+function notice(msg, { title = 'Heads up', icon = '💡' } = {}) {
+  return new Promise(res => modal(`<div class="bigIcon">${icon}</div><h2>${title}</h2><p>${msg}</p>`, [{ label: 'OK', cls: 'primary', fn: res }]));
+}
+function ask(msg, { title = 'Are you sure?', icon = '❓', ok = 'Yes', cancel = 'Cancel', danger = false } = {}) {
+  return new Promise(res => modal(`<div class="bigIcon">${icon}</div><h2>${title}</h2><p>${msg}</p>`,
+    [{ label: cancel, cls: 'ghost', fn: () => res(false) }, { label: ok, cls: danger ? 'bad' : 'primary', fn: () => res(true) }]));
+}
 
 // ---------- Game ----------
 let turn = 0, round = 1, used = new Set(), current = null, revealed = false, itemUsedThisTurn = false;
 let bets = [];
 let pickGroup = null; // category group opened on the pick screen (category mode) // Side Bets waiting to pay out: { from: player, on: player }
 function startGame() {
-  if (!players.length) return alert('Add at least one player.');
+  if (!players.length) return notice('Add at least one player to start.', { title: 'No players yet', icon: '🙋' });
   if (players.length > MAX_PLAYERS) players.length = MAX_PLAYERS;
-  if (!data.questions.length) return alert('Add some questions first (Edit Questions).');
-  if (!gameQs().length) return alert("No questions are in play — turn at least one category and one difficulty back on.");
+  if (!data.questions.length) return notice('Add some questions first in Edit Questions.', { title: 'No questions yet', icon: '📝' });
+  if (!gameQs().length) return notice('Turn at least one category and one difficulty back on.', { title: 'No questions in play', icon: '🥔' });
   rememberPlayers(); turnPrizes = {}; assignColors(players);
   // games played are counted when a game finishes with a winner (quitting with End game doesn't count)
   players.forEach(p => Object.assign(p, { score: 0, items: [], history: [], streak: { kind: null, count: 0 }, skip: 0, hardLock: 0, catLock: null, boost: null, halfTime: false, halfGain: false, beginner: 0, helper: null, tax: null, dodge: false, exodia: null, turnsPlayed: 0, lastGamble: -Infinity, gambleLocked: false }));
@@ -2595,11 +2603,11 @@ function toggleGameMenu(e) { e.stopPropagation(); document.getElementById('gameM
 function closeGameMenu() { document.getElementById('gameMenu')?.classList.remove('open'); }
 document.addEventListener('click', e => { if (!e.target.closest?.('.gameMenu')) closeGameMenu(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeGameMenu(); });
-function restartGame() {
-  if (!confirm('Restart the game with the same players? Scores and items go back to zero (this game won\'t count toward Games or Wins).')) return;
+async function restartGame() {
+  if (!await ask("Same players, but scores and items go back to zero. This game won't count toward Games or Wins.", { title: 'Restart the game?', icon: '🔄', ok: 'Restart', danger: true })) return;
   document.querySelector('#stage audio')?.pause(); stopTimer(); current = null; closeModal(); startGame();
 }
-function quitGame() { if (confirm('End this game and return to the menu?')) { document.querySelector('#stage audio')?.pause(); stopTimer(); current = null; go('menu'); } }
+async function quitGame() { if (await ask("You'll go back to the main menu and this game will end.", { title: 'End this game?', icon: '🚪', ok: 'End game', danger: true })) { document.querySelector('#stage audio')?.pause(); stopTimer(); current = null; go('menu'); } }
 
 // Everything currently affecting a player. kind: 'buff' (helps them), 'debuff' (hurts them) or 'info' (neutral).
 // short = the tag on the scoreboard; text = the full explanation (player details and the current player's turn)
