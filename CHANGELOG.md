@@ -1,5 +1,9 @@
 # What's new in Potato Quiz
 
+## 3.10.1 — 2026-10-17
+- **🎯 Difficulty cleanup:** every question's difficulty was reviewed. About 2,500 moved up or down a tier so Easy, Medium, Hard and Obscure match what a typical game night actually knows, and about 160 true long shots moved into the hidden Impossible tier.
+- Fixed a few broken or duplicate questions.
+
 ## 3.10.0 — 2026-10-17
 - **📖 How to Play:** a quick rules card that explains turns, scoring, Random, Gamble and items. It's built from your current settings, so it only mentions what's switched on. Find it on the main menu, in the in-game ☰ menu, and on the turn-order screen before a game starts.
 - **👆 Tap to explain:** tap any item, effect, streak or answer marker on the scoreboard to see what it means.
