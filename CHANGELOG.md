@@ -1,5 +1,8 @@
 # What's new in Potato Quiz
 
+## 3.11.0 — 2026-10-17
+- **🧙 New Fantasy & Sci-Fi Worlds family:** 8 categories and about 3,900 questions: General, Harry Potter, Lord of the Rings, Star Wars, Star Trek, Game of Thrones, Hunger Games & YA Dystopia, and Doctor Who. Books, films, shows, casts and behind-the-scenes, including House of the Dragon, The Rings of Power and A Knight of the Seven Kingdoms. Franchise questions from Movies › Star Wars & Sci-Fi moved here, and that category is now **Movies › Sci-Fi**.
+
 ## 3.10.1 — 2026-10-17
 - **🎯 Difficulty cleanup:** every question's difficulty was reviewed. About 2,500 moved up or down a tier so Easy, Medium, Hard and Obscure match what a typical game night actually knows, and about 160 true long shots moved into the hidden Impossible tier.
 - Fixed a few broken or duplicate questions.

@@ -959,7 +959,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '3.10.1';
+const APP_VERSION = '3.11.0';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1133,9 +1133,18 @@ const SEED_CATEGORIES = [
   { id: 'cat_books_kids', name: "Children's Books", color: '#e0aaff', group: "Books & Literature" },
   { id: 'cat_books_poetry', name: "Poetry & Shakespeare", color: '#a77ae8', group: "Books & Literature" },
   { id: 'cat_books_screen', name: "Book-to-Screen", color: '#c287ff', group: "Books & Literature" },
+  // bank version 16: the Fantasy & Sci-Fi Worlds family
+  { id: 'cat_fantasy', name: "General", color: '#a98bff', group: "Fantasy & Sci-Fi Worlds" },
+  { id: 'cat_fantasy_hp', name: "Harry Potter", color: '#e86a5c', group: "Fantasy & Sci-Fi Worlds" },
+  { id: 'cat_fantasy_lotr', name: "Lord of the Rings", color: '#8fbf5a', group: "Fantasy & Sci-Fi Worlds" },
+  { id: 'cat_fantasy_starwars', name: "Star Wars", color: '#ffe066', group: "Fantasy & Sci-Fi Worlds" },
+  { id: 'cat_fantasy_startrek', name: "Star Trek", color: '#4fd1c5', group: "Fantasy & Sci-Fi Worlds" },
+  { id: 'cat_fantasy_got', name: "Game of Thrones", color: '#b8c4d0', group: "Fantasy & Sci-Fi Worlds" },
+  { id: 'cat_fantasy_dystopia', name: "Hunger Games & YA Dystopia", color: '#ff8c42', group: "Fantasy & Sci-Fi Worlds" },
+  { id: 'cat_fantasy_doctorwho', name: "Doctor Who", color: '#6c9eff', group: "Fantasy & Sci-Fi Worlds" },
   { id: 'cat_movies', name: "General", color: '#ff5e8a', group: "Movies", was: "Movies", v: 5, split: true },
   { id: 'cat_movies_superhero', name: "Marvel & Superheroes", color: '#ff207d', group: "Movies" },
-  { id: 'cat_movies_scifi', name: "Star Wars & Sci-Fi", color: '#ff4988', group: "Movies" },
+  { id: 'cat_movies_scifi', name: "Sci-Fi", color: '#ff4988', group: "Movies" },
   { id: 'cat_movies_horror', name: "Horror", color: '#ff7298', group: "Movies" },
   { id: 'cat_movies_classic', name: "Classic Hollywood", color: '#fe9baf', group: "Movies" },
   { id: 'cat_tv', name: "General", color: '#46c6e8', group: "Television", was: "Television", v: 5, split: true },
@@ -1425,6 +1434,14 @@ function upgrade(d) {
       const arts = d.categories.find(c => c.id === 'cat_general_arts');
       if (arts?.name === 'Art & Literature') arts.name = 'Art & Artists';
       if (!d.questions.some(q => q.categoryId === 'cat_general_animals')) d.categories = d.categories.filter(c => c.id !== 'cat_general_animals');
+      const order = new Map(SEED_CATEGORIES.map((c, i) => [c.id, i]));
+      d.categories = d.categories.map((c, i) => [c, order.get(c.id) ?? 10000 + i]).sort((x, y) => x[1] - y[1]).map(x => x[0]);
+    }
+    if (fromVersion < 16) {
+      // 3.11: franchise questions moved to the new Fantasy & Sci-Fi Worlds family, so Movies › Star Wars & Sci-Fi
+      // becomes Movies › Sci-Fi (unless renamed); categories go back into the bank's order
+      const sf = d.categories.find(c => c.id === 'cat_movies_scifi');
+      if (sf?.name === 'Star Wars & Sci-Fi') sf.name = 'Sci-Fi';
       const order = new Map(SEED_CATEGORIES.map((c, i) => [c.id, i]));
       d.categories = d.categories.map((c, i) => [c, order.get(c.id) ?? 10000 + i]).sort((x, y) => x[1] - y[1]).map(x => x[0]);
     }
