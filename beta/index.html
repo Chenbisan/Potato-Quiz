@@ -546,6 +546,10 @@
   .pcScores div.cur { outline: 2px solid var(--accent); font-weight: 800; }
   .pcList button.right:disabled, .pcList button.wrongPick:disabled, .pcList button.picked:disabled { opacity: 1; }
   .pcResult { font-size: 1.5rem; font-weight: 900; margin: 10px 0; }
+  .joinNote { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; font-weight: 800; margin: 4px 0 12px; }
+  .pcModalBtns { margin: 6px 0 14px; }
+  .pcModalBtns button.wide { grid-column: 1 / -1; text-align: left; }
+  .pcModalBtns button.picked { outline: 3px solid var(--accent); }
   .joinErr { color: var(--bad); font-weight: 700; min-height: 1.3em; margin: 8px 0 0; }
 </style>
 </head>
@@ -572,7 +576,7 @@
 <section id="setup" class="screen">
   <div class="topbar"><h2>Who's playing?</h2><button class="ghost" onclick="go('menu')">← Menu</button></div>
   <div class="card">
-    <div class="row">
+    <div class="row" id="addPlayerRow">
       <input id="playerName" placeholder="Player name (up to 16 characters)" maxlength="16" style="flex:1" onkeydown="if(event.key==='Enter')addPlayer()">
       <button onclick="addPlayer()">Add player</button>
     </div>
@@ -838,6 +842,14 @@
     </div>
   </div>
   <div class="card" data-stab="game">
+    <h3 class="cardTitle">📱 Playing on phones</h3>
+    <div class="setting">
+      <div class="setName">Move on after a phone answer</div>
+      <div class="ctrl"><input type="number" id="phoneAutoNext" min="0" max="30" step="0.5" style="width:90px" onchange="const v = +this.value; if (v >= 0) { data.settings.phoneAutoNext = Math.min(30, v); save(); toast('Saved'); }"><span class="unit">seconds (0 = the player taps Next)</span></div>
+      <div class="help">When a player answers on their phone, the result shows for this long and then the game goes on by itself.</div>
+    </div>
+  </div>
+  <div class="card" data-stab="game">
     <h3 class="cardTitle">🎰 Gamble</h3>
     <div class="setting">
       <label class="switch"><input type="checkbox" id="gambleOn" onchange="data.settings.gamble = this.checked; save(); toast('Saved')"> Show the Gamble button</label>
@@ -1005,7 +1017,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '4.0-beta'; // hidden test copy at /beta/ — not linked from the live game
+const APP_VERSION = '4.0-beta.2'; // hidden test copy at /beta/ — not linked from the live game
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1387,6 +1399,7 @@ function upgrade(d) {
   d.settings.timer ??= { enabled: true, seconds: 30, sound: true };
   d.settings.timer.lateCorrect ??= true;
   d.settings.introSeconds ??= 2.5;
+  d.settings.phoneAutoNext ??= 2; // seconds before a phone player's answer moves on by itself (0 = they tap Next)
   d.settings.fx ??= true;  // animations: screen transitions, flying points
   d.settings.sfx ??= true; // sound effects
   // Gamble cooldown = how many of their own turns a player waits after gambling (0 = none). Before 1.8 it meant
@@ -1692,6 +1705,7 @@ function renderSettings() {
   document.getElementById('modeCat').classList.toggle('on', data.settings.pickMode === 'cat');
   document.getElementById('gambleOn').checked = data.settings.gamble;
   document.getElementById('introSecs').value = data.settings.introSeconds;
+  document.getElementById('phoneAutoNext').value = data.settings.phoneAutoNext;
   document.getElementById('fxOn').checked = data.settings.fx;
   document.getElementById('sfxOn').checked = data.settings.sfx;
   document.getElementById('gambleCd').value = data.settings.gambleCooldown;
@@ -2331,7 +2345,7 @@ function setPlayerColor(i, c) {
 const MAX_NAME = 16; // keeps names from breaking the scoreboard, turn strip and buttons
 const cleanName = n => String(n).trim().replace(/\s+/g, ' ').slice(0, MAX_NAME).trim();
 const MAX_PLAYERS = 12; // one distinct color each
-function addByName(name) { name = cleanName(name); if (name && !isPlaying(name) && players.length < MAX_PLAYERS) players.push({ name, score: 0 }); }
+function addByName(name) { if (room) return; name = cleanName(name); if (name && !isPlaying(name) && players.length < MAX_PLAYERS) players.push({ name, score: 0 }); }
 function addRecent(i) { addByName(roster.recent[i]); renderSetup(); }
 function addAllRecent() { roster.recent.forEach(addByName); renderSetup(); }
 function addLastLineup() { roster.lastGame.forEach(addByName); renderSetup(); }
@@ -2344,9 +2358,10 @@ function clearPlayers() { players.forEach(kickPhone); players = []; renderSetup(
 let players = [], prefilled = false;
 function renderSetup() {
   // First time on this screen after opening the app: start with last game's lineup
-  if (!prefilled) { prefilled = true; if (!players.length) roster.lastGame.forEach(addByName); }
+  if (!prefilled) { prefilled = true; if (!players.length && !room) roster.lastGame.forEach(addByName); }
   const recent = roster.recent.map((n, i) => ({ n, i })).filter(r => !isPlaying(r.n));
-  document.getElementById('recentCard').style.display = roster.recent.length ? '' : 'none';
+  document.getElementById('recentCard').style.display = roster.recent.length && !room ? '' : 'none';
+  document.getElementById('addPlayerRow').style.display = room ? 'none' : '';
   document.getElementById('recentChips').innerHTML = recent.map(r =>
     `<span class="chip recent" onclick="addRecent(${r.i})">+ ${esc(r.n)} <b onclick="forgetRecent(${r.i}, event)" title="Forget this name">✕</b></span>`).join('')
     || '<span class="muted">Everyone from your recent list is already playing.</span>';
@@ -2359,13 +2374,14 @@ function renderSetup() {
   const full = players.length >= MAX_PLAYERS;
   document.getElementById('setupInfo').textContent = players.length
     ? `${players.length} of ${MAX_PLAYERS} players${full ? ' (full)' : ''}. First to ${data.settings.targetPoints} points wins.`
-    : `Add 1 to ${MAX_PLAYERS} players to begin.`;
+    : room ? 'Waiting for players to join on their phones.' : `Add 1 to ${MAX_PLAYERS} players to begin.`;
   document.getElementById('playerName').disabled = full;
   document.getElementById('playerName').placeholder = full ? `Game is full (${MAX_PLAYERS} players)` : 'Player name (up to 16 characters)';
   renderRoom(); sendLobby();
-  setTimeout(() => document.getElementById('playerName').focus(), 50);
+  if (!room) setTimeout(() => document.getElementById('playerName').focus(), 50);
 }
 function addPlayer() {
+  if (room) return notice('Players join from their phones while the room is open. Close the room to add players here instead.', { title: 'Phone game', icon: '📱' });
   const el = document.getElementById('playerName'); const name = cleanName(el.value);
   if (!name) return;
   if (isPlaying(name)) return notice(`<b>${esc(name)}</b> is already playing. Try a different name.`, { title: 'Name taken', icon: '🙋' });
@@ -2408,6 +2424,13 @@ async function openChannel(code, onMsg, { onUp, onDown } = {}) { // onUp/onDown:
 let room = null; // { code, ch, qr } while this device hosts a room
 const roomSend = m => room?.ch.send(m);
 async function openRoom(code = newRoomCode(), quiet = false) {
+  // A game is either all on phones or all on this screen, so names can't clash between the two
+  const local = players.filter(p => !p.pid);
+  if (local.length && !quiet) {
+    if (!await ask(`In a phone game everyone joins from their own phone, so the ${local.length} player${local.length === 1 ? '' : 's'} added here will be removed.`,
+      { title: 'Switch to phones?', icon: '📱', ok: 'Open the room' })) return;
+    players = players.filter(p => p.pid);
+  }
   try { room = { code, ch: await openChannel(code, onHostMsg, { onUp: () => { sendLobby(); syncPhones(); } }) }; }
   catch (e) { room = null; return quiet || notice(esc(e.message), { title: "Couldn't open a room", icon: '📡' }); }
   try { sessionStorage.setItem('potatoQuizHostRoom', code); } catch (e) {} // a reload of this tab reopens the same room
@@ -2456,7 +2479,7 @@ function renderRoom() {
   const el = document.getElementById('roomCard'); if (!el) return;
   if (!room) {
     el.innerHTML = `<div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:12px">
-      <div><h3 style="margin:0">📱 Play on phones</h3><p class="muted" style="margin:4px 0 0">Open a room and everyone can join from their own phone with a code.</p></div>
+      <div><h3 style="margin:0">📱 Play on phones</h3><p class="muted" style="margin:4px 0 0">Open a room and everyone joins from their own phone with a code (instead of adding players here).</p></div>
       <button class="primary" onclick="openRoom()">Open a room</button></div>`;
     return;
   }
@@ -2520,6 +2543,7 @@ function phoneJoin(code) {
   phone = { code: cleanCode(code), name, state: 'code' };
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('join').classList.add('active');
+  document.getElementById('joinBody').innerHTML = ''; // a code passed in wins over a code box left on screen
   if (phone.code.length === 4) phoneConnect(); else renderJoin();
 }
 // Phones check in every few seconds and watch for the host; if the host goes quiet, they show a banner and keep trying
@@ -2585,7 +2609,8 @@ function onPhoneMsg(m) {
   else if (m.t === 'rejected' && mine) { phone.err = m.why; phone.canWatch = !!m.started; if (['in', 'playing'].includes(phone.state)) phone.state = 'name'; }
   else if (m.t === 'kicked' && mine) { phone.ch.close(); phone.ch = null; phone.state = 'out'; phone.err = 'The host removed you from the game.'; }
   else if (m.t === 'closed' && phone.state !== 'code') { phone.ch?.close(); phone.ch = null; phone.state = 'out'; phone.err = 'The host closed the room.'; }
-  else if (m.t === 'started' && ['in', 'playing'].includes(phone.state)) phone.state = 'playing';
+  else if (m.t === 'started' && ['in', 'playing'].includes(phone.state)) { phone.state = 'playing'; phone.note = ''; }
+  else if (m.t === 'quit' && ['in', 'playing', 'watching'].includes(phone.state)) { phone.state = phone.state === 'watching' ? 'name' : 'in'; phone.turn = null; phone.winner = null; phone.note = 'The host ended the game.'; if (phone.state === 'name') phone.err = phone.note; }
   else if (m.t === 'turn' && ['in', 'playing', 'watching'].includes(phone.state)) {
     const same = phone.state !== 'in' && phone.turn?.v === m.v;
     if (phone.state === 'in') phone.state = 'playing'; phone.turn = m;
@@ -2628,7 +2653,7 @@ function renderJoin() {
       ${err}<button class="primary big" onclick="phoneSubmit()">Join the game</button>
       ${list.length ? `<p class="muted" style="margin:18px 0 0">Already playing:</p>${chips(list)}` : ''}`;
   } else if (P.state === 'in') {
-    el.innerHTML = `<p class="sub">You're in! ${P.winner ? `🏆 ${esc(P.winner)} won the last game.` : ''}</p>
+    el.innerHTML = `${P.note ? `<div class="joinNote">🛑 ${esc(P.note)}</div>` : ''}<p class="sub">You're in! ${P.winner ? `🏆 ${esc(P.winner)} won the last game.` : ''}</p>
       <div class="joinMe" style="color:${P.color || 'var(--accent)'}">${esc(P.name)}</div>
       <p>Waiting for the host to start the game…</p>
       ${others.length ? `<p class="muted" style="margin:18px 0 0">Playing with you:</p>${chips(others)}` : ''}
@@ -2669,10 +2694,12 @@ function turnView() {
     scores: players.map(o => ({ name: o.name, color: o.color, score: o.score, turn: o === p })) };
   const m = document.querySelector('#modal .modalBox');
   if (m) {
-    const body = m.cloneNode(true); body.querySelectorAll('h2, .actions, .bigIcon').forEach(e => e.remove());
+    const body = m.cloneNode(true); body.querySelectorAll('h2, .actions, .bigIcon, button, input').forEach(e => e.remove());
     body.querySelectorAll('p, div, li, br').forEach(e => e.after(' ')); // keep a space between paragraphs
     return { ...view, kind: 'modal', icon: txt(m.querySelector('.bigIcon')), title: txt(m.querySelector('h2')), body: txt(body).slice(0, 400),
-      buttons: [...m.querySelectorAll('.actions button')].map(btnInfo) };
+      buttons: [...m.querySelectorAll('.actions button')].map(btnInfo),
+      // buttons inside the pop-up itself (Category Lock families and categories, Exodia's family picks…)
+      extra: modalBodyButtons().map(b => ({ ...btnInfo(b), open: b.classList.contains('lockFamHead') && b.closest('.lockFamily')?.classList.contains('open') })) };
   }
   if (!current) {
     const st = document.getElementById('stage');
@@ -2686,13 +2713,15 @@ function turnView() {
   const right = q.shuffled ? q.shuffled.indexOf(q.answer) : -1;
   return { ...base, kind: 'question', q: q.text, choices: q.shuffled || null, picked: q.picked ?? null, revealed,
     answer: revealed ? q.answer : null, right: revealed ? right : -1, timesUp, timer: timer ? { left: timer.left, low: timer.left <= (data.settings.timer.warnAt ?? 10) } : null,
-    win: stakes(p).win, lose: stakes(p).lose, canNext: !!document.querySelector('#qReveal .actions button.primary') && revealed };
+    win: stakes(p).win, lose: stakes(p).lose, autoNext: autoNextSecs(), canNext: !!document.querySelector('#qReveal .actions button.primary') && revealed };
 }
+const modalBodyButtons = () => [...document.querySelectorAll('#modal .modalBox button')].filter(b => !b.closest('.actions'));
 // A tap from the active player's phone: only their own turn, and only on the screen the TV last sent them
 function phoneAct(m) {
   const p = players[turn];
   if (!p?.pid || m.pid !== p.pid || m.v !== lastView?.v) return;
-  const k = String(m.id || ''), n = parseInt(k.slice(1), 10), press = b => b && !b.disabled && b.click();
+  const k = String(m.id || ''), n = parseInt(k.slice(1), 10), press = b => { if (b && !b.disabled) { b.click(); setTimeout(syncPhones); } };
+  if (k[0] === 'x') return press(modalBodyButtons()[n]);
   if (k[0] === 'm') return press(document.querySelectorAll('#modal .modalBox .actions button')[n]);
   if (document.getElementById('modal')) return; // a pop-up is open on the TV: answer that first
   if (k[0] === 'p' && !current) return press(document.querySelectorAll('#stage .tierPick > button')[n]);
@@ -2721,6 +2750,8 @@ function phoneTurnHtml(T) {
     return `${bar}<div class="pcHead"><span style="color:${T.color}">${esc(T.name)}</span>'s turn</div>${watching || '<p class="muted">Watch the TV!</p>'}${scores}`;
   }
   if (T.kind === 'modal') return `${bar}<div class="bigIcon">${esc(T.icon)}</div><div class="pcHead">${esc(T.title)}</div>${T.body ? `<p>${esc(T.body)}</p>` : ''}
+    ${T.extra?.length ? `<div class="pcBtns pcModalBtns">${T.extra.map((b, i) => btn({ ...b, label: (b.cls.includes('lockFamHead') ? (b.open ? '▾ ' : '▸ ') : '') + b.label },
+      'x' + i, [/lockFamHead/.test(b.cls) && 'wide', /\bon\b/.test(b.cls) && 'picked'].filter(Boolean).join(' '))).join('')}</div>` : ''}
     <div class="pcList pcModal">${T.buttons.map((b, i) => btn({ ...b, color: '' }, 'm' + i, b.cls.includes('primary') ? 'primary' : b.cls.includes('bad') ? 'bad' : '')).join('')}</div>`;
   if (T.kind === 'pick') return `${bar}<div class="pcHead">🎯 Your turn! Pick one:</div>
     <div class="pcBtns">${T.buttons.map((b, i) => btn(b, 'p' + i, /lockedBtn|exodiaBtn|groupBack/.test(b.cls) ? 'wide' : '')).join('')}</div>
@@ -2731,7 +2762,7 @@ function phoneTurnHtml(T) {
       : `${T.timesUp ? '<div class="pcResult">⏰ Time\'s up!</div>' : ''}<p>Answer: <b>${esc(T.answer)}</b></p><p class="muted">The host will mark it on the TV.</p>`) : '';
   return `${bar}${pills}${timerHtml}<div class="pcQ">${esc(T.q)}</div>
     ${T.choices ? choicesHtml(!T.revealed) : (T.revealed ? '' : '<p class="muted">Say your answer out loud! The host will mark it.</p>')}
-    ${result}${T.canNext && T.picked != null ? `<button class="primary big" onclick="phoneTap('next')">Next ▶</button>` : ''}`;
+    ${result}${T.canNext && T.picked != null ? `<button class="primary big" onclick="phoneTap('next')">Next ▶${T.autoNext ? ` <small>(auto in ${T.autoNext}s)</small>` : ''}</button>` : ''}`;
 }
 
 // ---------- Items ----------
@@ -2874,6 +2905,7 @@ function renderExodiaPicker() {
       <span>${on ? '✓ ' : ''}${esc(f.name)}</span><small>${f.count} q</small></button>`; }).join('');
   const go = document.getElementById('exoGo');
   go.disabled = chosen.length < need; go.textContent = chosen.length < need ? `Pick ${need - chosen.length} more` : '🃏 Start Exodia';
+  syncPhones();
 }
 function exodiaStart() {
   const { idx, chosen, fams } = exodiaPick, p = players[turn];
@@ -3014,7 +3046,7 @@ async function restartGame() {
   if (!await ask("Same players, but scores and items go back to zero. This game won't count toward Games or Wins.", { title: 'Restart the game?', icon: '🔄', ok: 'Restart', danger: true })) return;
   document.querySelector('#stage audio')?.pause(); stopTimer(); current = null; closeModal(); startGame();
 }
-async function quitGame() { if (await ask("You'll go back to the main menu and this game will end.", { title: 'End this game?', icon: '🚪', ok: 'End game', danger: true })) { document.querySelector('#stage audio')?.pause(); stopTimer(); current = null; clearSavedGame(); go('menu'); } }
+async function quitGame() { if (await ask("You'll go back to the main menu and this game will end.", { title: 'End this game?', icon: '🚪', ok: 'End game', danger: true })) { document.querySelector('#stage audio')?.pause(); stopTimer(); current = null; clearSavedGame(); roomSend({ t: 'quit' }); go('menu'); } }
 
 // Everything currently affecting a player. kind: 'buff' (helps them), 'debuff' (hurts them) or 'info' (neutral).
 // short = the tag on the scoreboard; text = the full explanation (player details and the current player's turn)
@@ -3373,12 +3405,13 @@ function renderReveal() {
     }).join('')}</div>` : ''}
     ${revealed && pickedRight !== null && !timesUp ? `<div class="answer">✅ ${esc(q.answer)}</div>
       <div class="pickResult ${pickedRight ? 'good' : 'bad'}">${pickedRight ? `🎉 Correct! <b>+${st.win}</b>` : `❌ Wrong${st.lose ? ` <b>−${st.lose}</b>` : ''}`}</div>
-      <div class="actions"><button class="primary" onclick="mark(${pickedRight})">Next ▶</button></div>
+      <div class="actions"><button class="primary" onclick="mark(${pickedRight})">Next ▶${autoNextSecs() ? ` <small>(auto in ${autoNextSecs()}s)</small>` : ''}</button></div>
       <p class="muted" style="text-align:center;margin:6px 0 0;font-size:.85rem"><a href="#" style="color:var(--muted)" onclick="current.picked = null; renderReveal(); return false">Change result</a></p>`
     : revealed ? `${timesUp ? `<div class="timesUp">⏰ Time's up!${late ? ' <small>If they answered just in time, you can still mark it correct.</small>' : ''}</div>` : ''}<div class="answer">✅ ${esc(q.answer)}</div>
       <div class="actions">${timesUp && !late ? '' : `<button class="good ${pickedRight === true ? 'suggest' : ''}" onclick="mark(true)">Correct (+${st.win})</button>`}
       <button class="bad ${pickedRight === false ? 'suggest' : ''}" onclick="mark(false)">${timesUp && !late ? 'Continue — counts as wrong' : 'Wrong'}${st.lose ? ` (−${st.lose})` : ''}</button></div>`
       : `<div class="actions"><button class="primary" onclick="reveal()">Reveal answer</button></div>`}`;
+  scheduleAutoNext();
   syncPhones(); saveGameSoon();
 }
 function countLabel(match) {
@@ -3467,6 +3500,20 @@ function reveal() { stopTimer(); revealed = true; renderReveal(); }
 // Players can lock in an answer by clicking it: that reveals the answer, scores it, and shows a Next button
 // ("Change result" falls back to the host's Correct / Wrong buttons)
 function pickChoice(i) { if (revealed || !current) return; current.picked = i; reveal(); }
+
+// Phone players don't need to tap Next: after they answer, the result shows briefly and the game moves on
+let autoNextTimer = null, autoNextFor = null;
+const autoNextSecs = () => room && players[turn]?.pid && current?.picked != null && !timesUp ? data.settings.phoneAutoNext || 0 : 0;
+function scheduleAutoNext() {
+  const secs = autoNextSecs(), q = current;
+  if (!revealed || !secs) { if (!revealed || q?.picked == null) { clearTimeout(autoNextTimer); autoNextFor = null; } return; }
+  if (autoNextFor === q) return; // already counting down for this answer
+  autoNextFor = q; clearTimeout(autoNextTimer);
+  autoNextTimer = setTimeout(() => {
+    autoNextFor = null;
+    if (current === q && revealed && q.picked != null && !document.getElementById('modal')) document.querySelector('#qReveal .actions button.primary')?.click();
+  }, secs * 1000);
+}
 
 // ---------- Timer ----------
 let timer = null, timesUp = false, audioCtx;
@@ -3902,7 +3949,7 @@ function renderLockPicker() {
         .map(x => chip(x.c.id, `${g.group} › ${x.c.name}`, x.c.color, x.count))),
       ...loose.filter(e => e.c.name.toLowerCase().includes(q)).map(e => chip(e.c.id, e.c.name, e.c.color, e.count))];
     el.innerHTML = hits.length ? `<div class="lockChips">${hits.join('')}</div>` : '<p class="muted">No category matches.</p>';
-    return;
+    return syncPhones();
   }
   el.innerHTML = `<div class="lockFamilies">${groups.map((g, gi) => {
     const open = lockPick.open === g.group;
@@ -3911,6 +3958,7 @@ function renderLockPicker() {
       ${open ? `<div class="lockChips">${chip('g:' + g.group, `🎲 Any ${g.group}`, g.color, g.count)}${[...g.cats].sort((a, b) => catOrder(a.c, b.c)).map(x => chip(x.c.id, x.c.name, x.c.color, x.count)).join('')}</div>` : ''}
     </div>`; }).join('')}</div>
     ${loose.length ? `<div class="lockChips" style="margin-top:10px">${loose.map(e => chip(e.c.id, e.c.name, e.c.color, e.count)).join('')}</div>` : ''}`;
+  syncPhones();
 }
 function applyItem(idx, ti, catId) {
   const p = players[turn], key = p.items[idx], it = ITEMS[key], v = players[ti];
