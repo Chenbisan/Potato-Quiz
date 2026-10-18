@@ -351,10 +351,29 @@
   .catToggle { border-radius: 999px; padding: 7px 14px; background: transparent; border: 2px solid var(--line); color: var(--muted); text-decoration: line-through; }
   .catToggle.on { background: var(--c); border-color: var(--c); color: #111; font-weight: 700; text-decoration: none; }
   .catToggle small { opacity: .7; margin-left: 4px; }
+  /* How to play card */
+  .howBox { text-align: left; }
+  .howTo h2 { text-align: center; }
+  .howSection { display: grid; gap: 10px; }
+  .howHead { margin: 18px 0 8px; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .howRow { display: flex; gap: 12px; align-items: flex-start; background: var(--panel2); border-radius: 12px; padding: 10px 12px; }
+  .howIcon { font-size: 1.4rem; line-height: 1.2; width: 1.6em; text-align: center; flex: none; }
+  .howRow .howT { display: block; margin-bottom: 2px; }
+  .howRow .howB { color: var(--text); opacity: .9; line-height: 1.45; }
+  .howRow .pill { color: #111; font-weight: 700; margin: 2px 2px 0 0; display: inline-block; }
+  /* tap-to-explain bubble */
+  .tipPop { position: fixed; z-index: 400; max-width: 260px; background: var(--panel); color: var(--text); border: 1px solid var(--line);
+    border-radius: 10px; padding: 8px 11px; font-size: .85rem; line-height: 1.4; box-shadow: var(--shadow, 0 8px 24px rgba(0,0,0,.4)); animation: pop .15s ease-out; }
+  .tipPop b { display: block; margin-bottom: 2px; }
+  .tipPop hr { border: 0; border-top: 1px solid var(--line); margin: 6px 0; }
+  #liveBoard .fx, #liveBoard .slot.full, #liveBoard .streakLbl, #liveBoard .hist, #stage .myFx .fx, #stage .itemCard.passive { cursor: help; }
   /* difficulty buttons keep their size: same weight on/off, counts in a fixed-width slot */
   #tierPicker .catToggle { font-weight: 700; font-variant-numeric: tabular-nums; }
   #tierPicker .catToggle .n { display: inline-block; min-width: var(--nw, 5ch); text-align: left; }
   #tierPicker .catToggle { min-width: var(--tw, auto); }
+  .impossibleCard { --imp: #7a6a9e; border-left: 4px solid var(--imp); }
+  .impossibleRow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .impossibleRow .pill { color: #fff; }
   #tierPicker .catToggle .ic { display: inline-block; width: 1em; text-align: center; }
   .turnOrder { text-align: left; display: inline-block; font-size: 1.25rem; line-height: 1.8; margin: 8px 0 0; padding-left: 28px; }
   .turnOrder li:first-child { color: var(--accent); font-weight: 800; }
@@ -498,6 +517,7 @@
   <div class="news" id="news"></div>
   <div class="menu">
     <button class="primary" onclick="go('setup')">▶ Start Quiz</button>
+    <button onclick="howToPlay()">📖 How to Play</button>
     <button onclick="go('editor')">✏️ Edit Questions</button>
     <button onclick="go('stats')">📊 Stats</button>
     <button onclick="go('settings')">⚙️ Settings</button>
@@ -564,6 +584,7 @@
     <div class="gameMenu">
       <button class="ghost menuBtn" onclick="toggleGameMenu(event)" title="Menu" aria-label="Menu" aria-haspopup="true">☰</button>
       <div class="menuDrop" id="gameMenu" role="menu">
+        <button role="menuitem" onclick="closeGameMenu(); howToPlay()">📖 How to play</button>
         <button role="menuitem" id="themeMenuBtn" onclick="closeGameMenu(); toggleTheme()">☀️ Light mode</button>
         <button role="menuitem" onclick="closeGameMenu(); restartGame()">🔄 Restart game</button>
         <button role="menuitem" class="danger" onclick="closeGameMenu(); quitGame()">✕ End game</button>
@@ -666,6 +687,15 @@
         decides difficulty for Exodia (which ends on the bottom tier), Hard Lock (bottom tier) and Beginner's Luck (top tier).</p>
       <table><thead><tr><th></th><th>Name</th><th>Points</th><th>Colour</th><th>Questions</th><th></th></tr></thead><tbody id="tTable"></tbody></table>
       <button style="margin-top:14px" onclick="addTier()">+ Add tier</button>
+    </div>
+    <div class="card impossibleCard">
+      <h3 style="margin-top:0">🔒 Impossible</h3>
+      <p class="muted">A special tier for the toughest long-shot questions. It has <b>no points</b> and sits outside the difficulty
+        ranking, so its questions never come up in a normal game. Not by difficulty, Random, Hard Lock, Exodia or Beginner's Luck.
+        They're reserved for special interactions and rewards.</p>
+      <div class="impossibleRow"><span class="pill" style="background:var(--imp)">🔒 Impossible</span>
+        <span id="impCount" class="muted"></span>
+        <button class="small" onclick="showImpossible()">View questions</button></div>
     </div>
   </div>
 
@@ -929,7 +959,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '3.9.0';
+const APP_VERSION = '3.10.0';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1210,9 +1240,10 @@ const SEED_RETIER = {"actors":"11,81,98,112,113,114,115,116,117,118,121,122,124,
 // The starter bank lives in questions.json (loaded at startup). Each entry: id, cat, tier, q, a, wrong[], since.
 // "since" = bank version that added it (only used to upgrade old full saves); new entries can leave it out.
 let BANK = [];
-// Impossible questions (tier "impossible" in questions.json) are set aside: they're never drawn, listed or saved. Reserved for
-// future items and special events.
-let IMPOSSIBLE_BANK = [];
+// Impossible: a special tier outside the difficulty ranking. Its questions show up in the editor but never in normal play
+// (no points, no Random/Hard Lock/Exodia); they're reserved for special interactions and rewards.
+const IMPOSSIBLE_TIER = { id: 'impossible', name: 'Impossible', points: 0, color: '#7a6a9e' };
+const playable = q => q.tierId !== IMPOSSIBLE_TIER.id;
 const seedQuestions = () => BANK.map(o => ({ id: o.id, categoryId: o.cat, tierId: o.tier, text: o.q, answer: o.a, wrong: [...(o.wrong || [])], since: o.since ?? Infinity }));
 const DEFAULT = {
   seedVersion: SEED_VERSION,
@@ -1403,7 +1434,7 @@ function upgrade(d) {
     const have = new Set([...d.questions.map(x => x.id), ...(d.deleted || [])]);
     for (const { since, ...q } of seedQuestions()) {
       if (since <= fromVersion || have.has(q.id)) continue;
-      if (!d.tiers.some(t => t.id === q.tierId)) q.tierId = ranked[Math.min(+q.tierId.slice(1) - 1, ranked.length - 1)]?.id;
+      if (q.tierId !== IMPOSSIBLE_TIER.id && !d.tiers.some(t => t.id === q.tierId)) q.tierId = ranked[Math.min(+q.tierId.slice(1) - 1, ranked.length - 1)]?.id;
       if (q.tierId) d.questions.push(q);
     }
     d.seedVersion = SEED_VERSION;
@@ -1430,7 +1461,7 @@ function upgrade(d) {
 }
 function save() { writeSave(data); }
 const uid = () => Math.random().toString(36).slice(2, 10);
-const tierOf = id => data.tiers.find(t => t.id === id);
+const tierOf = id => id === IMPOSSIBLE_TIER.id ? IMPOSSIBLE_TIER : data.tiers.find(t => t.id === id);
 const catOf = id => data.categories.find(c => c.id === id);
 const NO_CAT = { name: 'Uncategorized', color: '#777799' };
 // Categories can belong to a group (family), e.g. "Pokémon" → Kanto, Johto, General…
@@ -1544,7 +1575,7 @@ function renderNews() {
 function coffee() {
   document.querySelector('.coffeePop')?.remove();
   const el = document.createElement('div'); el.className = 'coffeePop';
-  el.innerHTML = `<span class="cpIcon">❤️</span><div><b>Thanks, but I do this for the love of the game!</b><small>I'm not taking donations, so just enjoy the game. 🥔</small></div>`;
+  el.innerHTML = `<span class="cpIcon">❤️</span><div><b>Thanks, but I do this for the love of the game!</b><small>I'm not taking donations. All I want is for you to have fun. 🥔</small></div>`;
   el.onclick = () => el.remove();
   document.body.appendChild(el); sfx('coin');
   setTimeout(() => { el.classList.add('leaving'); setTimeout(() => el.remove(), 400); }, 6000);
@@ -1552,7 +1583,7 @@ function coffee() {
 function renderMenu() {
   renderNews();
   document.getElementById('menuStats').textContent =
-    `${data.questions.length} questions · ${data.tiers.length} tiers · ${data.categories.length} categories · first to ${data.settings.targetPoints} points wins`;
+    `${data.questions.filter(playable).length} questions · ${data.tiers.length} tiers · ${data.categories.length} categories · first to ${data.settings.targetPoints} points wins`;
 }
 
 // ---------- Settings ----------
@@ -1755,9 +1786,9 @@ function fillSelect(id, html) {
   if (hadChoice && [...sel.options].some(o => o.value === keep)) sel.value = keep;
 }
 function renderEditor() {
-  fillSelect('qTier', data.tiers.map(t => `<option value="${t.id}">${esc(t.name)} (${t.points} pts)</option>`).join(''));
+  fillSelect('qTier', data.tiers.map(t => `<option value="${t.id}">${esc(t.name)} (${t.points} pts)</option>`).join('') + `<option value="${IMPOSSIBLE_TIER.id}">🔒 Impossible (no points · special only)</option>`);
   fillSelect('qCat', `<option value="">Uncategorized</option>` + catOptions());
-  fillSelect('qFilter', `<option value="">All tiers</option>` + data.tiers.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join(''));
+  fillSelect('qFilter', `<option value="">All tiers</option>` + data.tiers.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('') + `<option value="${IMPOSSIBLE_TIER.id}">🔒 Impossible</option>`);
   const groups = sortedGroups();
   fillSelect('qCatFilter', `<option value="*">All categories</option><option value="">Uncategorized</option>` +
     (groups.length ? `<optgroup label="Whole groups">${groups.map(g => `<option value="g:${esc(g)}">All ${esc(g)}</option>`).join('')}</optgroup>` : '') + catOptions());
@@ -1848,7 +1879,10 @@ function deleteQuestion(id) {
   if (!confirm('Delete this question?')) return;
   removeQuestions(q => q.id === id); save(); renderQuestions(); renderTiers();
 }
+function showImpossible() { edTab('q'); document.getElementById('qFilter').value = IMPOSSIBLE_TIER.id; document.getElementById('qCatFilter').value = '*'; document.getElementById('qTypeFilter').value = ''; renderQuestions(); document.getElementById('qTable').scrollIntoView({ block: 'start', behavior: 'smooth' }); }
 function renderTiers() {
+  const ni = data.questions.filter(q => q.tierId === IMPOSSIBLE_TIER.id).length;
+  document.getElementById('impCount').textContent = `${ni} question${ni === 1 ? '' : 's'} · 0 points`;
   const last = data.tiers.length - 1;
   document.getElementById('tTable').innerHTML = data.tiers.map((t, i) => {
     const n = data.questions.filter(q => q.tierId === t.id).length;
@@ -1938,9 +1972,9 @@ const offTiers = () => roster.offTiers ??= [];
 const isNsfwCat = c => !!c && (!!c.nsfw || c.group === 'After Dark' || /^cat_afterdark/.test(c.id));
 const nsfwOn = () => !!roster.nsfw;
 const nsfwIds = () => new Set(data.categories.filter(isNsfwCat).map(c => c.id));
-const visibleQs = () => { if (nsfwOn()) return data.questions; const hide = nsfwIds(); return data.questions.filter(q => !hide.has(q.categoryId)); };
+const visibleQs = () => { const hide = nsfwOn() ? null : nsfwIds(); return data.questions.filter(q => playable(q) && !hide?.has(q.categoryId)); };
 const gameQs = () => { const off = new Set(offCats()), offT = new Set(offTiers()), hide = nsfwOn() ? null : nsfwIds();
-  return data.questions.filter(q => !off.has(q.categoryId || '') && !offT.has(q.tierId) && !hide?.has(q.categoryId)); };
+  return data.questions.filter(q => playable(q) && !off.has(q.categoryId || '') && !offT.has(q.tierId) && !hide?.has(q.categoryId)); };
 function toggleNsfw() {
   if (!nsfwOn() && !confirm('After Dark has adults-only (18+) questions about sex, dating and partying.\n\nTurn it on only if everyone playing is an adult and is OK with it.')) return;
   roster.nsfw = !nsfwOn(); saveRoster(); renderCatPicker();
@@ -2397,6 +2431,72 @@ function exodiaStart() {
 const exodiaFamNames = p => (p.exodia?.fams || []).map(k => k.startsWith('cat:') ? (catOf(k.slice(4))?.name || '?') : k);
 
 // Simple modal: html body plus buttons [{label, cls, fn}]
+// How to play: a short rules card built from the current settings, so it only mentions what's switched on
+function howToHTML() {
+  const st = data.settings, it = st.items, byCat = st.pickMode === 'cat', tm = st.timer;
+  const tiers = data.tiers.filter(t => data.questions.some(q => q.tierId === t.id && playable(q)));
+  const pts = tiers.map(t => `<span class="pill" style="background:${t.color}">${esc(t.name)} ${t.points}</span>`).join(' ');
+  const choices = { 4: 'four answer choices appear', 6: 'six answer choices appear', 0: 'no choices appear, so you say your answer out loud' }[choiceCount()];
+  const nth = n => n.join(', ').replace(/, (\d+)$/, ' or $1');
+  const row = (icon, title, body) => `<div class="howRow"><span class="howIcon">${icon}</span><div><b class="howT">${title}</b><span class="howB">${body}</span></div></div>`;
+  const basics = [
+    row('🔁', 'Take turns', byCat
+      ? 'On your turn, pick a category. Each question shows its difficulty and points before it appears.'
+      : `On your turn, pick a difficulty. Harder questions are worth more: ${pts}`),
+    row('💬', 'Answer', `${choices[0].toUpperCase() + choices.slice(1)}${tm.enabled ? `, and you have <b>${tm.seconds} seconds</b>` : ''}. The host reveals the answer and marks you right or wrong${tm.enabled && tm.lateCorrect ? ' (a right answer can still count after time runs out)' : ''}.`),
+    row('🏁', 'Win', `The first player to <b>${st.targetPoints} points</b> wins.`),
+  ];
+  const extras = [];
+  if (st.randomBonus) extras.push(row('🎲', 'Random', `Can't decide? Take a random question for <b>+${st.randomBonus} bonus point${st.randomBonus === 1 ? '' : 's'}</b> if you get it right.`));
+  else extras.push(row('🎲', 'Random', 'Take a random question from anything in play.'));
+  if (st.gamble) {
+    const cd = st.gambleCooldown, after = [cd ? `wait ${cd} turn${cd === 1 ? '' : 's'}` : '', st.gambleNeedsWin ? 'get a regular question right' : ''].filter(Boolean).join(' and ');
+    extras.push(row('🎰', 'Gamble', `A random question for <b>double points</b>, but a wrong answer <b>loses double</b>.${after ? ` Afterwards you must ${after} before gambling again.` : ''}`));
+  }
+  if (itemsOn()) {
+    const how = [`<b>${nth(it.streaks)}</b> right answers in a row 🔥`];
+    if (it.coldStreaks?.length) how.push(`<b>${nth(it.coldStreaks)}</b> misses in a row 🧊 (to help you catch up)`);
+    extras.push(row('🎁', 'Items', `Earn an item when your streak reaches ${how.join(', or ')}.${it.rewards && it.rewardChance > 0 ? ` Players in the bottom half may also see 🎁 on a ${byCat ? 'category' : 'difficulty'}${it.rewardAfterRounds ? ` (from round ${it.rewardAfterRounds + 1})` : ''}: pick it and answer right to win that item.` : ''}${it.lastPlaceAfter ? ` After round ${it.lastPlaceAfter}, whoever is in last place gets a free item each round.` : ''}`));
+    extras.push(row('🎒', 'Using items', `Use <b>one item per turn</b>, before you pick a question. Your bag holds ${maxItems()}. Some items help you; others steal points or lock another player.`));
+  }
+  extras.push(row('👆', 'Not sure what something means?', `Tap any ${itemsOn() ? 'item, ' : ''}effect, streak or answer marker on the scoreboard to see what it does.`));
+  return `<div class="howTo"><h2 style="margin-top:0">🥔 How to play</h2>
+    <div class="howSection">${basics.join('')}</div>
+    <div class="howHead">Extras</div><div class="howSection">${extras.join('')}</div></div>`;
+}
+function howToPlay(after) {
+  closeGameMenu?.();
+  modal(howToHTML(), [{ label: 'Got it!', cls: 'primary', fn: after }]);
+  document.querySelector('#modal .modalBox').classList.add('wide', 'howBox');
+}
+// Tap-to-explain: tapping an item, effect, streak or answer marker on the scoreboard (or the "Affecting you" tags) shows
+// what it means in a small bubble next to it. Hover tooltips still work too.
+const TIP_TARGETS = '#liveBoard .fx, #liveBoard .slot.full, #liveBoard .streakLbl, #liveBoard .hist, #stage .myFx .fx, #stage .itemCard.passive';
+function hideTip() { document.getElementById('tipPop')?.remove(); clearTimeout(hideTip.t); }
+function showTip(el) {
+  const text = el.dataset.tip || el.getAttribute('title'); if (!text) return;
+  el.dataset.tip = text; el.removeAttribute('title'); // keep the text, drop the native tooltip so it doesn't double up
+  hideTip();
+  const z = parseFloat(document.documentElement.dataset.zoom) || 1, r = el.getBoundingClientRect();
+  const t = document.createElement('div'); t.className = 'tipPop'; t.id = 'tipPop';
+  t.innerHTML = text.split('\n').map(line => { const i = line.indexOf(': ');
+    return i > 0 && i < 40 ? `<b>${esc(line.slice(0, i))}</b>${esc(line.slice(i + 2))}` : esc(line); }).join('<hr>');
+  document.body.appendChild(t);
+  const w = t.offsetWidth, h = t.offsetHeight, vw = innerWidth / z, vh = innerHeight / z;
+  let left = (r.left + r.width / 2) / z - w / 2, top = r.bottom / z + 8;
+  if (top + h > vh - 8) { top = r.top / z - h - 8; t.classList.add('above'); }
+  t.style.left = Math.max(8, Math.min(vw - w - 8, left)) + 'px'; t.style.top = Math.max(8, top) + 'px';
+  hideTip.t = setTimeout(hideTip, 6000);
+  // hold the scoreboard's auto-scroll while the bubble is up, so it doesn't drift away from what was tapped
+  if (el.closest('#liveBoard') && typeof boardPauseUntil !== 'undefined') boardPauseUntil = Math.max(boardPauseUntil, performance.now() + 6500);
+}
+document.addEventListener('click', e => {
+  const el = e.target.closest?.(TIP_TARGETS);
+  if (el) { e.preventDefault(); e.stopPropagation(); showTip(el); }
+  else if (!e.target.closest?.('#tipPop')) hideTip();
+}, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') hideTip(); });
+document.addEventListener('scroll', hideTip, true);
 function modal(html, buttons = [{ label: 'Continue', cls: 'primary' }]) {
   closeModal();
   const o = document.createElement('div'); o.className = 'modal'; o.id = 'modal';
@@ -2431,8 +2531,10 @@ function startGame() {
   boardDir = 1; boardPauseUntil = Infinity;
   const startBoard = () => { document.getElementById('boardScroll').scrollTop = 0; boardPauseUntil = performance.now() + BOARD_START_DELAY; };
   go('game'); renderGame(); sfx('start');
-  if (players.length > 1) modal(`<div class="bigIcon">🎲</div><h2>Turn order</h2>
-    <ol class="turnOrder">${players.map(p => `<li>${esc(p.name)}</li>`).join('')}</ol>`, [{ label: "Let's go!", cls: 'primary', fn: startBoard }]);
+  const showOrder = () => modal(`<div class="bigIcon">🎲</div><h2>Turn order</h2>
+    <ol class="turnOrder">${players.map(p => `<li>${esc(p.name)}</li>`).join('')}</ol>`,
+    [{ label: '📖 How to play', fn: () => howToPlay(showOrder) }, { label: "Let's go!", cls: 'primary', fn: startBoard }]);
+  if (players.length > 1) showOrder();
   else startBoard();
 }
 const BOARD_START_DELAY = 3000; // ms the scoreboard waits at the top when a game starts
@@ -3449,7 +3551,7 @@ async function start() {
     const r = await fetch(`questions.json?v=${APP_VERSION}`);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const bank = await r.json();
-    BANK = bank.questions.filter(q => q.tier !== 'impossible'); IMPOSSIBLE_BANK = bank.questions.filter(q => q.tier === 'impossible'); SEED_VERSION = bank.version ?? SEED_VERSION;
+    BANK = bank.questions; SEED_VERSION = bank.version ?? SEED_VERSION;
   } catch (e) {
     document.body.innerHTML = `<div class="card" style="max-width:560px;margin:60px auto;text-align:center">
       <h2>🥔 Couldn't load the questions</h2><p class="muted">The question bank (questions.json) didn't load: ${esc(e.message)}.

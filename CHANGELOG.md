@@ -1,5 +1,11 @@
 # What's new in Potato Quiz
 
+## 3.10.0 — 2026-10-17
+- **📖 How to Play:** a quick rules card that explains turns, scoring, Random, Gamble and items. It's built from your current settings, so it only mentions what's switched on. Find it on the main menu, in the in-game ☰ menu, and on the turn-order screen before a game starts.
+- **👆 Tap to explain:** tap any item, effect, streak or answer marker on the scoreboard to see what it means.
+- **🔒 Impossible questions** now appear in the question editor, and the Difficulty Tiers page has its own Impossible panel. These questions have no points and never come up in a normal game; they're reserved for special interactions and rewards.
+- Small touch-ups to the main menu.
+
 ## 3.9.0 — 2026-10-17
 - **📚 New Books & Literature family:** 9 categories and about 4,200 questions: General, Classics, Modern Fiction, Mystery, Thriller & Horror, Fantasy & Sci-Fi Books, YA & BookTok, Children's Books, Poetry & Shakespeare, and Book-to-Screen. Book questions from Art & Literature moved here, and that category is now **Art & Artists**.
 - **🦷 Dentistry › Histology & Embryology:** a new category with about 500 questions on tooth development, the pharyngeal arches, face and palate formation, and the microscopic structure of enamel, dentin, pulp, cementum, the PDL, bone and oral mucosa, written at dental-hygiene board level.
