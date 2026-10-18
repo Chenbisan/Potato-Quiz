@@ -1,5 +1,8 @@
 # What's new in Potato Quiz
 
+## 4.0.3 — 2026-10-18
+- Fixed: opening the site again in a tab you'd hosted in before jumped straight to the setup screen with your old room. It now opens on the main menu. Reloading while hosting still reopens your room.
+
 ## 4.0.2 — 2026-10-18
 - Clearer item wording, the same on the host screen and on phones: you can use 1 item per turn, and only before you pick a question.
 - After a phone answer, the result now shows for 3 seconds (was 2) before the game moves on.

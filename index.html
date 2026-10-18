@@ -1016,7 +1016,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '4.0.2';
+const APP_VERSION = '4.0.3';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -2451,7 +2451,10 @@ async function openRoom(code = newRoomCode(), quiet = false) {
 }
 // After the host's page reloads, reopen the same room so phones find it again and rejoin by themselves
 async function resumeRoom(game) { // game: the saved game that was just resumed, if any
-  let code = null; try { code = sessionStorage.getItem('potatoQuizHostRoom'); } catch (e) {}
+  // Only a reload of a hosting page reopens its room. Visiting the site again in the same tab (a link, the address bar)
+  // starts fresh on the main menu, because browsers keep sessionStorage for the whole tab, not just across reloads.
+  const reload = performance.getEntriesByType?.('navigation')?.[0]?.type === 'reload';
+  let code = null; try { code = reload ? sessionStorage.getItem('potatoQuizHostRoom') : null; if (!reload) sessionStorage.removeItem('potatoQuizHostRoom'); } catch (e) {}
   code ||= game?.room; // the tab was closed rather than reloaded: the saved game remembers its room
   if (!code || room) return;
   if (!game) go('setup');
