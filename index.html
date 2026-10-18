@@ -322,6 +322,8 @@
   .menuDrop button { text-align: left; background: none; color: var(--text); padding: 10px 12px; border-radius: 8px; font-weight: 700; }
   .menuDrop button:hover { background: var(--panel2); }
   .menuDrop button.danger { color: #ff8a8a; }
+  .menuVol { display: flex; align-items: center; gap: 8px; padding: 6px 12px 8px; } .menuVol input { flex: 1; min-width: 0; accent-color: var(--accent); }
+  .menuVol b { min-width: 2.8em; text-align: right; font-size: .85rem; }
   .twoLbl { display: inline-grid; }
   .twoLbl > span { grid-area: 1 / 1; text-align: center; }
   .twoLbl > span:last-child, .alt .twoLbl > span:first-child { visibility: hidden; }
@@ -689,6 +691,8 @@
         <button role="menuitem" onclick="closeGameMenu(); howToPlay()">📖 How to play</button>
         <button role="menuitem" id="themeMenuBtn" onclick="closeGameMenu(); toggleTheme()">☀️ Light mode</button>
         <button role="menuitem" id="musicMenuBtn" onclick="closeGameMenu(); toggleMusic()">🔇 Mute music</button>
+        <div class="menuVol" title="Volume (same as Settings › Audio › Master)"><span id="menuVolIcon">🔊</span><input type="range" id="menuVol" min="0" max="100" aria-label="Volume"
+          oninput="setMenuVolume(this.value)" onchange="setMenuVolume(this.value, true)"><b id="menuVolVal"></b></div>
         <button role="menuitem" onclick="closeGameMenu(); flagLastQuestion()">🚩 Flag last question</button>
         <button role="menuitem" onclick="closeGameMenu(); restartGame()">🔄 Restart game</button>
         <button role="menuitem" class="danger" onclick="closeGameMenu(); quitGame()">✕ End game</button>
@@ -1098,7 +1102,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '4.2.0';
+const APP_VERSION = '4.2.1';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1109,7 +1113,7 @@ for (const [oldKey, newKey] of [['teamQuizData_v1', KEY], ['teamQuizPlayers_v1',
   } catch (e) {}
 }
 // Bump when a settings migration is added in upgrade(); a reset starts at this rev so no migration re-runs
-const SETTINGS_REV = 9;
+const SETTINGS_REV = 10;
 let SEED_VERSION = 10; // set from questions.json's "version" at startup; // 10: every starter question gets 2 extra wrong answers for 6-answer games; 5: category groups; 6: more families + Disney+, Theme Parks, Generations; 7: every category in a family (General Knowledge, Cars, Pop Culture); 8: pre-1990 questions most players won't know moved to Obscure; 9: regional culture families
 // Tier difficulty is their order in the list (easiest first, hardest last); points only decide scoring
 const OBSCURE_TIER = { id: 't4', name: 'Obscure', points: 10, color: '#b36bff' };
@@ -1483,7 +1487,7 @@ function upgrade(d) {
   d.settings.phoneAutoNext ??= 3; // seconds before a phone player's answer moves on by itself (0 = the host taps Next)
   d.settings.fx ??= true;  // animations: screen transitions, flying points
   d.settings.sfx ??= true; // sound effects
-  d.settings.audio = { master: 80, sfx: 100, music: 70, musicOn: true, style: 'lounge', ...(d.settings.audio || {}) }; // volumes in %
+  d.settings.audio = { master: 80, sfx: 70, music: 70, musicOn: true, style: 'lounge', ...(d.settings.audio || {}) }; // volumes in %
   // Gamble cooldown = how many of their own turns a player waits after gambling (0 = none). Before 1.8 it meant
   // "once every N turns" (N − 1 turns of waiting), so older saves are converted once.
   if ((d.settings.rev ?? 1) < 5 && d.settings.gambleCooldown != null) d.settings.gambleCooldown = Math.max(0, d.settings.gambleCooldown - 1);
@@ -1526,6 +1530,11 @@ function upgrade(d) {
     if (d.settings.itemCardSeconds === 10) d.settings.itemCardSeconds = 6;
     if (d.settings.phoneAutoNext === 2) d.settings.phoneAutoNext = 3;
     d.settings.rev = 9;
+  }
+  if (d.settings.rev < 10) {
+    // 4.2.1: sound effects a bit softer by default (100% → 70%), unless changed
+    if (d.settings.audio.sfx === 100) d.settings.audio.sfx = 70;
+    d.settings.rev = 10;
   }
   if (!d.categories) {
     d.categories = structuredClone(DEFAULT.categories);
@@ -3340,7 +3349,13 @@ function startGame() {
 const BOARD_START_DELAY = 3000; // ms the scoreboard waits at the top when a game starts
 function rematch() { startGame(); }
 // ☰ game menu (top right of the game screen) — add more entries to the #gameMenu list as needed
-function toggleGameMenu(e) { e.stopPropagation(); document.getElementById('gameMenu').classList.toggle('open'); }
+function toggleGameMenu(e) { e.stopPropagation(); syncMenuVol(); document.getElementById('gameMenu').classList.toggle('open'); }
+// ☰ menu volume slider: the master volume (the same setting as Settings › Audio › Master)
+function syncMenuVol() {
+  const v = data.settings.audio.master, r = document.getElementById('menuVol'); if (!r) return;
+  r.value = v; document.getElementById('menuVolVal').textContent = v + '%'; document.getElementById('menuVolIcon').textContent = v == 0 ? '🔇' : v < 50 ? '🔉' : '🔊';
+}
+function setMenuVolume(v, done) { setVolume('master', v, done); syncMenuVol(); if (done) sfx('right'); }
 function closeGameMenu() { document.getElementById('gameMenu')?.classList.remove('open'); }
 document.addEventListener('click', e => { if (!e.target.closest?.('.gameMenu')) closeGameMenu(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeGameMenu(); });

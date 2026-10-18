@@ -1,5 +1,9 @@
 # What's new in Potato Quiz
 
+## 4.2.1 — 2026-10-18
+- **🔊 Volume in the ☰ menu:** change the overall volume mid-game without leaving the game. It's the same setting as Settings › Audio › Master.
+- Sound effects are a bit softer by default (70%). If you hadn't changed the effects volume, yours is lowered to match. If you had, it's left as you set it.
+
 ## 4.2.0 — 2026-10-18
 - **🚩 Flag a question:** if a question looks wrong, confusing, too easy, too hard or outdated, flag it. The host can flag it under the answer or from the ☰ menu ("Flag last question"), and phone players can flag it from their phone, even after the game moves on. You can add a short note. Flags are sent in for review, and they're saved and sent later if you're offline.
 - **📤 Export analytics** (on the Stats screen): download a small file of how often questions, categories and items come up, to help balance the game. It never includes player names.
