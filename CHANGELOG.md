@@ -1,5 +1,12 @@
 # What's new in Potato Quiz
 
+## 4.1.0 — 2026-10-18
+- **🎵 Background music:** a mellow 🛗 Lounge (elevator jazz) or upbeat 🎤 Game show loop plays on the host screen while you play. It's made by the game itself, so there's nothing to download, and it never plays on players' phones.
+- Mute it anytime with the 🎵 button in the corner, or from the ☰ menu during a game.
+- **🔊 New Audio settings:** master, music and sound-effect volumes, music style, and the sound switches (moved here from Effects). Sound effects are now leveled so none is much louder than the rest, and the music always sits a bit under them.
+- The player whose turn it is now pulses gently in the top bar.
+- When a phone player answers, the host's Next button drains from top to bottom as the countdown runs.
+
 ## 4.0.4 — 2026-10-18
 - **📊 New player stats:** a highlights row (most wins, sharpest player, questions played, Exodia record) and a card for each player in their color, with win rate and accuracy bars, right and wrong answers, and their best and worst categories. Sort by wins, win rate, accuracy or games.
 

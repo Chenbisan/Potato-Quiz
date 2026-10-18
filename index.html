@@ -417,7 +417,8 @@
   .turnChip { flex: none; }
   .turnChip { position: relative; padding: 8px 14px; border-radius: 999px; background: var(--panel); border: 2px solid #33335f; color: var(--muted); font-weight: 600; }
   .turnChip em { font-style: normal; font-size: .62rem; font-weight: 900; letter-spacing: 1px; margin-right: 6px; padding: 2px 6px; border-radius: 6px; vertical-align: middle; }
-  .turnChip.now { background: var(--accent); border-color: var(--accent); color: #222; font-weight: 800; box-shadow: 0 0 10px rgba(255,204,51,.5); }
+  .turnChip.now { background: var(--accent); border-color: var(--accent); color: #222; font-weight: 800; box-shadow: 0 0 10px rgba(255,204,51,.5); animation: nowGlow 1.8s ease-in-out infinite; }
+  @keyframes nowGlow { 50% { box-shadow: 0 0 0 3px #fff3b0, 0 0 26px 6px rgba(255,214,90,.9); } } /* a slow pulse on whoever's turn it is */
   .turnChip .pDot { width: 9px; height: 9px; }
   .turnChip.now em { background: #222; color: var(--accent); }
   .turnChip.next { border-color: var(--blue); color: var(--text); }
@@ -577,6 +578,17 @@
   .pFam { font-size: .82rem; padding: 4px 10px; border-radius: 999px; background: var(--panel2); }
   .pFam.good b { color: var(--good); }
   .pFam.bad b { color: var(--bad); }
+  .musicBtn { position: fixed; right: 14px; bottom: 14px; z-index: 18; width: 48px; height: 48px; border-radius: 50%; padding: 0; font-size: 1.35rem;
+    background: var(--panel); border: 1px solid var(--line); box-shadow: 0 6px 18px var(--shadow); }
+  body[data-screen="game"] .musicBtn, body[data-screen="join"] .musicBtn { display: none; }
+  .volCtrl { gap: 12px; align-items: center; }
+  .volCtrl input[type=range] { width: min(320px, 60vw); accent-color: var(--accent); padding: 0; }
+  .volCtrl b { min-width: 3.5ch; font-variant-numeric: tabular-nums; }
+  #qReveal button.drain { position: relative; overflow: hidden; isolation: isolate; }
+  #qReveal button.drain::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 0; z-index: -1; background: rgba(0,0,0,.42);
+    animation: drainDown var(--drain, 3s) linear var(--drainDelay, 0s) forwards; }
+  [data-theme="light"] #qReveal button.drain::before { background: rgba(255,255,255,.6); }
+  @keyframes drainDown { to { height: 100%; } }
 </style>
 </head>
 <body>
@@ -649,6 +661,8 @@
   </div>
 </section>
 
+<button id="musicBtn" class="musicBtn" onclick="toggleMusic()" aria-label="Music on or off">🎵</button>
+
 <!-- JOIN (on a player's phone) -->
 <section id="join" class="screen"><div class="joinBox"><h1>🥔 Potato Quiz</h1><div id="joinBody"></div></div></section>
 
@@ -662,6 +676,7 @@
       <div class="menuDrop" id="gameMenu" role="menu">
         <button role="menuitem" onclick="closeGameMenu(); howToPlay()">📖 How to play</button>
         <button role="menuitem" id="themeMenuBtn" onclick="closeGameMenu(); toggleTheme()">☀️ Light mode</button>
+        <button role="menuitem" id="musicMenuBtn" onclick="closeGameMenu(); toggleMusic()">🔇 Mute music</button>
         <button role="menuitem" onclick="closeGameMenu(); restartGame()">🔄 Restart game</button>
         <button role="menuitem" class="danger" onclick="closeGameMenu(); quitGame()">✕ End game</button>
       </div>
@@ -838,6 +853,7 @@
     <button data-t="itemlist" onclick="settingsTab('itemlist')">📋 Item list</button>
     <button data-t="timing" onclick="settingsTab('timing')">⏱️ Timer</button>
     <button data-t="fx" onclick="settingsTab('fx')">✨ Effects</button>
+    <button data-t="audio" onclick="settingsTab('audio')">🔊 Audio</button>
     <button data-t="data" onclick="settingsTab('data')">💾 Data</button>
   </div>
 
@@ -882,7 +898,6 @@
   <div class="card" data-stab="fx">
     <h3 style="margin-top:0">✨ Effects</h3>
     <label class="switch"><input type="checkbox" id="fxOn" onchange="saveFxSettings()"> Animations — screen transitions and points flying to / dropping off players</label>
-    <label class="switch" style="margin-top:10px"><input type="checkbox" id="sfxOn" onchange="saveFxSettings()"> Sound effects — right / wrong answers, points, items, game start, each new turn and the winner</label>
     <div class="setting" style="margin-top:12px">
       <div class="setName">🎨 Theme</div>
       <div class="ctrl"><select id="themeSel" onchange="data.settings.theme = this.value; save(); applyTheme(); toast('Saved')">
@@ -895,6 +910,30 @@
         <option value="auto">Auto (fits your window)</option><option value="1">100%</option><option value="1.1">110%</option><option value="1.25">125%</option><option value="1.4">140%</option><option value="1.6">160%</option></select></div>
       <div class="help">Auto makes everything bigger on larger windows. Pick a fixed size for a TV or projector.</div>
     </div>
+  </div>
+  <div class="card" data-stab="audio">
+    <h3 style="margin-top:0">🔊 Volume</h3>
+    <div class="setting"><div class="setName">Master volume</div>
+      <div class="ctrl volCtrl"><input type="range" id="volMaster" min="0" max="100" oninput="setVolume('master', this.value)" onchange="setVolume('master', this.value, true)"><b id="volMasterVal"></b></div>
+      <div class="help">Everything the game plays. Music and sound effects are mixed so they sit at a similar level.</div></div>
+  </div>
+  <div class="card" data-stab="audio">
+    <div class="row" style="justify-content:space-between">
+      <h3 style="margin:0">🎵 Background music</h3>
+      <label class="switch"><input type="checkbox" id="musicOn" onchange="setMusicOn(this.checked)"> Music on</label>
+    </div>
+    <div class="setting"><div class="setName">Music volume</div>
+      <div class="ctrl volCtrl"><input type="range" id="volMusic" min="0" max="100" oninput="setVolume('music', this.value)" onchange="setVolume('music', this.value, true)"><b id="volMusicVal"></b></div>
+      <div class="help">Even at 100% the music stays a little softer than the sound effects, so right / wrong answers are always clear.</div></div>
+    <div class="setting"><div class="setName">Style</div>
+      <div class="ctrl"><select id="musicStyle" onchange="setMusicStyle(this.value)"><option value="lounge">🛗 Lounge (mellow elevator jazz)</option><option value="gameshow">🎤 Game show (upbeat trivia)</option></select></div>
+      <div class="help">Composed by the game as it plays, so it never needs downloading. Plays on the host screen only, never on players' phones. Mute it anytime with the 🎵 button in the corner, or from the ☰ menu during a game.</div></div>
+  </div>
+  <div class="card" data-stab="audio">
+    <h3 style="margin-top:0">🔔 Sound effects</h3>
+    <label class="switch" ><input type="checkbox" id="sfxOn" onchange="saveFxSettings()"> Sound effects — right / wrong answers, points, items, game start, each new turn and the winner</label>
+    <div class="setting"><div class="setName">Effects volume</div>
+      <div class="ctrl volCtrl"><input type="range" id="volSfx" min="0" max="100" oninput="setVolume('sfx', this.value)" onchange="setVolume('sfx', this.value, true)"><b id="volSfxVal"></b></div></div>
     <label class="switch" style="margin-top:10px"><input type="checkbox" id="uiSfxOn" onchange="saveFxSettings()"> Button sounds — a soft tick when you hover over or click a button</label>
     <div class="row" style="margin-top:10px"><button class="small" onclick="sfx('right')">▶ Right</button><button class="small" onclick="sfx('wrong')">▶ Wrong</button>
       <button class="small" onclick="sfx('item')">▶ Item gained</button><button class="small" onclick="sfx('use')">▶ Item used</button><button class="small" onclick="sfx('block')">▶ Shield block</button><button class="small" onclick="sfx('win')">▶ Winner</button>
@@ -1041,7 +1080,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '4.0.4';
+const APP_VERSION = '4.1.0';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1426,6 +1465,7 @@ function upgrade(d) {
   d.settings.phoneAutoNext ??= 3; // seconds before a phone player's answer moves on by itself (0 = the host taps Next)
   d.settings.fx ??= true;  // animations: screen transitions, flying points
   d.settings.sfx ??= true; // sound effects
+  d.settings.audio = { master: 80, sfx: 100, music: 70, musicOn: true, style: 'lounge', ...(d.settings.audio || {}) }; // volumes in %
   // Gamble cooldown = how many of their own turns a player waits after gambling (0 = none). Before 1.8 it meant
   // "once every N turns" (N − 1 turns of waiting), so older saves are converted once.
   if ((d.settings.rev ?? 1) < 5 && d.settings.gambleCooldown != null) d.settings.gambleCooldown = Math.max(0, d.settings.gambleCooldown - 1);
@@ -1698,6 +1738,7 @@ function removeQuestions(pred) {
 
 // ---------- Navigation ----------
 function go(id) {
+  document.body.dataset.screen = id; // the floating 🎵 button hides on the game screen (it's in the ☰ menu there)
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   ({ menu: renderMenu, setup: renderSetup, editor: renderEditor, settings: renderSettings, stats: () => { renderStats(); renderQuestionStats(); } })[id]?.();
@@ -1729,7 +1770,7 @@ function renderMenu() {
 // ---------- Settings ----------
 function renderSettings() {
   let tab = 'game'; try { tab = localStorage.getItem('potatoQuizSettingsTab') || 'game'; } catch (e) {}
-  settingsTab(tab);
+  settingsTab(tab); renderAudioSettings();
   document.getElementById('setTarget').value = data.settings.targetPoints;
   document.getElementById('modeTier').classList.toggle('on', data.settings.pickMode === 'tier');
   document.getElementById('modeCat').classList.toggle('on', data.settings.pickMode === 'cat');
@@ -2597,12 +2638,14 @@ window.addEventListener('pagehide', () => roomSend({ t: 'away' })); // a reload 
 let phone = null; // { code, ch, lobby, joined, name, color, state, err }
 const myPid = () => { try { let id = localStorage.getItem('potatoQuizPid'); if (!id) { id = crypto.randomUUID(); localStorage.setItem('potatoQuizPid', id); } return id; } catch (e) { return myPid.fallback ??= crypto.randomUUID(); } }; // private mode: one id for this visit
 function startPhone(code) {
+  isPhoneView = true; document.body.dataset.screen = 'join';
   let theme = 'dark';
   try { theme = JSON.parse(localStorage.getItem(SAVE_KEY))?.settings?.theme || theme; } catch (e) {}
   document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
   phoneJoin(code);
 }
 function phoneJoin(code) {
+  isPhoneView = true; musicStop(); document.body.dataset.screen = 'join';
   phone?.ch?.close();
   let name = ''; try { name = localStorage.getItem('potatoQuizMyName') || ''; } catch (e) {}
   phone = { code: cleanCode(code), name, state: 'code' };
@@ -3568,17 +3611,24 @@ function reveal() { stopTimer(); revealed = true; renderReveal(); }
 function pickChoice(i) { if (revealed || !current) return; current.picked = i; reveal(); }
 
 // Phone players don't need to tap Next: after they answer, the result shows briefly and the game moves on
-let autoNextTimer = null, autoNextFor = null;
+let autoNextTimer = null, autoNextFor = null, autoNextAt = 0;
 const autoNextSecs = () => room && players[turn]?.pid && current?.picked != null && !timesUp ? data.settings.phoneAutoNext || 0 : 0;
 function scheduleAutoNext() {
   const secs = autoNextSecs(), q = current;
   if (!revealed || !secs) { if (!revealed || q?.picked == null) { clearTimeout(autoNextTimer); autoNextFor = null; } return; }
-  if (autoNextFor === q) return; // already counting down for this answer
-  autoNextFor = q; clearTimeout(autoNextTimer);
+  if (autoNextFor !== q) { autoNextFor = q; autoNextAt = performance.now(); clearTimeout(autoNextTimer); }
+  else { drainNext(secs); return; } // already counting down for this answer: just keep the button's drain in step
+  drainNext(secs);
   autoNextTimer = setTimeout(() => {
     autoNextFor = null;
     if (current === q && revealed && q.picked != null && !document.getElementById('modal')) document.querySelector('#qReveal .actions button.primary')?.click();
   }, secs * 1000);
+}
+
+// The host's Next button drains from top to bottom while the auto-advance counts down (in step even after a redraw)
+function drainNext(secs) {
+  const b = document.querySelector('#qReveal .actions button.primary'); if (!b) return;
+  b.classList.add('drain'); b.style.setProperty('--drain', secs + 's'); b.style.setProperty('--drainDelay', -(performance.now() - autoNextAt) / 1000 + 's');
 }
 
 // ---------- Timer ----------
@@ -3619,9 +3669,116 @@ function beep(freq, dur, vol = .12) {
     const o = audioCtx.createOscillator(), g = audioCtx.createGain();
     o.frequency.value = freq; g.gain.setValueAtTime(vol, audioCtx.currentTime);
     g.gain.exponentialRampToValueAtTime(.0001, audioCtx.currentTime + dur);
-    o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + dur);
+    o.connect(g); g.connect(bus().fx); o.start(); o.stop(audioCtx.currentTime + dur);
   } catch (e) {}
 }
+
+// ---------- Audio: mixer and background music ----------
+// master ← effects channel (all sound effects) + music channel (background music, lowpassed for warmth)
+let audioBus = null;
+const MUSIC_HEADROOM = .32; // music at 100% still sits well under the effects
+function bus() {
+  audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
+  if (!audioBus) {
+    const master = audioCtx.createGain(), fx = audioCtx.createGain(), music = audioCtx.createGain(), warm = audioCtx.createBiquadFilter();
+    warm.type = 'lowpass'; warm.frequency.value = 3200; warm.connect(music);
+    fx.connect(master); music.connect(master); master.connect(audioCtx.destination);
+    audioBus = { master, fx, music, musicIn: warm };
+    applyVolumes(true);
+  }
+  return audioBus;
+}
+function applyVolumes(now) {
+  if (!audioBus || !data?.settings?.audio) return;
+  const a = data.settings.audio, t = audioCtx.currentTime, set = (g, v) => now ? g.gain.setValueAtTime(v, t) : g.gain.setTargetAtTime(v, t, .08);
+  set(audioBus.master, a.master / 100); set(audioBus.fx, a.sfx / 100); set(audioBus.music, a.musicOn ? a.music / 100 * MUSIC_HEADROOM : 0);
+}
+// Background music is composed on the fly (no audio files): a few soft synth voices on a step sequencer.
+// Plays on the host only, never on a player's phone.
+const midi = n => 440 * 2 ** ((n - 69) / 12);
+function mNote(n, t, dur, { type = 'sine', vol = .1, attack = .01 } = {}) {
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = type; o.frequency.value = midi(n);
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + attack); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  o.connect(g); g.connect(audioBus.musicIn); o.start(t); o.stop(t + dur + .05);
+}
+function mKeys(n, t, dur, vol) { mNote(n, t, dur, { vol, attack: .012 }); mNote(n + 12, t, dur * .6, { vol: vol * .25, attack: .008 }); } // electric-piano-ish
+let noiseBuf = null;
+function mHat(t, vol = .025) {
+  noiseBuf ??= (() => { const b = audioCtx.createBuffer(1, audioCtx.sampleRate * .1, audioCtx.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; })();
+  const src = audioCtx.createBufferSource(), hp = audioCtx.createBiquadFilter(), g = audioCtx.createGain();
+  src.buffer = noiseBuf; hp.type = 'highpass'; hp.frequency.value = 7000;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + .05);
+  src.connect(hp); hp.connect(g); g.connect(audioBus.music); src.start(t); src.stop(t + .06); // skips the lowpass so it stays crisp
+}
+function mKick(t, vol = .22) {
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(45, t + .15);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + .2);
+  o.connect(g); g.connect(audioBus.musicIn); o.start(t); o.stop(t + .25);
+}
+const seeded = n => { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); }; // same "random" melody every loop
+const MUSIC_STYLES = {
+  // mellow elevator jazz: ii–V turnarounds, soft keys, walking-ish bass, brushed hats, a wandering vibraphone
+  lounge: { name: '🛗 Lounge', bpm: 84, bars: [
+      { c: [57, 60, 64, 65], b: 41 }, { c: [55, 59, 62, 64], b: 40 }, { c: [53, 57, 60, 62], b: 38 }, { c: [53, 55, 59, 62], b: 43 },
+      { c: [52, 55, 59, 60], b: 36 }, { c: [55, 57, 61, 64], b: 45 }, { c: [53, 57, 60, 62], b: 38 }, { c: [53, 55, 59, 62], b: 43 }],
+    play(step, t, e) { // e = one eighth note in seconds
+      const bar = this.bars[Math.floor(step / 8) % this.bars.length], i = step % 8;
+      if (i === 0) bar.c.forEach(n => mKeys(n, t, e * 7.5, .035));
+      if (i === 5) bar.c.slice(1).forEach(n => mKeys(n, t, e * 2, .022));
+      if (i % 2 === 0) mNote(bar.b + (i === 4 ? 7 : i === 6 ? 12 : i === 2 ? 4 : 0), t, e * 1.8, { type: 'triangle', vol: .16, attack: .02 });
+      if (i % 2 === 1) mHat(t, .014);
+      if ([2, 3, 6].includes(i) && seeded(step) > .45) mNote(bar.c[Math.floor(seeded(step + 7) * 4)] + 12, t, e * 3, { type: 'triangle', vol: .05, attack: .005 });
+    } },
+  // upbeat game-show: I–vi–IV–V, bouncy bass, off-beat piano stabs, bell arpeggios, light kick
+  gameshow: { name: '🎤 Game show', bpm: 116, bars: [
+      { c: [60, 64, 67], b: 36 }, { c: [57, 60, 64], b: 45 }, { c: [53, 57, 60], b: 41 }, { c: [55, 59, 62], b: 43 }],
+    play(step, t, e) {
+      const bar = this.bars[Math.floor(step / 8) % this.bars.length], i = step % 8;
+      if (i % 2 === 0) mNote(bar.b + (i % 4 === 2 ? 12 : 0), t, e * .9, { type: 'triangle', vol: .17, attack: .01 });
+      if (i % 2 === 1) { bar.c.forEach(n => mKeys(n, t, e * .7, .03)); mHat(t, .018); }
+      if (i === 0 || i === 4) mKick(t, .16);
+      const arp = [...bar.c, bar.c[0] + 12]; if (Math.floor(step / 32) % 2 === 1) mNote(arp[i % 4] + 12, t, e * 1.2, { type: 'sine', vol: .045, attack: .004 });
+    } },
+};
+const music = { on: false, timer: null, next: 0, step: 0 };
+let isPhoneView = false, audioUnlocked = false;
+function musicStart() {
+  if (music.on || isPhoneView || !audioUnlocked || !data?.settings?.audio?.musicOn) return;
+  bus(); if (audioCtx.state === 'suspended') audioCtx.resume();
+  music.on = true; music.next = audioCtx.currentTime + .15; music.step = 0;
+  music.timer = setInterval(() => { // schedules a little ahead so timer hiccups never make it stutter
+    const st = MUSIC_STYLES[data.settings.audio.style] || MUSIC_STYLES.lounge, e = 60 / st.bpm / 2;
+    while (music.next < audioCtx.currentTime + .35) { st.play(music.step, music.next, e); music.next += e; music.step++; }
+  }, 60);
+}
+function musicStop() { clearInterval(music.timer); music.on = false; }
+function setMusicOn(on) {
+  data.settings.audio.musicOn = on; save(); applyVolumes();
+  on ? musicStart() : musicStop(); renderMusicButtons();
+}
+const toggleMusic = () => setMusicOn(!data.settings.audio.musicOn);
+function renderMusicButtons() {
+  const on = !!data?.settings?.audio?.musicOn;
+  const b = document.getElementById('musicBtn'); if (b) { b.textContent = on ? '🎵' : '🔇'; b.title = on ? 'Music on (tap to mute)' : 'Music off (tap to play)'; }
+  const m = document.getElementById('musicMenuBtn'); if (m) m.textContent = on ? '🔇 Mute music' : '🎵 Play music';
+  const c = document.getElementById('musicOn'); if (c) c.checked = on;
+}
+// Browsers only allow sound after the first tap or key press on the page
+['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if (!audioUnlocked) { audioUnlocked = true; bus(); audioCtx.resume?.(); musicStart(); } }, { capture: true }));
+// Audio settings tab
+function renderAudioSettings() {
+  const a = data.settings.audio;
+  [['volMaster', 'master'], ['volMusic', 'music'], ['volSfx', 'sfx']].forEach(([id, k]) => { document.getElementById(id).value = a[k]; document.getElementById(id + 'Val').textContent = a[k] + '%'; });
+  document.getElementById('musicStyle').value = a.style; renderMusicButtons();
+}
+function setVolume(k, v, done) {
+  data.settings.audio[k] = Math.max(0, Math.min(100, Math.round(+v)));
+  document.getElementById({ master: 'volMaster', music: 'volMusic', sfx: 'volSfx' }[k] + 'Val').textContent = data.settings.audio[k] + '%';
+  applyVolumes(); if (done) { save(); if (k === 'sfx') sfx('right'); }
+}
+function setMusicStyle(v) { data.settings.audio.style = v; save(); if (music.on) { musicStop(); musicStart(); } toast('Saved'); }
 
 // ---------- Effects: sounds & animations ----------
 function applyFx() { document.body.classList.toggle('fxOff', !data.settings.fx); applyTheme(); applyScale(); }
@@ -3649,13 +3806,15 @@ function applyScale() {
 }
 addEventListener('resize', () => { if ((data.settings.uiScale ?? 'auto') === 'auto') applyScale(); });
 const fxOn = () => data.settings.fx && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Sound effects play into sfxOut: normally the mixer's effects channel, or an offline context while they're measured
+let sfxOut = null, sfxNorm = 1;
 function tone(freq, start, dur, { type = 'sine', vol = .15, slide } = {}) {
-  audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
-  const t0 = audioCtx.currentTime + start, o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  const ctx = sfxOut?.ctx || (audioCtx ??= new (window.AudioContext || window.webkitAudioContext)()), dest = sfxOut?.dest || bus().fx;
+  const t0 = ctx.currentTime + start, o = ctx.createOscillator(), g = ctx.createGain(), v = Math.max(.0002, vol * sfxNorm);
   o.type = type; o.frequency.setValueAtTime(freq, t0);
   if (slide) o.frequency.exponentialRampToValueAtTime(slide, t0 + dur);
-  g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + .015); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
-  o.connect(g); g.connect(audioCtx.destination); o.start(t0); o.stop(t0 + dur + .05);
+  g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(v, t0 + .015); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+  o.connect(g); g.connect(dest); o.start(t0); o.stop(t0 + dur + .05);
 }
 const SFX = {
   right: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .08, .28, { type: 'triangle', vol: .16 })),
@@ -3684,7 +3843,31 @@ const SFX = {
   click: () => tone(900, 0, .05, { type: 'triangle', vol: .05, slide: 600 }),
 };
 const UI_SOUNDS = new Set(['hover', 'click']);
-function sfx(name) { if (!data.settings.sfx || (UI_SOUNDS.has(name) && !data.settings.uiSfx)) return; try { SFX[name](); } catch (e) {} }
+function sfx(name) {
+  if (!data.settings.sfx || (UI_SOUNDS.has(name) && !data.settings.uiSfx)) return;
+  try { sfxNorm = SFX_LEVEL[name] ?? 1; SFX[name](); } catch (e) {} finally { sfxNorm = 1; }
+}
+// Loudness normalizing: each effect is played once into a silent offline context and measured (loudest 100 ms, RMS),
+// then scaled toward the middle (median) loudness so none jumps out. Button ticks are left alone so they stay quiet on purpose.
+const SFX_LEVEL = {};
+async function measureSfx() {
+  const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext; if (!OAC) return;
+  const loud = {};
+  for (const name of Object.keys(SFX)) {
+    if (UI_SOUNDS.has(name)) continue;
+    try {
+      const rate = 22050, ctx = new OAC(1, rate * 2, rate);
+      sfxOut = { ctx, dest: ctx.destination }; SFX[name](); sfxOut = null;
+      const buf = (await ctx.startRendering()).getChannelData(0), win = Math.floor(rate / 10), hop = Math.floor(win / 2);
+      let best = 0;
+      for (let i = 0; i + win <= buf.length; i += hop) { let sum = 0; for (let j = i; j < i + win; j++) sum += buf[j] * buf[j]; best = Math.max(best, Math.sqrt(sum / win)); }
+      if (best > 0) loud[name] = best;
+    } catch (e) { sfxOut = null; }
+  }
+  const vals = Object.values(loud).sort((a, b) => a - b), mid = vals[Math.floor(vals.length / 2)];
+  for (const [name, v] of Object.entries(loud)) SFX_LEVEL[name] = Math.min(1.8, Math.max(.55, mid / v));
+}
+measureSfx();
 // Hover / click ticks on buttons (one tick per button entered; throttled so sweeping across a grid isn't noisy)
 let lastHoverEl = null, lastHoverAt = 0;
 document.addEventListener('pointerover', e => {
@@ -4200,7 +4383,7 @@ document.getElementById('menuVersion').textContent = `Version ${APP_VERSION} · 
 document.getElementById('versionTag').textContent = `v${APP_VERSION}`;
 applyFx();
 migrateOldMedia();
-renderMenu();
+renderMenu(); renderMusicButtons(); document.body.dataset.screen = 'menu';
 resumeGame().then(resumeRoom);
 }
 start();
