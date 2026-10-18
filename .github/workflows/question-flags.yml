@@ -1,0 +1,36 @@
+# Turns question flags from players (stored in Supabase) into GitHub issues, and marks them resolved when the issue closes.
+# Needs the repo secret SUPABASE_SECRET_KEY (Supabase → Project Settings → API Keys → secret key).
+name: Question flags
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # every 30 minutes
+  workflow_dispatch: {}       # "Run workflow" button for an immediate check
+  issues:
+    types: [closed, reopened]
+permissions:
+  issues: write
+  contents: read
+concurrency:
+  group: question-flags
+  cancel-in-progress: false
+jobs:
+  sync:
+    if: github.event_name != 'issues' || contains(github.event.issue.labels.*.name, 'question-flag')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node .github/scripts/question-flags.mjs
+        env:
+          SUPABASE_URL: https://vatbltqkvqksimbmkqql.supabase.co
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_ACTION: ${{ github.event.action }}
+          ISSUE_STATE_REASON: ${{ github.event.issue.state_reason }}

@@ -1,5 +1,10 @@
 # What's new in Potato Quiz
 
+## 4.2.0 — 2026-10-18
+- **🚩 Flag a question:** if a question looks wrong, confusing, too easy, too hard or outdated, flag it. The host can flag it under the answer or from the ☰ menu ("Flag last question"), and phone players can flag it from their phone, even after the game moves on. You can add a short note. Flags are sent in for review, and they're saved and sent later if you're offline.
+- **📤 Export analytics** (on the Stats screen): download a small file of how often questions, categories and items come up, to help balance the game. It never includes player names.
+- **Music now plays from audio files** that loop seamlessly. It's the same two tracks (🛗 Lounge and 🎤 Game show), but the host screen no longer has to build the music note by note while you play, so it's lighter on the computer running the game.
+
 ## 4.1.2 — 2026-10-18
 - **Fairer question mix:** every family you have turned on now gets an even share of questions, and so does every category inside a family. Big families like Television and Dentistry no longer crowd out the smaller ones. It's still random, though: any family can come up next, even the one you just had.
 - The Join a game screen now has a **← Menu** button, like the other screens, so you can get back to the main menu if you opened it by mistake or can't find the game.

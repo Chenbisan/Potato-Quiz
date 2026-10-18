@@ -358,6 +358,12 @@
   .catToggle small { opacity: .7; margin-left: 4px; }
   /* How to play card */
   .howBox { text-align: left; }
+  .flagLink { text-align: center; margin: 8px 0 0; font-size: .85rem; } .flagLink a { color: var(--muted); }
+  .flagDone { text-align: center; margin: 8px 0 0; font-size: .85rem; color: var(--muted); }
+  .flagBox { margin: 12px auto 0; max-width: 560px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; text-align: center; }
+  .flagBox input { width: 100%; margin: 8px 0; box-sizing: border-box; } .flagBox a { color: var(--muted); font-size: .85rem; }
+  .flagReasons { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 8px; }
+  .pcFlag { margin-top: 14px; text-align: center; }
   .howTo h2 { text-align: center; }
   .howSection { display: grid; gap: 10px; }
   .howHead { margin: 18px 0 8px; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
@@ -683,6 +689,7 @@
         <button role="menuitem" onclick="closeGameMenu(); howToPlay()">📖 How to play</button>
         <button role="menuitem" id="themeMenuBtn" onclick="closeGameMenu(); toggleTheme()">☀️ Light mode</button>
         <button role="menuitem" id="musicMenuBtn" onclick="closeGameMenu(); toggleMusic()">🔇 Mute music</button>
+        <button role="menuitem" onclick="closeGameMenu(); flagLastQuestion()">🚩 Flag last question</button>
         <button role="menuitem" onclick="closeGameMenu(); restartGame()">🔄 Restart game</button>
         <button role="menuitem" class="danger" onclick="closeGameMenu(); quitGame()">✕ End game</button>
       </div>
@@ -810,7 +817,7 @@
 
 <!-- SETTINGS -->
 <section id="stats" class="screen">
-  <div class="topbar"><h2>📊 Stats</h2><button class="ghost" onclick="go('menu')">← Menu</button></div>
+  <div class="topbar"><h2>📊 Stats</h2><div><button class="ghost" onclick="exportAnalytics()" title="Download a file of balance data and flags (no names) to share for tuning the game">📤 Export analytics</button> <button class="ghost" onclick="go('menu')">← Menu</button></div></div>
   <div class="tabs">
     <button id="stTabP" class="on" onclick="statsTab('p')">Players</button>
     <button id="stTabQ" onclick="statsTab('q')">Questions</button>
@@ -1091,7 +1098,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '4.1.2';
+const APP_VERSION = '4.2.0';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -2443,6 +2450,115 @@ function renderQuestionStats() {
 }
 async function resetPlayerStats() { if (await ask('Games, wins and correct/incorrect counts go back to zero for every player.', { title: 'Reset player stats?', icon: '📊', ok: 'Reset', danger: true })) { stats.players = {}; saveStats(); renderStats(); } }
 async function resetSeenCounts() { if (await ask('Every question\'s "seen" count goes back to 0.', { title: 'Reset seen counts?', icon: '👀', ok: 'Reset', danger: true })) { stats.seen = {}; stats.answered = {}; stats.right = {}; saveStats(); toast('Counts reset'); } }
+// ---------- Analytics: a light log of every game + question flags (no player names anywhere) ----------
+// games: only what helps spot imbalance — which questions came up (category, difficulty, how picked, right or wrong)
+// and which items were used, plus the families in play and the settings that shape the mix
+// flags: questions players reported, kept here and sent to the Supabase table question_flags, which a GitHub Action
+// turns into GitHub issues (see tools/supabase-flags.sql and .github/workflows/question-flags.yml)
+const LOG_KEY = 'potatoQuizLog_v1', MAX_GAMES = 100, MAX_FLAGS = 500;
+let qlog = (() => { try { const l = JSON.parse(localStorage.getItem(LOG_KEY)); if (l?.games && l?.flags) return l; } catch (e) {} return { games: [], flags: [] }; })();
+function saveLog() {
+  for (let i = 0; i < 6; i++) {
+    try { localStorage.setItem(LOG_KEY, JSON.stringify(qlog)); return; }
+    catch (e) { if (qlog.games.length < 2) return; qlog.games = qlog.games.slice(Math.ceil(qlog.games.length / 2)); } // storage full: drop the oldest half
+  }
+}
+const uuid = () => crypto.randomUUID?.() || 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
+let gameRec = null; // the game in progress
+function logGameStart() {
+  const s = data.settings, qs = gameQs();
+  gameRec = { id: uuid(), start: new Date().toISOString(), app: APP_VERSION, bank: SEED_VERSION, players: players.length,
+    settings: { pickMode: s.pickMode, items: itemsOn() }, families: [...new Set(qs.map(famOf))].sort(), q: [], items: [] };
+}
+// one line per question answered: id, t tier, c category, k how it was picked (tier / cat / any / lock / gamble), ok right?
+function logAnswer(p, correct) {
+  if (!gameRec || !current) return;
+  gameRec.q.push({ id: current.id, t: current.tierId, c: current.categoryId || '', k: current.kind || '', ok: !!correct });
+  lastAnswered = current;
+}
+let lastAnswered = null; // for "🚩 Flag last question" in the game menu
+function logGameEnd(how) {
+  if (!gameRec) return;
+  Object.assign(gameRec, { end: new Date().toISOString(), how, rounds: round });
+  qlog.games.push(gameRec); if (qlog.games.length > MAX_GAMES) qlog.games = qlog.games.slice(-MAX_GAMES);
+  gameRec = null; saveLog();
+}
+
+// Flags
+const FLAG_REASONS = { wrong: '❌ Wrong answer', confusing: '🤔 Confusing', easy: '😴 Too easy', hard: '🧗 Too hard', outdated: '📅 Outdated', other: '💬 Other' };
+function addFlag(q, reason, note, source) {
+  if (!q || !FLAG_REASONS[reason]) return;
+  const c = catOf(q.categoryId) || NO_CAT, t = tierOf(q.tierId);
+  qlog.flags.push({ id: uuid(), created_at: new Date().toISOString(), question_id: String(q.id).slice(0, 80), reason, note: String(note || '').trim().slice(0, 300) || null,
+    question: String(q.text).slice(0, 1000), answer: String(q.answer).slice(0, 400), category: catLabel(c).slice(0, 150), tier: (t?.name || '').slice(0, 60),
+    source, app_version: APP_VERSION, bank_version: SEED_VERSION, sent: false });
+  if (qlog.flags.length > MAX_FLAGS) qlog.flags = qlog.flags.filter(f => !f.sent).concat(qlog.flags.filter(f => f.sent)).slice(0, MAX_FLAGS);
+  saveLog(); sendFlags();
+}
+// Sends flags that haven't gone out yet (retried on start-up and when the device comes back online)
+async function sendFlags() {
+  if (!NET_CONFIG.url || sendFlags.busy || !navigator.onLine) return;
+  sendFlags.busy = true;
+  try {
+    for (const f of qlog.flags.filter(f => !f.sent)) {
+      const { sent, ...row } = f;
+      const r = await fetch(`${NET_CONFIG.url}/rest/v1/question_flags`, { method: 'POST',
+        headers: { apikey: NET_CONFIG.key, 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify(row) });
+      if (r.ok || r.status === 409) { f.sent = true; saveLog(); } // 409: it already arrived on an earlier try
+      else break;
+    }
+  } catch (e) {} finally { sendFlags.busy = false; }
+}
+addEventListener('online', sendFlags);
+// host: the flag box under the answer (opening it pauses the phone auto-advance)
+function flagBoxHtml(q) {
+  if (q.flagged) return `<p class="flagDone">🚩 Flagged. Thanks, it'll be looked at.</p>`;
+  if (!q.flagOpen) return `<p class="flagLink"><a href="#" onclick="current.flagOpen = true; renderReveal(); return false">🚩 Flag this question</a></p>`;
+  return `<div class="flagBox"><b>What's wrong with this question?</b>
+    <input id="flagNote" maxlength="300" placeholder="Details (optional), e.g. the right answer">
+    <div class="flagReasons">${Object.entries(FLAG_REASONS).map(([k, v]) => `<button class="small" onclick="hostFlag('${k}')">${v}</button>`).join('')}</div>
+    <a href="#" onclick="current.flagOpen = false; renderReveal(); return false">Cancel</a></div>`;
+}
+function hostFlag(reason) {
+  if (!current) return;
+  addFlag(current, reason, document.getElementById('flagNote')?.value, 'host');
+  current.flagOpen = false; current.flagged = true; toast('🚩 Thanks! The question was flagged.'); renderReveal();
+}
+// ☰ menu: flag the question that was just played (handy once the game has moved on)
+function flagLastQuestion() {
+  const q = current && revealed ? current : lastAnswered;
+  if (!q) return notice('No question has been played yet in this game.', { title: 'Nothing to flag yet', icon: '🚩' });
+  modal(`<div class="bigIcon">🚩</div><h2>Flag a question</h2><p class="muted">${esc(q.text)}</p><p>✅ ${esc(q.answer)}</p>
+    <input id="flagNoteM" maxlength="300" placeholder="Details (optional), e.g. the right answer" style="width:100%">`,
+    [...Object.entries(FLAG_REASONS).map(([k, v]) => ({ label: v, fn: () => { addFlag(q, k, document.getElementById('flagNoteM')?.value, 'host'); if (q === current) current.flagged = true; toast('🚩 Thanks! The question was flagged.'); } })),
+     { label: 'Cancel', cls: 'ghost' }], { owner: { pid: 'host', name: 'the host' } });
+}
+// a phone flagged a question: checked here, then sent like the host's own
+const phoneFlagged = new Set();
+function phoneFlagIn(m) {
+  const q = data.questions.find(x => x.id === m.qid), key = `${m.pid}|${m.qid}`;
+  if (!q || !FLAG_REASONS[m.reason] || phoneFlagged.has(key)) return;
+  phoneFlagged.add(key); addFlag(q, m.reason, typeof m.note === 'string' ? m.note : '', 'phone'); toast('🚩 A player flagged a question');
+}
+
+// 📤 Export analytics: one JSON file of balance data (questions and items coming up too much / too little) and flags. No player names.
+function exportAnalytics() {
+  const byId = new Map(data.questions.map(q => [q.id, q]));
+  const ids = [...new Set([...Object.keys(stats.seen), ...Object.keys(stats.answered)])].filter(id => byId.has(id));
+  const out = {
+    format: 'potato-quiz-analytics', formatVersion: 1, exportedAt: new Date().toISOString(), app: APP_VERSION, bank: SEED_VERSION,
+    about: 'Balance data from one device; no player names. questions: how often each came up and was answered right. games[].q: id, t tier, c category, k how picked, ok right. games[].items: items used.',
+    categoriesOff: roster.offCats || [],
+    questions: ids.map(id => { const q = byId.get(id); return { id, cat: q.categoryId, tier: q.tierId, seen: stats.seen[id] || 0, answered: stats.answered[id] || 0, right: stats.right[id] || 0 }; }),
+    drawBalance: { families: stats.famTally || {}, categories: stats.catTally || {} },
+    items: stats.items || {}, exodia: stats.exodia || {},
+    games: qlog.games, flags: qlog.flags,
+  };
+  const a = document.createElement('a'), url = URL.createObjectURL(new Blob([JSON.stringify(out)], { type: 'application/json' }));
+  a.href = url; a.download = `potato-quiz-analytics-${new Date().toISOString().slice(0, 10)}.json`; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  toast(`📤 Exported ${qlog.games.length} game${qlog.games.length === 1 ? '' : 's'}, ${ids.length} questions and ${qlog.flags.length} flag${qlog.flags.length === 1 ? '' : 's'}`);
+}
 function saveRoster() { try { localStorage.setItem(PKEY, JSON.stringify(roster)); } catch (e) {} }
 const MAX_RECENT = 40;
 function rememberPlayers() {
@@ -2658,6 +2774,7 @@ function onHostMsg(m) {
     return;
   }
   if (m.t === 'act') return phoneAct(m);
+  if (m.t === 'flag') return phoneFlagIn(m);
   if (m.t !== 'join' || typeof m.pid !== 'string') return;
   const name = cleanName(m.name || ''); if (!name) return reply(false, { why: 'Please enter your name.' });
   let p = players.find(o => o.pid === m.pid);
@@ -2774,6 +2891,7 @@ function onPhoneMsg(m) {
   else if (m.t === 'turn' && ['in', 'playing', 'watching'].includes(phone.state)) {
     const same = phone.state !== 'in' && phone.turn?.v === m.v;
     if (phone.state === 'in') phone.state = 'playing'; phone.turn = m;
+    if (m.kind === 'question' && m.revealed && m.qid) phone.lastQ = { qid: m.qid, q: m.q }; // can still be flagged after the game moves on
     if (same) { // same screen, just a clock tick: update the timer in place so taps aren't lost mid-redraw
       const t = document.querySelector('#joinBody .pcTimer');
       if (t && m.timer) { t.textContent = `⏱️ ${m.timer.left}s`; t.classList.toggle('low', m.timer.low); }
@@ -2820,7 +2938,7 @@ function renderJoin() {
       ${others.length ? `<p class="muted" style="margin:18px 0 0">Playing with you:</p>${chips(others)}` : ''}
       <button class="ghost big" onclick="phoneLeave()">Leave</button>`;
   } else if (P.state === 'playing' || P.state === 'watching') {
-    el.innerHTML = P.turn ? phoneTurnHtml(P.turn) : `<div class="bigIcon">📺</div><div class="joinMe" style="color:${P.color || 'var(--accent)'}">${esc(P.name)}</div>
+    el.innerHTML = P.turn ? phoneTurnHtml(P.turn) + phoneFlagHtml(P.turn) : `<div class="bigIcon">📺</div><div class="joinMe" style="color:${P.color || 'var(--accent)'}">${esc(P.name)}</div>
       <p>The game is starting. Watch the TV!</p>`;
   } else {
     el.innerHTML = `<div class="bigIcon">👋</div><p>${esc(P.err || 'You left the game.')}</p>
@@ -2873,7 +2991,7 @@ function turnView() {
   const base = { ...view, cat: catLabel(c), catColor: c.color, tier: `${t.name} · ${t.points} pt${t.points == 1 ? '' : 's'}`, tierColor: t.color };
   if (q.intro) return { ...base, kind: 'intro' };
   const right = q.shuffled ? q.shuffled.indexOf(q.answer) : -1;
-  return { ...base, kind: 'question', q: q.text, choices: q.shuffled || null, picked: q.picked ?? null, revealed,
+  return { ...base, kind: 'question', qid: q.id, q: q.text, choices: q.shuffled || null, picked: q.picked ?? null, revealed,
     answer: revealed ? q.answer : null, right: revealed ? right : -1, timesUp, timer: timer ? { left: timer.left, low: timer.left <= (data.settings.timer.warnAt ?? 10) } : null,
     win: stakes(p).win, lose: stakes(p).lose, autoNext: autoNextSecs(), canNext: !!document.querySelector('#qReveal .actions button.primary') && revealed };
 }
@@ -2895,6 +3013,22 @@ function phoneTap(id) {
   const T = phone?.turn; if (!T || phone.sent === T.v + id) return;
   phone.sent = T.v + id; phoneSend('act', { v: T.v, id });
   document.querySelectorAll('#joinBody button').forEach(b => b.disabled = true); // wait for the TV's reply
+}
+// 🚩 on phones: flag the question that was just answered (sent to the host, which reports it)
+function phoneFlagHtml(T) {
+  const L = phone.lastQ; if (!L || T.kind === 'modal') return '';
+  const st = (phone.flags ??= {})[L.qid], same = T.qid === L.qid;
+  if (st === 'sent') return same ? '<p class="muted pcFlag">🚩 Flagged. Thanks!</p>' : '';
+  if (st !== 'open') return `<div class="pcFlag"><button class="ghost small" onclick="phone.flags[phone.lastQ.qid] = 'open'; renderJoin()">🚩 Flag ${same ? 'this' : 'the last'} question</button></div>`;
+  return `<div class="pcFlag flagBox"><b>What's wrong with this question?</b>${same ? '' : `<p class="muted">${esc(L.q)}</p>`}
+    <input maxlength="300" placeholder="Details (optional)" value="${esc(phone.flagNote || '')}" oninput="phone.flagNote = this.value">
+    <div class="flagReasons">${Object.entries(FLAG_REASONS).map(([k, v]) => `<button class="small" onclick="phoneFlag('${k}')">${v}</button>`).join('')}</div>
+    <a href="#" onclick="delete phone.flags[phone.lastQ.qid]; renderJoin(); return false">Cancel</a></div>`;
+}
+function phoneFlag(reason) {
+  const L = phone.lastQ; if (!L) return;
+  phoneSend('flag', { qid: L.qid, reason, note: (phone.flagNote || '').slice(0, 300) });
+  phone.flags[L.qid] = 'sent'; phone.flagNote = ''; renderJoin();
 }
 function phoneTurnHtml(T) {
   const mine = (T.kind === 'modal' && T.owner !== undefined ? T.owner === myPid() : T.pid === myPid()) && phone.state !== 'watching', me = T.scores.find(o => o.name.toLowerCase() === (phone.name || '').toLowerCase());
@@ -3195,6 +3329,7 @@ function startGame() {
   // the scoreboard starts at the top and holds still until the turn order is closed, then a few more seconds
   boardDir = 1; boardPauseUntil = Infinity;
   const startBoard = () => { document.getElementById('boardScroll').scrollTop = 0; boardPauseUntil = performance.now() + BOARD_START_DELAY; };
+  logGameStart(); lastAnswered = null;
   go('game'); renderGame(); sfx('start'); roomSend({ t: 'started' }); renderPhoneStatus();
   const showOrder = () => modal(`<div class="bigIcon">🎲</div><h2>Turn order</h2>
     <ol class="turnOrder">${players.map(p => `<li>${esc(p.name)}</li>`).join('')}</ol>`,
@@ -3211,9 +3346,9 @@ document.addEventListener('click', e => { if (!e.target.closest?.('.gameMenu')) 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeGameMenu(); });
 async function restartGame() {
   if (!await ask("Same players, but scores and items go back to zero. This game won't count toward Games or Wins.", { title: 'Restart the game?', icon: '🔄', ok: 'Restart', danger: true })) return;
-  document.querySelector('#stage audio')?.pause(); stopTimer(); current = null; closeModal(); startGame();
+  document.querySelector('#stage audio')?.pause(); stopTimer(); current = null; closeModal(); logGameEnd('restart'); startGame();
 }
-async function quitGame() { if (await ask("You'll go back to the main menu and this game will end.", { title: 'End this game?', icon: '🚪', ok: 'End game', danger: true })) { document.querySelector('#stage audio')?.pause(); stopTimer(); current = null; clearSavedGame(); roomSend({ t: 'quit' }); go('menu'); } }
+async function quitGame() { if (await ask("You'll go back to the main menu and this game will end.", { title: 'End this game?', icon: '🚪', ok: 'End game', danger: true })) { document.querySelector('#stage audio')?.pause(); stopTimer(); current = null; clearSavedGame(); logGameEnd('quit'); roomSend({ t: 'quit' }); go('menu'); } }
 
 // Everything currently affecting a player. kind: 'buff' (helps them), 'debuff' (hurts them) or 'info' (neutral).
 // short = the tag on the scoreboard; text = the full explanation (player details and the current player's turn)
@@ -3578,7 +3713,8 @@ function renderReveal() {
     : revealed ? `${timesUp ? `<div class="timesUp">⏰ Time's up!${late ? ' <small>If they answered just in time, you can still mark it correct.</small>' : ''}</div>` : ''}<div class="answer">✅ ${esc(q.answer)}</div>
       <div class="actions">${timesUp && !late ? '' : `<button class="good ${pickedRight === true ? 'suggest' : ''}" onclick="mark(true)">Correct (+${st.win})</button>`}
       <button class="bad ${pickedRight === false ? 'suggest' : ''}" onclick="mark(false)">${timesUp && !late ? 'Continue — counts as wrong' : 'Wrong'}${st.lose ? ` (−${st.lose})` : ''}</button></div>`
-      : `<div class="actions"><button class="primary" onclick="reveal()">Reveal answer</button></div>`}`;
+      : `<div class="actions"><button class="primary" onclick="reveal()">Reveal answer</button></div>`}
+    ${revealed ? flagBoxHtml(q) : ''}`;
   scheduleAutoNext();
   syncPhones(); saveGameSoon();
 }
@@ -3678,7 +3814,7 @@ function draw(kind, id, gamble = false) {
   stats.seen[q.id] = seenCount(q.id) + 1; saveStats();
   catsThisGame[q.categoryId || ''] = (catsThisGame[q.categoryId || ''] || 0) + 1; famsThisGame[famOf(q)] = (famsThisGame[famOf(q)] || 0) + 1;
   used.add(q.id);
-  current = { ...q, gamble, random: kind === 'any' && !gamble, shuffled: buildChoices(q),
+  current = { ...q, gamble, random: kind === 'any' && !gamble, shuffled: buildChoices(q), kind: gamble ? 'gamble' : kind,
     reward: kind === 'tier' || kind === 'cat' ? turnPrizes[kind + ':' + id] ?? null : null };
   revealed = false;
   // Show category & difficulty first, then move to the question automatically (the answer timer starts with the question)
@@ -3702,6 +3838,7 @@ let autoNextTimer = null, autoNextFor = null, autoNextAt = 0;
 const autoNextSecs = () => room && players[turn]?.pid && current?.picked != null && !timesUp ? data.settings.phoneAutoNext || 0 : 0;
 function scheduleAutoNext() {
   const secs = autoNextSecs(), q = current;
+  if (q?.flagOpen) { clearTimeout(autoNextTimer); autoNextFor = null; return; } // someone is flagging: wait (restarts after)
   if (!revealed || !secs) { if (!revealed || q?.picked == null) { clearTimeout(autoNextTimer); autoNextFor = null; } return; }
   if (autoNextFor !== q) { autoNextFor = q; autoNextAt = performance.now(); clearTimeout(autoNextTimer); }
   else { drainNext(secs); return; } // already counting down for this answer: just keep the button's drain in step
@@ -3761,7 +3898,7 @@ function beep(freq, dur, vol = .12) {
 }
 
 // ---------- Audio: mixer and background music ----------
-// output ← limiter ← loudness boost ← master ← effects channel (all sound effects) + music channel (background music, lowpassed for warmth)
+// output ← limiter ← loudness boost ← master ← effects channel (all sound effects) + music channel (background music)
 let audioBus = null;
 const MUSIC_HEADROOM = .32; // music at 100% still sits well under the effects
 // The synth voices are generated quietly, so the whole mix is lifted to normal app/video loudness (+14 dB: effects peak
@@ -3770,13 +3907,12 @@ const OUTPUT_BOOST = 5;
 function bus() {
   audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
   if (!audioBus) {
-    const master = audioCtx.createGain(), fx = audioCtx.createGain(), music = audioCtx.createGain(), warm = audioCtx.createBiquadFilter();
-    warm.type = 'lowpass'; warm.frequency.value = 3200; warm.connect(music);
+    const master = audioCtx.createGain(), fx = audioCtx.createGain(), music = audioCtx.createGain();
     const boost = audioCtx.createGain(), limiter = audioCtx.createDynamicsCompressor();
     boost.gain.value = OUTPUT_BOOST;
     limiter.threshold.value = -3; limiter.knee.value = 0; limiter.ratio.value = 20; limiter.attack.value = .002; limiter.release.value = .12;
     fx.connect(master); music.connect(master); master.connect(boost); boost.connect(limiter); limiter.connect(audioCtx.destination);
-    audioBus = { master, fx, music, musicIn: warm };
+    audioBus = { master, fx, music };
     applyVolumes(true);
   }
   return audioBus;
@@ -3786,67 +3922,42 @@ function applyVolumes(now) {
   const a = data.settings.audio, t = audioCtx.currentTime, set = (g, v) => now ? g.gain.setValueAtTime(v, t) : g.gain.setTargetAtTime(v, t, .08);
   set(audioBus.master, a.master / 100); set(audioBus.fx, a.sfx / 100); set(audioBus.music, a.musicOn ? a.music / 100 * MUSIC_HEADROOM : 0);
 }
-// Background music is composed on the fly (no audio files): a few soft synth voices on a step sequencer.
+// Background music: two looping tracks (music/*.m4a), made once from the game's old built-in synth (tools/music-source.js),
+// so the host only plays a file. Each file has 1 s of spare audio either side of an exact loop, so it repeats seamlessly.
 // Plays on the host only, never on a player's phone.
-const midi = n => 440 * 2 ** ((n - 69) / 12);
-function mNote(n, t, dur, { type = 'sine', vol = .1, attack = .01 } = {}) {
-  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-  o.type = type; o.frequency.value = midi(n);
-  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + attack); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
-  o.connect(g); g.connect(audioBus.musicIn); o.start(t); o.stop(t + dur + .05);
-}
-function mKeys(n, t, dur, vol) { mNote(n, t, dur, { vol, attack: .012 }); mNote(n + 12, t, dur * .6, { vol: vol * .25, attack: .008 }); } // electric-piano-ish
-let noiseBuf = null;
-function mHat(t, vol = .025) {
-  noiseBuf ??= (() => { const b = audioCtx.createBuffer(1, audioCtx.sampleRate * .1, audioCtx.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; })();
-  const src = audioCtx.createBufferSource(), hp = audioCtx.createBiquadFilter(), g = audioCtx.createGain();
-  src.buffer = noiseBuf; hp.type = 'highpass'; hp.frequency.value = 7000;
-  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + .05);
-  src.connect(hp); hp.connect(g); g.connect(audioBus.music); src.start(t); src.stop(t + .06); // skips the lowpass so it stays crisp
-}
-function mKick(t, vol = .22) {
-  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-  o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(45, t + .15);
-  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + .2);
-  o.connect(g); g.connect(audioBus.musicIn); o.start(t); o.stop(t + .25);
-}
-const seeded = n => { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); }; // same "random" melody every loop
 const MUSIC_STYLES = {
-  // mellow elevator jazz: ii–V turnarounds, soft keys, walking-ish bass, brushed hats, a wandering vibraphone
-  lounge: { name: '🛗 Lounge', bpm: 84, bars: [
-      { c: [57, 60, 64, 65], b: 41 }, { c: [55, 59, 62, 64], b: 40 }, { c: [53, 57, 60, 62], b: 38 }, { c: [53, 55, 59, 62], b: 43 },
-      { c: [52, 55, 59, 60], b: 36 }, { c: [55, 57, 61, 64], b: 45 }, { c: [53, 57, 60, 62], b: 38 }, { c: [53, 55, 59, 62], b: 43 }],
-    play(step, t, e) { // e = one eighth note in seconds
-      const bar = this.bars[Math.floor(step / 8) % this.bars.length], i = step % 8;
-      if (i === 0) bar.c.forEach(n => mKeys(n, t, e * 7.5, .035));
-      if (i === 5) bar.c.slice(1).forEach(n => mKeys(n, t, e * 2, .022));
-      if (i % 2 === 0) mNote(bar.b + (i === 4 ? 7 : i === 6 ? 12 : i === 2 ? 4 : 0), t, e * 1.8, { type: 'triangle', vol: .16, attack: .02 });
-      if (i % 2 === 1) mHat(t, .014);
-      if ([2, 3, 6].includes(i) && seeded(step) > .45) mNote(bar.c[Math.floor(seeded(step + 7) * 4)] + 12, t, e * 3, { type: 'triangle', vol: .05, attack: .005 });
-    } },
-  // upbeat game-show: I–vi–IV–V, bouncy bass, off-beat piano stabs, bell arpeggios, light kick
-  gameshow: { name: '🎤 Game show', bpm: 116, bars: [
-      { c: [60, 64, 67], b: 36 }, { c: [57, 60, 64], b: 45 }, { c: [53, 57, 60], b: 41 }, { c: [55, 59, 62], b: 43 }],
-    play(step, t, e) {
-      const bar = this.bars[Math.floor(step / 8) % this.bars.length], i = step % 8;
-      if (i % 2 === 0) mNote(bar.b + (i % 4 === 2 ? 12 : 0), t, e * .9, { type: 'triangle', vol: .17, attack: .01 });
-      if (i % 2 === 1) { bar.c.forEach(n => mKeys(n, t, e * .7, .03)); mHat(t, .018); }
-      if (i === 0 || i === 4) mKick(t, .16);
-      const arp = [...bar.c, bar.c[0] + 12]; if (Math.floor(step / 32) % 2 === 1) mNote(arp[i % 4] + 12, t, e * 1.2, { type: 'sine', vol: .045, attack: .004 });
-    } },
+  lounge: { name: '🛗 Lounge', file: 'music/lounge.m4a', loop: 4032000 / 44100, gain: .37246 },     // mellow elevator jazz
+  gameshow: { name: '🎤 Game show', file: 'music/gameshow.m4a', loop: 729931 / 44100, gain: .35029 }, // upbeat game-show
 };
-const music = { on: false, timer: null, next: 0, step: 0 };
+const MUSIC_PAD = 1;
+const music = { on: false, src: null, out: null, token: 0, buffers: {} };
+function musicBuffer(style) { // loaded and decoded once per style
+  return music.buffers[style] ??= fetch(`${MUSIC_STYLES[style].file}?v=${APP_VERSION}`)
+    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.arrayBuffer(); })
+    .then(b => new Promise((res, rej) => audioCtx.decodeAudioData(b, res, rej)))
+    .catch(e => { delete music.buffers[style]; throw e; });
+}
 let isPhoneView = false, audioUnlocked = false;
-function musicStart() {
+async function musicStart() {
   if (music.on || isPhoneView || !audioUnlocked || !data?.settings?.audio?.musicOn) return;
   bus(); if (audioCtx.state === 'suspended') audioCtx.resume();
-  music.on = true; music.next = audioCtx.currentTime + .15; music.step = 0;
-  music.timer = setInterval(() => { // schedules a little ahead so timer hiccups never make it stutter
-    const st = MUSIC_STYLES[data.settings.audio.style] || MUSIC_STYLES.lounge, e = 60 / st.bpm / 2;
-    while (music.next < audioCtx.currentTime + .35) { st.play(music.step, music.next, e); music.next += e; music.step++; }
-  }, 60);
+  music.on = true; const token = ++music.token;
+  const style = MUSIC_STYLES[data.settings.audio.style] ? data.settings.audio.style : 'lounge', st = MUSIC_STYLES[style];
+  let buf; try { buf = await musicBuffer(style); } catch (e) { if (token === music.token) music.on = false; return; }
+  if (token !== music.token) return; // stopped or restarted while the file was loading
+  const src = audioCtx.createBufferSource(), out = audioCtx.createGain(), t = audioCtx.currentTime;
+  src.buffer = buf; src.loop = true; src.loopStart = MUSIC_PAD; src.loopEnd = MUSIC_PAD + st.loop;
+  out.gain.setValueAtTime(0, t); out.gain.linearRampToValueAtTime(st.gain, t + .4); // short fade in
+  src.connect(out); out.connect(audioBus.music); src.start(t, MUSIC_PAD);
+  music.src = src; music.out = out;
 }
-function musicStop() { clearInterval(music.timer); music.on = false; }
+function musicStop() {
+  music.on = false; music.token++;
+  const { src, out } = music; music.src = music.out = null;
+  if (!src) return;
+  const t = audioCtx.currentTime; // short fade out so it doesn't click
+  out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(out.gain.value, t); out.gain.linearRampToValueAtTime(0, t + .15); src.stop(t + .2);
+}
 function setMusicOn(on) {
   data.settings.audio.musicOn = on; save(); applyVolumes();
   on ? musicStart() : musicStop(); renderMusicButtons();
@@ -4035,6 +4146,7 @@ function mark(correct) {
         } })));
     }
   }
+  logAnswer(p, correct);
   document.querySelector('#stage audio')?.pause();
   stopTimer(); timesUp = false;
   const st = stakes(p);
@@ -4372,7 +4484,7 @@ function finishItem(p, idx, html, sound = 'use') {
   sfx(sound);
   { const it = ITEMS[p.items[idx]], body = plainText(html.replace(/<h2>.*?<\/h2>/, '').replace(/<div class="bigIcon">.*?<\/div>/, ''));
     logEvent(`${it.icon} <b style="color:${pcText(p)}">${esc(p.name)}</b> used <b>${it.name}</b>${body ? ' — ' + esc(body.length > 110 ? body.slice(0, 107) + '…' : body) : ''}`); }
-  itemStat(p.items[idx]).used++; saveStats();
+  itemStat(p.items[idx]).used++; saveStats(); gameRec?.items.push(p.items[idx]);
   p.items.splice(idx, 1); itemUsedThisTurn = true;
   renderGame();
   const w = findWinner();
@@ -4398,7 +4510,7 @@ function saveGame() {
   const st = { at: Date.now(), room: room?.code || null,
     players: players.map(p => Object.fromEntries(Object.entries(p).map(([k, x]) => [k, encGame(x)]))),
     turn, round, used: [...used], current: encGame(current), revealed, itemUsedThisTurn, bets: encGame(bets), pickGroup,
-    itemsThisGame, feedLog, turnPrizes, catsThisGame, famsThisGame, timesUp, dodgeNote, lastPlaceRound, lastPlaceNotes: encGame(lastPlaceNotes), shownRound,
+    itemsThisGame, feedLog, turnPrizes, catsThisGame, famsThisGame, timesUp, dodgeNote, lastPlaceRound, lastPlaceNotes: encGame(lastPlaceNotes), shownRound, gameRec,
     timer: timer && { left: timer.left, total: timer.total, paused: timer.paused, crunched: timer.crunched } };
   try { localStorage.setItem(GAME_KEY, JSON.stringify(st)); } catch (e) {}
 }
@@ -4413,7 +4525,7 @@ async function resumeGame() {
   turn = st.turn; round = st.round; used = new Set(st.used); current = decGame(st.current); revealed = st.revealed; itemUsedThisTurn = st.itemUsedThisTurn;
   bets = decGame(st.bets); pickGroup = st.pickGroup; itemsThisGame = st.itemsThisGame; feedLog = st.feedLog; turnPrizes = st.turnPrizes;
   catsThisGame = st.catsThisGame; famsThisGame = st.famsThisGame; timesUp = st.timesUp; dodgeNote = st.dodgeNote;
-  lastPlaceRound = st.lastPlaceRound; lastPlaceNotes = decGame(st.lastPlaceNotes); shownRound = st.shownRound;
+  lastPlaceRound = st.lastPlaceRound; lastPlaceNotes = decGame(st.lastPlaceNotes); shownRound = st.shownRound; gameRec = st.gameRec || null;
   shownScores = new Map(); boardDir = 1; boardPauseUntil = 0; prefilled = true;
   document.getElementById('itemCards').innerHTML = '';
   stopTimer(); go('game');
@@ -4429,7 +4541,7 @@ async function resumeGame() {
 
 // ---------- Winner ----------
 function showWinner(w, how) {
-  clearSavedGame();
+  clearSavedGame(); logGameEnd(how === 'exodia' ? 'exodia' : 'points');
   players.forEach(p => playerStat(p.name).games++); // only finished games count toward games and wins
   playerStat(w.name).wins++;
   players.forEach(p => p.items.forEach(k => itemStat(k).unused++)); // still in hand when the game ended
@@ -4479,6 +4591,7 @@ applyFx();
 migrateOldMedia();
 renderMenu(); renderMusicButtons(); document.body.dataset.screen = 'menu';
 resumeGame().then(resumeRoom);
+setTimeout(sendFlags, 3000); // anything flagged while offline
 }
 start();
 </script>
