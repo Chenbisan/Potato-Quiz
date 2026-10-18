@@ -841,14 +841,6 @@
     </div>
   </div>
   <div class="card" data-stab="game">
-    <h3 class="cardTitle">📱 Playing on phones</h3>
-    <div class="setting">
-      <div class="setName">Move on after a phone answer</div>
-      <div class="ctrl"><input type="number" id="phoneAutoNext" min="0" max="30" step="0.5" style="width:90px" onchange="const v = +this.value; if (v >= 0) { data.settings.phoneAutoNext = Math.min(30, v); save(); toast('Saved'); }"><span class="unit">seconds (0 = the host taps Next on the TV)</span></div>
-      <div class="help">When a player answers on their phone, the result shows for this long and then the game goes on by itself. Phones never show a Next button.</div>
-    </div>
-  </div>
-  <div class="card" data-stab="game">
     <h3 class="cardTitle">🎰 Gamble</h3>
     <div class="setting">
       <label class="switch"><input type="checkbox" id="gambleOn" onchange="data.settings.gamble = this.checked; save(); toast('Saved')"> Show the Gamble button</label>
@@ -878,11 +870,6 @@
         <option value="auto">Auto (fits your window)</option><option value="1">100%</option><option value="1.1">110%</option><option value="1.25">125%</option><option value="1.4">140%</option><option value="1.6">160%</option></select></div>
       <div class="help">Auto makes everything bigger on larger windows. Pick a fixed size for a TV or projector.</div>
     </div>
-    <div class="setting" style="margin-top:12px">
-      <div class="setName">🎒 Item cards stay on screen for</div>
-      <div class="ctrl"><input type="number" id="itemCardSecs" min="3" max="60" style="width:80px" onchange="saveFxSettings()"><span class="unit">seconds</span></div>
-      <div class="help">How long the card that shows a newly earned item stays on screen before it slides away. Up to 2 show at once.</div>
-    </div>
     <label class="switch" style="margin-top:10px"><input type="checkbox" id="uiSfxOn" onchange="saveFxSettings()"> Button sounds — a soft tick when you hover over or click a button</label>
     <div class="row" style="margin-top:10px"><button class="small" onclick="sfx('right')">▶ Right</button><button class="small" onclick="sfx('wrong')">▶ Wrong</button>
       <button class="small" onclick="sfx('item')">▶ Item gained</button><button class="small" onclick="sfx('use')">▶ Item used</button><button class="small" onclick="sfx('block')">▶ Shield block</button><button class="small" onclick="sfx('win')">▶ Winner</button>
@@ -908,6 +895,19 @@
       <label class="switch" style="margin-top:12px"><input type="checkbox" id="timerLate" onchange="saveTimerSettings()"> Host can still mark an answer correct after time runs out (for last-second answers)</label>
       <p class="muted">The clock starts when the question appears and stops when you click Reveal answer. Click the clock to pause it.
         If time runs out, the answer is shown; it counts as wrong unless the host-override option above is on.</p>
+    </div>
+  </div>
+  <div class="card" data-stab="timing">
+    <h3 style="margin-top:0">⏩ Pacing</h3>
+    <div class="setting">
+      <div class="setName">📱 Move on after a phone answer</div>
+      <div class="ctrl"><input type="number" id="phoneAutoNext" min="0" max="30" step="0.5" style="width:90px" onchange="const v = +this.value; if (v >= 0) { data.settings.phoneAutoNext = Math.min(30, v); save(); toast('Saved'); }"><span class="unit">seconds (0 = the host taps Next on the TV)</span></div>
+      <div class="help">When a player answers on their phone, the result shows for this long and then the game goes on by itself. Phones never show a Next button.</div>
+    </div>
+    <div class="setting">
+      <div class="setName">🎒 Item cards stay on screen for</div>
+      <div class="ctrl"><input type="number" id="itemCardSecs" min="3" max="60" style="width:80px" onchange="saveFxSettings()"><span class="unit">seconds</span></div>
+      <div class="help">How long the card that shows a newly earned item stays on screen before it slides away. Up to 2 show at once.</div>
     </div>
   </div>
   <div class="card" data-stab="items">
@@ -1016,7 +1016,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '4.0.1';
+const APP_VERSION = '4.0.2';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1027,7 +1027,7 @@ for (const [oldKey, newKey] of [['teamQuizData_v1', KEY], ['teamQuizPlayers_v1',
   } catch (e) {}
 }
 // Bump when a settings migration is added in upgrade(); a reset starts at this rev so no migration re-runs
-const SETTINGS_REV = 8;
+const SETTINGS_REV = 9;
 let SEED_VERSION = 10; // set from questions.json's "version" at startup; // 10: every starter question gets 2 extra wrong answers for 6-answer games; 5: category groups; 6: more families + Disney+, Theme Parks, Generations; 7: every category in a family (General Knowledge, Cars, Pop Culture); 8: pre-1990 questions most players won't know moved to Obscure; 9: regional culture families
 // Tier difficulty is their order in the list (easiest first, hardest last); points only decide scoring
 const OBSCURE_TIER = { id: 't4', name: 'Obscure', points: 10, color: '#b36bff' };
@@ -1398,7 +1398,7 @@ function upgrade(d) {
   d.settings.timer ??= { enabled: true, seconds: 30, sound: true };
   d.settings.timer.lateCorrect ??= true;
   d.settings.introSeconds ??= 2.5;
-  d.settings.phoneAutoNext ??= 2; // seconds before a phone player's answer moves on by itself (0 = they tap Next)
+  d.settings.phoneAutoNext ??= 3; // seconds before a phone player's answer moves on by itself (0 = the host taps Next)
   d.settings.fx ??= true;  // animations: screen transitions, flying points
   d.settings.sfx ??= true; // sound effects
   // Gamble cooldown = how many of their own turns a player waits after gambling (0 = none). Before 1.8 it meant
@@ -1436,7 +1436,13 @@ function upgrade(d) {
     for (const k of NO_PRIZE) if (d.settings.items?.pools?.[k]) d.settings.items.pools[k].reward = false;
     // cold streaks still on the 3.0 default (2, 4, 6) move to the new default (2, 3, 4, 5)
     if (d.settings.items?.coldStreaks?.join() === '2,4,6') d.settings.items.coldStreaks = [2, 3, 4, 5];
-    d.settings.rev = SETTINGS_REV;
+    d.settings.rev = 8;
+  }
+  if (d.settings.rev < 9) {
+    // 4.0.2: shorter item-gained cards (10 → 6 s) and a little longer before a phone answer moves on (2 → 3 s), unless changed
+    if (d.settings.itemCardSeconds === 10) d.settings.itemCardSeconds = 6;
+    if (d.settings.phoneAutoNext === 2) d.settings.phoneAutoNext = 3;
+    d.settings.rev = 9;
   }
   if (!d.categories) {
     d.categories = structuredClone(DEFAULT.categories);
@@ -1550,7 +1556,7 @@ function upgrade(d) {
   }
   d.settings.timer.warnAt ??= 10; // the clock ticks (and turns red) for this many final seconds
   d.settings.uiSfx ??= true;
-  d.settings.itemCardSeconds ??= 10; // item-gained cards stay this long
+  d.settings.itemCardSeconds ??= 6; // item-gained cards stay this long
   d.settings.uiScale ??= 'auto';     // screen size: 'auto' or a fixed zoom like 1.25
   d.settings.theme ??= 'dark';       // 'dark' or 'light'      // small interface sounds: hovering and clicking buttons, turn changes
   d.settings.items ??= defaultItemSettings();
@@ -1716,7 +1722,7 @@ function renderSettings() {
   document.getElementById('timerSound').checked = tm.sound;
   document.getElementById('timerWarn').value = tm.warnAt ?? 10;
   document.getElementById('uiSfxOn').checked = data.settings.uiSfx;
-  document.getElementById('itemCardSecs').value = data.settings.itemCardSeconds ?? 10;
+  document.getElementById('itemCardSecs').value = data.settings.itemCardSeconds ?? 6;
   document.getElementById('uiScaleSel').value = String(data.settings.uiScale ?? 'auto');
   document.getElementById('themeSel').value = data.settings.theme === 'light' ? 'light' : 'dark';
   document.getElementById('timerLate').checked = !!tm.lateCorrect;
@@ -2712,7 +2718,7 @@ function turnView() {
     const st = document.getElementById('stage');
     return { ...view, kind: 'pick', head: txt(st.querySelector('.turn')),
       buttons: [...st.querySelectorAll('.tierPick > button')].map(btnInfo),
-      items: [...st.querySelectorAll('.itemBar button.itemCard')].map(btnInfo) };
+      items: [...st.querySelectorAll('.itemBar button.itemCard')].map(btnInfo), itemRule: itemRule() };
   }
   const q = current, c = catOf(q.categoryId) || NO_CAT, t = tierOf(q.tierId);
   const base = { ...view, cat: catLabel(c), catColor: c.color, tier: `${t.name} · ${t.points} pt${t.points == 1 ? '' : 's'}`, tierColor: t.color };
@@ -2762,7 +2768,7 @@ function phoneTurnHtml(T) {
     <div class="pcList pcModal">${T.buttons.map((b, i) => btn({ ...b, color: '' }, 'm' + i, b.cls.includes('primary') ? 'primary' : b.cls.includes('bad') ? 'bad' : '')).join('')}</div>`;
   if (T.kind === 'pick') return `${bar}<div class="pcHead">🎯 Your turn! Pick one:</div>
     <div class="pcBtns">${T.buttons.map((b, i) => btn(b, 'p' + i, /lockedBtn|exodiaBtn|groupBack/.test(b.cls) ? 'wide' : '')).join('')}</div>
-    ${T.items.length ? `<div class="pcItems"><p class="muted" style="margin:0 0 8px">🎒 Your items (use one before picking):</p><div class="pcList">${T.items.map((b, i) => btn({ ...b, color: '' }, 'i' + i)).join('')}</div></div>` : ''}`;
+    ${T.items.length ? `<div class="pcItems"><p class="muted" style="margin:0 0 8px">🎒 Your items · ${esc(T.itemRule)}</p><div class="pcList">${T.items.map((b, i) => btn({ ...b, color: '' }, 'i' + i)).join('')}</div></div>` : ''}`;
   if (T.kind === 'intro') return `${bar}<div class="pcHead">Get ready…</div>${pills}<p class="muted">Your question is coming up on the TV.</p>`;
   const timerHtml = T.timer ? `<div class="pcTimer ${T.timer.low ? 'low' : ''}">⏱️ ${T.timer.left}s</div>` : '';
   const result = T.revealed ? (T.picked != null && !T.timesUp ? `<div class="pcResult">${T.picked === T.right ? `🎉 Correct! +${T.win}` : `❌ Not quite${T.lose ? ` −${T.lose}` : ''}`}</div>${T.picked !== T.right ? `<p>Answer: <b>${esc(T.answer)}</b></p>` : ''}`
@@ -3198,7 +3204,7 @@ function showFeedHistory() {
 }
 // Item gained: a card slides in over the right end of the activity bar (above the question area, never over the scoreboard) for ~10 s (doesn't block anything) and the bar logs it
 function itemGained(p, k, how) {
-  const it = ITEMS[k], secs = data.settings.itemCardSeconds ?? 10; // how long the card stays (Settings › Effects)
+  const it = ITEMS[k], secs = data.settings.itemCardSeconds ?? 6; // how long the card stays (Settings › Effects)
   logEvent(`${it.icon} <b style="color:${pcText(p)}">${esc(p.name)}</b> ${how} <b>${it.name}</b>`);
   const box = document.getElementById('itemCards'); if (!box) return;
   const card = document.createElement('div'); card.className = 'itemCardPop';
@@ -3322,9 +3328,10 @@ function renderGame() {
   const stage = document.getElementById('stage');
   stage.classList.remove('stageIn'); void stage.offsetWidth; stage.classList.add('stageIn');
 }
+const itemRule = () => itemUsedThisTurn ? 'item used this turn (1 per turn)' : '1 per turn, and only before you pick a question'; // same words on the host and phones
 function itemBar(p) {
   if (!p.items.length) return '';
-  return `<div class="itemBar"><div class="muted" style="margin-bottom:8px">🎒 ${esc(p.name)}'s items ${itemUsedThisTurn ? '— one item per turn, already used' : '— use one before picking a question'}</div>
+  return `<div class="itemBar"><div class="muted" style="margin-bottom:8px">🎒 ${esc(p.name)}'s items · ${itemRule()}</div>
     <div class="itemList">${p.items.map((k, i) => {
       const it = ITEMS[k];
       return it.passive

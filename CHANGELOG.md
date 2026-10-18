@@ -1,5 +1,11 @@
 # What's new in Potato Quiz
 
+## 4.0.2 — 2026-10-18
+- Clearer item wording, the same on the host screen and on phones: you can use 1 item per turn, and only before you pick a question.
+- After a phone answer, the result now shows for 3 seconds (was 2) before the game moves on.
+- Item cards now stay on screen for 6 seconds (was 10).
+- Both timings are under Settings › Timer › Pacing.
+
 ## 4.0.1 — 2026-10-18
 - Fixed: players from a phone game no longer show up as players added on the host screen the next time you set up a game.
 
