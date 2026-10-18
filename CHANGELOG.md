@@ -1,5 +1,8 @@
 # What's new in Potato Quiz
 
+## 4.1.1 — 2026-10-18
+- Fixed: in phone games, when your bag was full the "drop an item" choice went to the next player's phone, so they could drop your items and your own choice didn't count. Now it goes to your phone, and everyone else sees that you're choosing.
+
 ## 4.1.0 — 2026-10-18
 - **🎵 Background music:** a mellow 🛗 Lounge (elevator jazz) or upbeat 🎤 Game show loop plays on the host screen while you play. It's made by the game itself, so there's nothing to download, and it never plays on players' phones.
 - Mute it anytime with the 🎵 button in the corner, or from the ☰ menu during a game.

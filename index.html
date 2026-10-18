@@ -1080,7 +1080,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '4.1.0';
+const APP_VERSION = '4.1.1';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -2805,6 +2805,7 @@ function turnView() {
     const body = m.cloneNode(true); body.querySelectorAll('h2, .actions, .bigIcon, button, input').forEach(e => e.remove());
     body.querySelectorAll('p, div, li, br').forEach(e => e.after(' ')); // keep a space between paragraphs
     return { ...view, kind: 'modal', icon: txt(m.querySelector('.bigIcon')), title: txt(m.querySelector('h2')), body: txt(body).slice(0, 400),
+      ...(modalOwner ? { owner: modalOwner.pid || '', ownerName: modalOwner.name } : {}), // a pop-up for one player goes to that player's phone
       buttons: [...m.querySelectorAll('.actions button')].map(btnInfo),
       // buttons inside the pop-up itself (Category Lock families and categories, Exodia's family picks…)
       extra: modalBodyButtons().map(b => ({ ...btnInfo(b), open: b.classList.contains('lockFamHead') && b.closest('.lockFamily')?.classList.contains('open') })) };
@@ -2826,12 +2827,12 @@ function turnView() {
 const modalBodyButtons = () => [...document.querySelectorAll('#modal .modalBox button')].filter(b => !b.closest('.actions'));
 // A tap from the active player's phone: only their own turn, and only on the screen the TV last sent them
 function phoneAct(m) {
-  const p = players[turn];
-  if (!p?.pid || m.pid !== p.pid || m.v !== lastView?.v) return;
   const k = String(m.id || ''), n = parseInt(k.slice(1), 10), press = b => { if (b && !b.disabled) { b.click(); setTimeout(syncPhones); } };
-  if (k[0] === 'x') return press(modalBodyButtons()[n]);
-  if (k[0] === 'm') return press(document.querySelectorAll('#modal .modalBox .actions button')[n]);
-  if (document.getElementById('modal')) return; // a pop-up is open on the TV: answer that first
+  const popup = !!document.getElementById('modal'), answerer = popup && modalOwner ? modalOwner : players[turn]; // whose decision this is
+  if (!answerer?.pid || m.pid !== answerer.pid || m.v !== lastView?.v) return;
+  if (k[0] === 'x') return popup && press(modalBodyButtons()[n]);
+  if (k[0] === 'm') return popup && press(document.querySelectorAll('#modal .modalBox .actions button')[n]);
+  if (popup) return; // a pop-up is open on the TV: answer that first
   if (k[0] === 'p' && !current) return press(document.querySelectorAll('#stage .tierPick > button')[n]);
   if (k[0] === 'i' && !current) return press(document.querySelectorAll('#stage .itemBar button.itemCard')[n]);
   if (k[0] === 'c' && current && !current.intro && !revealed && current.shuffled?.[n] !== undefined) return pickChoice(n);
@@ -2843,7 +2844,7 @@ function phoneTap(id) {
   document.querySelectorAll('#joinBody button').forEach(b => b.disabled = true); // wait for the TV's reply
 }
 function phoneTurnHtml(T) {
-  const mine = T.pid === myPid() && phone.state !== 'watching', me = T.scores.find(o => o.name.toLowerCase() === (phone.name || '').toLowerCase());
+  const mine = (T.kind === 'modal' && T.owner !== undefined ? T.owner === myPid() : T.pid === myPid()) && phone.state !== 'watching', me = T.scores.find(o => o.name.toLowerCase() === (phone.name || '').toLowerCase());
   const bar = phone.state === 'watching' ? `<div class="pcBar"><span style="font-weight:800">👀 Watching</span><span>Round ${T.round}</span></div>`
     : `<div class="pcBar"><span style="color:${phone.color || 'var(--accent)'};font-weight:800">${esc(phone.name)}</span><span>${me ? `${me.score} pts` : ''} · Round ${T.round}</span></div>`;
   const scores = `<div class="pcScores">${[...T.scores].sort((a, b) => b.score - a.score).map(o =>
@@ -2853,6 +2854,7 @@ function phoneTurnHtml(T) {
   const choicesHtml = (clickable) => T.choices ? `<div class="pcList">${T.choices.map((c, i) => {
       const cls = [T.revealed && i === T.right && 'right', T.revealed && T.picked === i && i !== T.right && 'wrongPick', T.picked === i && 'picked'].filter(Boolean).join(' ');
       return `<button class="${cls}" ${clickable ? `onclick="phoneTap('c${i}')"` : 'disabled'}><b>${'ABCDEF'[i]}.</b> ${esc(c)}</button>`; }).join('')}</div>` : '';
+  if (!mine && T.kind === 'modal' && T.ownerName) return `${bar}<div class="pcHead">⏳ Waiting for <span style="color:${(T.scores.find(o => o.name === T.ownerName) || {}).color || 'inherit'}">${esc(T.ownerName)}</span> to choose…</div><p class="muted">${esc(T.title)}</p>${scores}`;
   if (!mine) {
     const watching = T.kind === 'question' ? `${pills}<div class="pcQ">${esc(T.q)}</div>${choicesHtml(false)}${T.revealed ? `<p class="pcResult">✅ ${esc(T.answer)}</p>` : ''}` : '';
     return `${bar}<div class="pcHead"><span style="color:${T.color}">${esc(T.name)}</span>'s turn</div>${watching || '<p class="muted">Watch the TV!</p>'}${scores}`;
@@ -3095,8 +3097,10 @@ document.addEventListener('click', e => {
 }, true);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') hideTip(); });
 document.addEventListener('scroll', hideTip, true);
-function modal(html, buttons = [{ label: 'Continue', cls: 'primary' }]) {
-  closeModal();
+// owner: the player this pop-up is asking (e.g. whose bag is full). Their phone answers it, not whoever's turn it is.
+let modalOwner = null;
+function modal(html, buttons = [{ label: 'Continue', cls: 'primary' }], { owner = null } = {}) {
+  closeModal(); modalOwner = owner;
   const o = document.createElement('div'); o.className = 'modal'; o.id = 'modal';
   o.innerHTML = `<div class="modalBox">${html}<div class="actions" style="margin-top:20px;flex-wrap:wrap"></div></div>`;
   const bar = o.querySelector('.actions');
@@ -3106,7 +3110,7 @@ function modal(html, buttons = [{ label: 'Continue', cls: 'primary' }]) {
   });
   document.body.appendChild(o); syncPhones();
 }
-function closeModal() { if (document.getElementById('modal')) { document.getElementById('modal').remove(); syncPhones(); saveGameSoon(); } }
+function closeModal() { modalOwner = null; if (document.getElementById('modal')) { document.getElementById('modal').remove(); syncPhones(); saveGameSoon(); } }
 // In-game versions of the browser's alert() and confirm(), so messages match the rest of the game
 function notice(msg, { title = 'Heads up', icon = '💡' } = {}) {
   return new Promise(res => modal(`<div class="bigIcon">${icon}</div><h2>${title}</h2><p>${msg}</p>`, [{ label: 'OK', cls: 'primary', fn: res }]));
@@ -3221,7 +3225,7 @@ function resolveOverflow() {
   modal(`<div class="bagFull"><h2 style="margin-top:0">🎒 <span style="color:${pcText(p)}">${esc(p.name)}</span>'s bag is full</h2>
     <p class="muted" style="margin-top:-8px">You can hold ${max} items. Tap the one you want to drop.</p>
     <div class="zone newZone"><div class="zoneHead">✨ New item</div>${newOnes.map((k, j) => card(k, max + j, true)).join('')}</div>
-    <div class="zone"><div class="zoneHead">🎒 In your bag (${max} of ${max})</div><div class="bagGrid">${p.items.slice(0, max).map((k, i) => card(k, i, false)).join('')}</div></div></div>`, []);
+    <div class="zone"><div class="zoneHead">🎒 In your bag (${max} of ${max})</div><div class="bagGrid">${p.items.slice(0, max).map((k, i) => card(k, i, false)).join('')}</div></div></div>`, [], { owner: p });
   document.querySelector('#modal .modalBox').classList.add('wide');
 }
 function dropItem(pi, i) {
