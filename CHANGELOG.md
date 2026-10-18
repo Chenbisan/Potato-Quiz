@@ -1,5 +1,13 @@
 # What's new in Potato Quiz
 
+## 4.0.0 — 2026-10-18
+- **📱 Play on your phones:** open a room on the setup screen and everyone joins from their own phone by scanning the QR code or typing the 4-letter room code. Put the host screen on a TV (casting works great) and play from the couch.
+- **Your turn, your phone:** pick a difficulty or category, use your items (including choosing who to target, Category Lock and Exodia), and tap your answer right on your phone. The result shows for a moment and the game moves on by itself. You can change how long under Settings › Game › Playing on phones.
+- Everyone else's phone follows along with the question and the scoreboard.
+- **Drops and refreshes are fine:** if a phone locks, loses signal or reloads, it rejoins by itself. If the host's page reloads or the tab closes mid-game, you can resume right where you left off, and phones reconnect on their own.
+- Friends who arrive after the game starts can watch on their phone and join the next game.
+- A phone game is all on phones: opening a room clears players added on the host screen, so names can't clash.
+
 ## 3.13.1 — 2026-10-18
 - Messages and confirmations (like "No questions in play" or "End this game?") now appear as in-game pop-ups that match the game's look, instead of plain browser boxes.
 

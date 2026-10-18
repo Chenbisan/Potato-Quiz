@@ -506,6 +506,50 @@
   @keyframes bumpLight { 30% { transform: scale(1.06); background: #d8f5e2; } }
   @keyframes hitLight { 0%, 100% { transform: none; } 20% { transform: translateX(-6px); background: #ffd9d9; } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
   [data-theme="light"] .board li.bump { animation-name: bumpLight; } [data-theme="light"] .board li.hit { animation-name: hitLight; }
+  /* Online play: room card on the host's setup screen, join screen on phones */
+  .roomRow { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
+  .roomQr { background: #fff; padding: 8px; border-radius: 12px; width: 148px; flex: none; }
+  .roomQr svg { display: block; width: 100%; height: auto; }
+  .roomCode { font-size: 3rem; font-weight: 900; letter-spacing: .22em; color: var(--accent); line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .roomUrl { font-size: .9rem; word-break: break-all; }
+  .phoneTag { font-size: .85em; }
+  #join .joinBox { max-width: 440px; margin: 0 auto; text-align: center; }
+  #join h1 { font-size: 2.3rem; }
+  #join input { width: 100%; box-sizing: border-box; font-size: 1.2rem; text-align: center; }
+  #join .codeInput { font-size: 2.2rem; letter-spacing: .35em; text-transform: uppercase; font-weight: 800; }
+  #join .colorGrid { margin: 12px 0 4px; }
+  #join button.big { width: 100%; font-size: 1.2rem; padding: 14px; margin-top: 14px; }
+  .joinMe { font-size: 2rem; font-weight: 900; margin: 6px 0; }
+  .joinList { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 12px 0; }
+  #phoneStatus { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--bad); border-radius: 999px; padding: 8px 16px; font-size: .9rem; z-index: 15; box-shadow: 0 6px 20px var(--shadow); max-width: calc(100% - 32px); text-align: center; }
+  #joinBanner { position: sticky; top: 0; z-index: 5; background: var(--bad); color: #2a0505; font-weight: 800; text-align: center; padding: 10px; border-radius: 10px; margin-bottom: 12px; }
+  .pcBar { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: -6px 0 12px; font-size: .95rem; }
+  .pcHead { font-size: 1.35rem; font-weight: 800; margin: 4px 0 12px; }
+  .pcBtns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pcBtns button { color: #111; font-weight: 800; padding: 14px 8px; min-height: 64px; line-height: 1.15; }
+  .pcBtns button small { display: block; font-weight: 500; font-size: .78rem; opacity: .8; margin-top: 3px; }
+  .pcBtns button.wide, .pcList button { grid-column: 1 / -1; }
+  .pcList { display: grid; gap: 10px; }
+  .pcList button { text-align: left; padding: 14px; font-size: 1.05rem; }
+  .pcList button small { display: block; opacity: .75; font-size: .8rem; margin-top: 2px; }
+  .pcModal button { text-align: center; }
+  .pcList button.picked { outline: 3px solid var(--accent); }
+  .pcList button.right { background: var(--good); color: #04210f; font-weight: 800; }
+  .pcList button.wrongPick { background: var(--bad); color: #2a0505; font-weight: 800; }
+  .pcQ { font-size: 1.25rem; font-weight: 700; margin: 6px 0 14px; line-height: 1.3; }
+  .pcTimer { font-weight: 800; font-variant-numeric: tabular-nums; }
+  .pcTimer.low { color: var(--bad); }
+  .pcItems { margin-top: 18px; text-align: left; }
+  .pcScores { display: grid; gap: 4px; margin-top: 16px; text-align: left; }
+  .pcScores div { display: flex; justify-content: space-between; padding: 6px 10px; border-radius: 8px; background: var(--panel2); }
+  .pcScores div.cur { outline: 2px solid var(--accent); font-weight: 800; }
+  .pcList button.right:disabled, .pcList button.wrongPick:disabled, .pcList button.picked:disabled { opacity: 1; }
+  .pcResult { font-size: 1.5rem; font-weight: 900; margin: 10px 0; }
+  .joinNote { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; font-weight: 800; margin: 4px 0 12px; }
+  .pcModalBtns { margin: 6px 0 14px; }
+  .pcModalBtns button.wide { grid-column: 1 / -1; text-align: left; }
+  .pcModalBtns button.picked { outline: 3px solid var(--accent); }
+  .joinErr { color: var(--bad); font-weight: 700; min-height: 1.3em; margin: 8px 0 0; }
 </style>
 </head>
 <body>
@@ -517,6 +561,7 @@
   <div class="news" id="news"></div>
   <div class="menu">
     <button class="primary" onclick="go('setup')">▶ Start Quiz</button>
+    <button onclick="phoneJoin('')">📱 Join a game</button>
     <button onclick="howToPlay()">📖 How to Play</button>
     <button onclick="go('editor')">✏️ Edit Questions</button>
     <button onclick="go('stats')">📊 Stats</button>
@@ -530,7 +575,7 @@
 <section id="setup" class="screen">
   <div class="topbar"><h2>Who's playing?</h2><button class="ghost" onclick="go('menu')">← Menu</button></div>
   <div class="card">
-    <div class="row">
+    <div class="row" id="addPlayerRow">
       <input id="playerName" placeholder="Player name (up to 16 characters)" maxlength="16" style="flex:1" onkeydown="if(event.key==='Enter')addPlayer()">
       <button onclick="addPlayer()">Add player</button>
     </div>
@@ -541,6 +586,7 @@
     </div>
     <button class="primary" style="margin-top:4px;font-size:1.2rem" onclick="startGame()">Start game →</button>
   </div>
+  <div class="card" id="roomCard"></div>
   <div class="card" id="recentCard">
     <div class="row" style="justify-content:space-between">
       <h3 style="margin:0">Recent players <span class="muted" style="font-size:.9rem;font-weight:400">— click a name to add them</span></h3>
@@ -575,6 +621,9 @@
     <p class="muted" id="catPickerInfo" style="margin-bottom:0"></p>
   </div>
 </section>
+
+<!-- JOIN (on a player's phone) -->
+<section id="join" class="screen"><div class="joinBox"><h1>🥔 Potato Quiz</h1><div id="joinBody"></div></div></section>
 
 <!-- GAME -->
 <section id="game" class="screen">
@@ -792,6 +841,14 @@
     </div>
   </div>
   <div class="card" data-stab="game">
+    <h3 class="cardTitle">📱 Playing on phones</h3>
+    <div class="setting">
+      <div class="setName">Move on after a phone answer</div>
+      <div class="ctrl"><input type="number" id="phoneAutoNext" min="0" max="30" step="0.5" style="width:90px" onchange="const v = +this.value; if (v >= 0) { data.settings.phoneAutoNext = Math.min(30, v); save(); toast('Saved'); }"><span class="unit">seconds (0 = the host taps Next on the TV)</span></div>
+      <div class="help">When a player answers on their phone, the result shows for this long and then the game goes on by itself. Phones never show a Next button.</div>
+    </div>
+  </div>
+  <div class="card" data-stab="game">
     <h3 class="cardTitle">🎰 Gamble</h3>
     <div class="setting">
       <label class="switch"><input type="checkbox" id="gambleOn" onchange="data.settings.gamble = this.checked; save(); toast('Saved')"> Show the Gamble button</label>
@@ -959,7 +1016,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '3.13.1';
+const APP_VERSION = '4.0.0';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1341,6 +1398,7 @@ function upgrade(d) {
   d.settings.timer ??= { enabled: true, seconds: 30, sound: true };
   d.settings.timer.lateCorrect ??= true;
   d.settings.introSeconds ??= 2.5;
+  d.settings.phoneAutoNext ??= 2; // seconds before a phone player's answer moves on by itself (0 = they tap Next)
   d.settings.fx ??= true;  // animations: screen transitions, flying points
   d.settings.sfx ??= true; // sound effects
   // Gamble cooldown = how many of their own turns a player waits after gambling (0 = none). Before 1.8 it meant
@@ -1615,7 +1673,7 @@ function go(id) {
 }
 // "Coming soon" banner on the main menu — edit this list to tell players what's in the works
 const NEWS = [
-  { icon: '🛡️', title: 'Survival mode', text: 'A brand-new way to play, coming in version 4.' },
+  { icon: '🛡️', title: 'Survival mode', text: 'A brand-new way to play, coming in a future update.' },
   { icon: '🎒', title: 'New items', text: 'More ways to help yourself and mess with your friends.' },
 ];
 function renderNews() {
@@ -1646,6 +1704,7 @@ function renderSettings() {
   document.getElementById('modeCat').classList.toggle('on', data.settings.pickMode === 'cat');
   document.getElementById('gambleOn').checked = data.settings.gamble;
   document.getElementById('introSecs').value = data.settings.introSeconds;
+  document.getElementById('phoneAutoNext').value = data.settings.phoneAutoNext;
   document.getElementById('fxOn').checked = data.settings.fx;
   document.getElementById('sfxOn').checked = data.settings.sfx;
   document.getElementById('gambleCd').value = data.settings.gambleCooldown;
@@ -2255,7 +2314,7 @@ const PLAYER_COLORS = ['#ff4d6d', '#4d7cff', '#3cb44b', '#f58231', '#a855f7', '#
 const COLOR_NAMES = ['Red', 'Blue', 'Green', 'Orange', 'Purple', 'Cyan', 'Magenta', 'Lime', 'White', 'Brown', 'Teal', 'Pink', 'Lavender', 'Mint', 'Grey'];
 function assignColors(list) {
   const saved = roster.colors ??= {}, taken = new Set();
-  list.forEach(p => { const c = saved[p.name.toLowerCase()]; if (c && PLAYER_COLORS.includes(c) && !taken.has(c)) { p.color = c; taken.add(c); } else p.color = null; });
+  list.forEach(p => { const c = p.pid && p.pick ? p.pick : saved[p.name.toLowerCase()]; if (c && PLAYER_COLORS.includes(c) && !taken.has(c)) { p.color = c; taken.add(c); } else p.color = null; });
   list.forEach(p => { if (p.color) return;
     p.color = PLAYER_COLORS.find(c => !taken.has(c)) ?? PLAYER_COLORS[taken.size % PLAYER_COLORS.length];
     taken.add(p.color); saved[p.name.toLowerCase()] = p.color; });
@@ -2285,7 +2344,7 @@ function setPlayerColor(i, c) {
 const MAX_NAME = 16; // keeps names from breaking the scoreboard, turn strip and buttons
 const cleanName = n => String(n).trim().replace(/\s+/g, ' ').slice(0, MAX_NAME).trim();
 const MAX_PLAYERS = 12; // one distinct color each
-function addByName(name) { name = cleanName(name); if (name && !isPlaying(name) && players.length < MAX_PLAYERS) players.push({ name, score: 0 }); }
+function addByName(name) { if (room) return; name = cleanName(name); if (name && !isPlaying(name) && players.length < MAX_PLAYERS) players.push({ name, score: 0 }); }
 function addRecent(i) { addByName(roster.recent[i]); renderSetup(); }
 function addAllRecent() { roster.recent.forEach(addByName); renderSetup(); }
 function addLastLineup() { roster.lastGame.forEach(addByName); renderSetup(); }
@@ -2293,14 +2352,15 @@ function forgetRecent(i, ev) {
   ev.stopPropagation();
   roster.recent.splice(i, 1); saveRoster(); renderSetup();
 }
-function clearPlayers() { players = []; renderSetup(); }
+function clearPlayers() { players.forEach(kickPhone); players = []; renderSetup(); }
 
 let players = [], prefilled = false;
 function renderSetup() {
   // First time on this screen after opening the app: start with last game's lineup
-  if (!prefilled) { prefilled = true; if (!players.length) roster.lastGame.forEach(addByName); }
+  if (!prefilled) { prefilled = true; if (!players.length && !room) roster.lastGame.forEach(addByName); }
   const recent = roster.recent.map((n, i) => ({ n, i })).filter(r => !isPlaying(r.n));
-  document.getElementById('recentCard').style.display = roster.recent.length ? '' : 'none';
+  document.getElementById('recentCard').style.display = roster.recent.length && !room ? '' : 'none';
+  document.getElementById('addPlayerRow').style.display = room ? 'none' : '';
   document.getElementById('recentChips').innerHTML = recent.map(r =>
     `<span class="chip recent" onclick="addRecent(${r.i})">+ ${esc(r.n)} <b onclick="forgetRecent(${r.i}, event)" title="Forget this name">✕</b></span>`).join('')
     || '<span class="muted">Everyone from your recent list is already playing.</span>';
@@ -2309,23 +2369,400 @@ function renderSetup() {
   renderCatPicker(); renderChoicePicker();
   assignColors(players);
   document.getElementById('playerChips').innerHTML = players.map((p, i) =>
-    `<span class="chip" style="box-shadow: inset 4px 0 0 ${p.color}"><button class="colorBtn" style="background:${p.color}" onclick="pickColor(${i})" title="Change ${esc(p.name)}'s color"></button>${esc(p.name)} <b onclick="removePlayer(${i})" title="Remove">✕</b></span>`).join('');
+    `<span class="chip" style="box-shadow: inset 4px 0 0 ${p.color}"><button class="colorBtn" style="background:${p.color}" onclick="pickColor(${i})" title="Change ${esc(p.name)}'s color"></button>${p.pid ? (p.offline ? '<span class="phoneTag" title="Their phone lost connection">📵</span>' : '<span class="phoneTag" title="Playing on their phone">📱</span>') : ''}${esc(p.name)} <b onclick="removePlayer(${i})" title="Remove">✕</b></span>`).join('');
   const full = players.length >= MAX_PLAYERS;
   document.getElementById('setupInfo').textContent = players.length
     ? `${players.length} of ${MAX_PLAYERS} players${full ? ' (full)' : ''}. First to ${data.settings.targetPoints} points wins.`
-    : `Add 1 to ${MAX_PLAYERS} players to begin.`;
+    : room ? 'Waiting for players to join on their phones.' : `Add 1 to ${MAX_PLAYERS} players to begin.`;
   document.getElementById('playerName').disabled = full;
   document.getElementById('playerName').placeholder = full ? `Game is full (${MAX_PLAYERS} players)` : 'Player name (up to 16 characters)';
-  setTimeout(() => document.getElementById('playerName').focus(), 50);
+  renderRoom(); sendLobby();
+  if (!room) setTimeout(() => document.getElementById('playerName').focus(), 50);
 }
 function addPlayer() {
+  if (room) return notice('Players join from their phones while the room is open. Close the room to add players here instead.', { title: 'Phone game', icon: '📱' });
   const el = document.getElementById('playerName'); const name = cleanName(el.value);
   if (!name) return;
   if (isPlaying(name)) return notice(`<b>${esc(name)}</b> is already playing. Try a different name.`, { title: 'Name taken', icon: '🙋' });
   if (players.length >= MAX_PLAYERS) return notice(`A game can have up to ${MAX_PLAYERS} players.`, { title: 'Game is full', icon: '👥' });
   players.push({ name, score: 0 }); el.value = ''; renderSetup();
 }
-function removePlayer(i) { players.splice(i, 1); renderSetup(); }
+function removePlayer(i) { kickPhone(players[i]); players.splice(i, 1); renderSetup(); }
+
+// ---------- Online play (4.0): players join from their own phones with a room code ----------
+// The TV/computer running the game stays in charge: phones say what they want to do, the host checks it and sends
+// back the state. Messages travel over a room channel: Supabase Realtime once NET_CONFIG is filled in, otherwise a
+// BroadcastChannel, which links tabs in the same browser (handy for testing with no server).
+const NET_CONFIG = { url: 'https://vatbltqkvqksimbmkqql.supabase.co', key: 'sb_publishable_aFpZS_M6eDkrOreWfAYfMQ_gaj5slzK' }; // Supabase project URL + publishable key (public by design); blank = test between tabs only
+const ROOM_LETTERS = 'BCDFGHJKLMNPQRSTVWXZ'; // no vowels, so a code can't spell a word
+const newRoomCode = () => Array.from(crypto.getRandomValues(new Uint32Array(4)), n => ROOM_LETTERS[n % ROOM_LETTERS.length]).join('');
+const cleanCode = s => String(s || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
+const joinUrl = code => `${location.origin}${location.pathname}?join=${code}`;
+const loadScript = src => new Promise((res, rej) => {
+  const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = () => rej(new Error("Couldn't reach the online-play service. Check your connection."));
+  document.head.appendChild(el);
+});
+async function openChannel(code, onMsg, { onUp, onDown } = {}) { // onUp/onDown: the connection came back / dropped after the first connect
+  if (NET_CONFIG.url && NET_CONFIG.key) {
+    if (!window.supabase) await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js');
+    const client = openChannel.client ??= window.supabase.createClient(NET_CONFIG.url, NET_CONFIG.key);
+    const ch = client.channel(`pq-${code}`, { config: { broadcast: { self: false } } });
+    ch.on('broadcast', { event: 'm' }, ({ payload }) => onMsg(payload));
+    let first = true;
+    await new Promise((res, rej) => ch.subscribe(st => {
+      if (st === 'SUBSCRIBED') { if (first) { first = false; res(); } else onUp?.(); }
+      else if (['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(st)) { if (first) rej(new Error("Couldn't connect to the room.")); else onDown?.(); }
+    }));
+    return { send: m => ch.send({ type: 'broadcast', event: 'm', payload: m }), close: () => client.removeChannel(ch) };
+  }
+  const bc = new BroadcastChannel(`pq-${code}`); bc.onmessage = e => onMsg(e.data);
+  return { send: m => bc.postMessage(m), close: () => bc.close() };
+}
+
+// Host side: the room card on the setup screen
+let room = null; // { code, ch, qr } while this device hosts a room
+const roomSend = m => room?.ch.send(m);
+async function openRoom(code = newRoomCode(), quiet = false) {
+  // A game is either all on phones or all on this screen, so names can't clash between the two
+  const local = players.filter(p => !p.pid);
+  if (local.length && !quiet) {
+    if (!await ask(`In a phone game everyone joins from their own phone, so the ${local.length} player${local.length === 1 ? '' : 's'} added here will be removed.`,
+      { title: 'Switch to phones?', icon: '📱', ok: 'Open the room' })) return;
+    players = players.filter(p => p.pid);
+  }
+  try { room = { code, ch: await openChannel(code, onHostMsg, { onUp: () => { sendLobby(); syncPhones(); } }) }; }
+  catch (e) { room = null; return quiet || notice(esc(e.message), { title: "Couldn't open a room", icon: '📡' }); }
+  try { sessionStorage.setItem('potatoQuizHostRoom', code); } catch (e) {} // a reload of this tab reopens the same room
+  if (document.getElementById('setup').classList.contains('active')) renderSetup();
+}
+// After the host's page reloads, reopen the same room so phones find it again and rejoin by themselves
+async function resumeRoom(game) { // game: the saved game that was just resumed, if any
+  let code = null; try { code = sessionStorage.getItem('potatoQuizHostRoom'); } catch (e) {}
+  code ||= game?.room; // the tab was closed rather than reloaded: the saved game remembers its room
+  if (!code || room) return;
+  if (!game) go('setup');
+  await openRoom(code, true);
+  if (room) { roomSend({ t: 'reopened' }); toast(`📱 Room ${code} is open again`); }
+}
+// Heartbeats: phones check in every few seconds; a phone that goes quiet is marked offline on the host
+const PHONE_BEAT = 6000, PHONE_LOST = 20000;
+setInterval(() => {
+  if (!room) return;
+  roomSend({ t: 'beat' });
+  let changed = false;
+  players.forEach(p => { if (!p.pid) return; const off = Date.now() - (p.seen || 0) > PHONE_LOST; if (off !== !!p.offline) { p.offline = off; changed = true; } });
+  if (changed) { if (document.getElementById('setup').classList.contains('active')) renderSetup(); renderPhoneStatus(); }
+}, PHONE_BEAT);
+// On the game screen: a small note when a phone player has dropped, so the host knows to play that turn for them
+function renderPhoneStatus() {
+  let el = document.getElementById('phoneStatus');
+  const off = room ? players.filter(p => p.pid && p.offline) : [];
+  if (!off.length) return el?.remove();
+  if (!el) { el = document.createElement('div'); el.id = 'phoneStatus'; document.getElementById('game').appendChild(el); }
+  el.innerHTML = `📵 ${off.map(p => `<b style="color:${pcText(p)}">${esc(p.name)}</b>`).join(', ')} ${off.length === 1 ? 'has' : 'have'} lost connection. Their turns can be played here.`;
+}
+async function closeRoom() {
+  if (!room) return;
+  const phones = players.filter(p => p.pid).length;
+  if (phones && !await ask(`${phones} player${phones === 1 ? ' is' : 's are'} on ${phones === 1 ? 'a phone' : 'phones'} and will be removed.`, { title: 'Close the room?', icon: '📱', ok: 'Close room', danger: true })) return;
+  roomSend({ t: 'closed' }); room.ch.close(); room = null;
+  try { sessionStorage.removeItem('potatoQuizHostRoom'); } catch (e) {}
+  players = players.filter(p => !p.pid); renderSetup(); renderPhoneStatus();
+}
+function kickPhone(p) { if (p?.pid) roomSend({ t: 'kicked', pid: p.pid }); }
+function sendLobby() {
+  roomSend({ t: 'lobby', code: room?.code, max: MAX_PLAYERS, started: !document.getElementById('setup').classList.contains('active'),
+    players: players.map(p => ({ name: p.name, color: p.color, phone: !!p.pid })) });
+}
+function renderRoom() {
+  const el = document.getElementById('roomCard'); if (!el) return;
+  if (!room) {
+    el.innerHTML = `<div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div><h3 style="margin:0">📱 Play on phones</h3><p class="muted" style="margin:4px 0 0">Open a room and everyone joins from their own phone with a code (instead of adding players here).</p></div>
+      <button class="primary" onclick="openRoom()">Open a room</button></div>`;
+    return;
+  }
+  if (!room.qr && window.qrcode) { const q = qrcode(0, 'M'); q.addData(joinUrl(room.code)); q.make(); room.qr = q.createSvgTag(4, 0); }
+  if (!window.qrcode) loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js').then(renderRoom, () => {});
+  const phones = players.filter(p => p.pid).length;
+  el.innerHTML = `<div class="roomRow">
+      <div class="roomQr">${room.qr || ''}</div>
+      <div style="flex:1;min-width:220px">
+        <div class="muted">Scan the code, or go to the site and tap <b>📱 Join a game</b>:</div>
+        <div class="roomCode">${room.code}</div>
+        <div class="roomUrl muted">${esc(joinUrl(room.code))}</div>
+        <p style="margin:10px 0 0">${phones ? `📱 ${phones} joined on ${phones === 1 ? 'a phone' : 'phones'}` : 'Waiting for players to join…'}</p>
+      </div>
+      <button class="ghost small" onclick="closeRoom()">Close room</button></div>`;
+}
+function onHostMsg(m) {
+  if (!room || !m || typeof m !== 'object') return;
+  const inLobby = document.getElementById('setup').classList.contains('active');
+  const reply = (ok, extra) => roomSend({ t: ok ? 'joined' : 'rejected', pid: m.pid, ...extra });
+  const from = typeof m.pid === 'string' && players.find(o => o.pid === m.pid);
+  if (from) { from.seen = Date.now(); if (from.offline) { from.offline = false; renderPhoneStatus(); if (inLobby) renderSetup(); } }
+  if (m.t === 'ping') return;
+  if (m.t === 'hello') { sendLobby(); return syncPhones(); }
+  if (m.t === 'leave') {
+    const i = players.findIndex(p => p.pid && p.pid === m.pid);
+    if (i >= 0 && inLobby) { players.splice(i, 1); renderSetup(); }
+    return;
+  }
+  if (m.t === 'act') return phoneAct(m);
+  if (m.t !== 'join' || typeof m.pid !== 'string') return;
+  const name = cleanName(m.name || ''); if (!name) return reply(false, { why: 'Please enter your name.' });
+  let p = players.find(o => o.pid === m.pid);
+  if (!p && !inLobby) return reply(false, { why: 'This game has already started. You can watch, and join the next one.', started: true });
+  if (players.some(o => o !== p && o.name.toLowerCase() === name.toLowerCase())) return reply(false, { why: `${name} is already playing. Try a different name.` });
+  if (!p) {
+    if (players.length >= MAX_PLAYERS) return reply(false, { why: `The game is full (${MAX_PLAYERS} players).` });
+    p = { name, score: 0, pid: m.pid }; players.push(p);
+  }
+  p.seen = Date.now(); p.offline = false;
+  p.name = name; p.pick = PLAYER_COLORS.includes(m.color) && !players.some(o => o !== p && o.color === m.color) ? m.color : null;
+  if (p.pick) (roster.colors ??= {})[name.toLowerCase()] = p.pick;
+  if (inLobby) renderSetup(); else { assignColors(players); sendLobby(); }
+  reply(true, { name: p.name, color: p.color });
+  if (inLobby) toast(`📱 ${name} joined`); else syncPhones(); // rejoining mid-game: send the current turn again
+}
+window.addEventListener('pagehide', () => roomSend({ t: 'away' })); // a reload or a closed tab: phones wait for the room to come back
+
+// Phone side: the join screen
+let phone = null; // { code, ch, lobby, joined, name, color, state, err }
+const myPid = () => { try { let id = localStorage.getItem('potatoQuizPid'); if (!id) { id = crypto.randomUUID(); localStorage.setItem('potatoQuizPid', id); } return id; } catch (e) { return myPid.fallback ??= crypto.randomUUID(); } }; // private mode: one id for this visit
+function startPhone(code) {
+  let theme = 'dark';
+  try { theme = JSON.parse(localStorage.getItem(SAVE_KEY))?.settings?.theme || theme; } catch (e) {}
+  document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+  phoneJoin(code);
+}
+function phoneJoin(code) {
+  phone?.ch?.close();
+  let name = ''; try { name = localStorage.getItem('potatoQuizMyName') || ''; } catch (e) {}
+  phone = { code: cleanCode(code), name, state: 'code' };
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('join').classList.add('active');
+  document.getElementById('joinBody').innerHTML = ''; // a code passed in wins over a code box left on screen
+  if (phone.code.length === 4) phoneConnect(); else renderJoin();
+}
+// Phones check in every few seconds and watch for the host; if the host goes quiet, they show a banner and keep trying
+setInterval(() => {
+  if (!phone?.ch) return;
+  if (['in', 'playing'].includes(phone.state)) phoneSend('ping');
+  const lost = ['in', 'playing', 'watching'].includes(phone.state) && Date.now() - (phone.heard || 0) > PHONE_LOST;
+  if (lost !== !!phone.lost) { phone.lost = lost; renderJoinBanner(); }
+  if (lost) phoneSend('hello');
+}, PHONE_BEAT);
+document.addEventListener('visibilitychange', () => { // back from a locked screen or another app: catch up
+  if (document.visibilityState === 'visible' && phone?.ch && phone.state !== 'code') phoneSend('hello');
+});
+function renderJoinBanner() {
+  let b = document.getElementById('joinBanner');
+  if (!phone?.lost) return b?.remove();
+  if (!b) { b = document.createElement('div'); b.id = 'joinBanner'; document.getElementById('join').prepend(b); }
+  b.textContent = phone.away ? "📺 The host's screen disconnected. Waiting for it to come back…" : '📡 Lost connection to the game. Reconnecting…';
+}
+function phoneRejoin() { if (phone?.name) phoneSend('join', { name: phone.name, color: phone.color ?? null }); }
+async function phoneConnect() {
+  const code = cleanCode(document.getElementById('joinCode')?.value ?? phone.code);
+  if (code.length !== 4) { phone.err = 'Room codes are 4 letters.'; return renderJoin(); }
+  phone.code = code; phone.err = ''; phone.state = 'finding'; renderJoin();
+  try { phone.ch = await openChannel(code, onPhoneMsg, { onUp: () => { phoneSend('hello'); if (['in', 'playing'].includes(phone.state)) phoneRejoin(); } }); }
+  catch (e) { phone.state = 'code'; phone.err = e.message; return renderJoin(); }
+  phone.ch.send({ t: 'hello' });
+  clearTimeout(phone.wait);
+  phone.wait = setTimeout(() => { if (phone.state !== 'finding') return;
+    phone.ch.close(); phone.ch = null; phone.state = 'code'; phone.err = `No game found with code ${code}. Check the code on the TV.`; renderJoin(); }, 5000);
+}
+function phoneSend(t, extra) { phone?.ch?.send({ t, pid: myPid(), ...extra }); }
+function phoneSubmit() {
+  const name = cleanName(document.getElementById('joinName').value);
+  if (!name) { phone.err = 'Please enter your name.'; return renderJoin(); }
+  phone.name = name; try { localStorage.setItem('potatoQuizMyName', name); } catch (e) {}
+  phone.err = ''; phoneSend('join', { name, color: phone.color });
+}
+function phonePickColor(c) { phone.color = c; phone.name = document.getElementById('joinName')?.value ?? phone.name; renderJoin(); }
+function phoneWatch() { phone.state = 'watching'; phone.err = ''; phone.canWatch = false; phoneSend('hello'); renderJoin(); }
+function phoneLeave() { phoneSend('leave'); phone.ch?.close(); phoneJoin(''); }
+function onPhoneMsg(m) {
+  if (!phone || !m || typeof m !== 'object') return;
+  phone.heard = Date.now(); if (phone.lost) { phone.lost = false; renderJoinBanner(); }
+  const mine = m.pid === myPid();
+  if (m.t === 'away') { phone.heard = 0; phone.lost = true; phone.away = true; return renderJoinBanner(); }
+  phone.away = false;
+  if (m.t === 'beat') return;
+  if (m.t === 'reopened') { if (['in', 'playing'].includes(phone.state)) phoneRejoin(); return; } // the host's page reloaded
+  if (m.t === 'lobby') {
+    phone.lobby = m;
+    if (phone.state === 'finding') {
+      phone.state = 'name';
+      let last = ''; try { last = localStorage.getItem('potatoQuizRoom'); } catch (e) {}
+      if (last === phone.code && phone.name) phoneSend('join', { name: phone.name, color: phone.color ?? null }); // was already in this room: rejoin
+    }
+    if (phone.state === 'in' && m.started) phone.state = 'playing';
+    if (phone.state === 'playing' && !m.started) phone.state = 'in';
+    if (phone.state === 'watching' && !m.started) phone.state = 'name'; // the game is over: spectators can join the next one
+    // the host forgot us (its page reloaded): quietly join again
+    if (['in', 'playing'].includes(phone.state) && !m.started && !m.players.some(o => o.name.toLowerCase() === phone.name.toLowerCase())) phoneRejoin();
+  } else if (m.t === 'joined' && mine) { try { localStorage.setItem('potatoQuizRoom', phone.code); } catch (e) {} phone.state = phone.lobby?.started ? 'playing' : 'in'; phone.name = m.name; phone.color = m.color; }
+  else if (m.t === 'rejected' && mine) { phone.err = m.why; phone.canWatch = !!m.started; if (['in', 'playing'].includes(phone.state)) phone.state = 'name'; }
+  else if (m.t === 'kicked' && mine) { phone.ch.close(); phone.ch = null; phone.state = 'out'; phone.err = 'The host removed you from the game.'; }
+  else if (m.t === 'closed' && phone.state !== 'code') { phone.ch?.close(); phone.ch = null; phone.state = 'out'; phone.err = 'The host closed the room.'; }
+  else if (m.t === 'started' && ['in', 'playing'].includes(phone.state)) { phone.state = 'playing'; phone.note = ''; }
+  else if (m.t === 'quit' && ['in', 'playing', 'watching'].includes(phone.state)) { phone.state = phone.state === 'watching' ? 'name' : 'in'; phone.turn = null; phone.winner = null; phone.note = 'The host ended the game.'; if (phone.state === 'name') phone.err = phone.note; }
+  else if (m.t === 'turn' && ['in', 'playing', 'watching'].includes(phone.state)) {
+    const same = phone.state !== 'in' && phone.turn?.v === m.v;
+    if (phone.state === 'in') phone.state = 'playing'; phone.turn = m;
+    if (same) { // same screen, just a clock tick: update the timer in place so taps aren't lost mid-redraw
+      const t = document.querySelector('#joinBody .pcTimer');
+      if (t && m.timer) { t.textContent = `⏱️ ${m.timer.left}s`; t.classList.toggle('low', m.timer.low); }
+      return;
+    }
+    phone.sent = null;
+  }
+  else if (m.t === 'ended' && phone.state === 'playing') { phone.state = 'in'; phone.winner = m.winner; }
+  else if (m.t === 'ended' && phone.state === 'watching') { phone.state = 'name'; phone.winner = m.winner; phone.err = `🏆 ${m.winner} won! You can join the next game.`; }
+  else return;
+  renderJoin();
+}
+function renderJoin() {
+  const el = document.getElementById('joinBody'), P = phone, L = P.lobby, list = L?.players || [];
+  const others = list.filter(o => o.name.toLowerCase() !== (P.state === 'in' || P.state === 'playing' ? P.name.toLowerCase() : '\u0000'));
+  const chips = items => items.length ? `<div class="joinList">${items.map(o => `<span class="chip" style="box-shadow: inset 4px 0 0 ${o.color}">${o.phone ? '<span class="phoneTag">📱</span>' : ''}${esc(o.name)}</span>`).join('')}</div>` : '';
+  const err = `<p class="joinErr">${esc(P.err || '')}</p>`;
+  if (P.state === 'code' || P.state === 'finding') {
+    el.innerHTML = `<p class="sub">Enter the room code shown on the TV.</p>
+      <input id="joinCode" class="codeInput" maxlength="4" autocomplete="off" autocapitalize="characters" value="${esc(P.code)}" placeholder="ABCD"
+        oninput="this.value=cleanCode(this.value)" onkeydown="if(event.key==='Enter')phoneConnect()">
+      ${err}<button class="primary big" onclick="phoneConnect()" ${P.state === 'finding' ? 'disabled' : ''}>${P.state === 'finding' ? 'Looking for the game…' : 'Next →'}</button>`;
+    if (P.state === 'code') setTimeout(() => document.getElementById('joinCode')?.focus(), 50);
+  } else if (P.state === 'name' && (P.canWatch || L?.started)) { // a game is already under way: offer to watch it
+    el.innerHTML = `<div class="bigIcon">🎮</div><p class="sub">Room <b>${P.code}</b></p>
+      <div class="pcHead">A game is already in progress</div><p>You can watch it on your phone and join the next game.</p>
+      <button class="primary big" onclick="phoneWatch()">👀 Watch this game</button>
+      ${list.length ? `<p class="muted" style="margin:18px 0 0">Playing:</p>${chips(list)}` : ''}`;
+  } else if (P.state === 'name') {
+    const taken = new Map(list.map(o => [o.color, o.name]));
+    if (taken.has(P.color)) P.color = null;
+    el.innerHTML = `<p class="sub">Room <b>${P.code}</b>${list.length ? ` · ${list.length} of ${L.max} playing` : ''}</p>
+      <input id="joinName" maxlength="16" placeholder="Your name" value="${esc(P.name)}" onkeydown="if(event.key==='Enter')phoneSubmit()">
+      <p class="muted" style="margin:14px 0 0">Pick your color${P.color ? '' : ' (or leave it to the host)'}:</p>
+      <div class="colorGrid">${PLAYER_COLORS.map((c, n) => { const by = taken.get(c), on = c === P.color;
+        return `<button class="swatch ${on ? 'mine' : ''}" style="--sw:${c}" ${by ? 'disabled' : ''} title="${esc(COLOR_NAMES[n])}${by ? ` — ${esc(by)}` : ''}" onclick="phonePickColor('${c}')">${by ? '✕' : on ? '✓' : ''}</button>`; }).join('')}</div>
+      ${err}<button class="primary big" onclick="phoneSubmit()">Join the game</button>
+      ${list.length ? `<p class="muted" style="margin:18px 0 0">Already playing:</p>${chips(list)}` : ''}`;
+  } else if (P.state === 'in') {
+    el.innerHTML = `${P.note ? `<div class="joinNote">🛑 ${esc(P.note)}</div>` : ''}<p class="sub">You're in! ${P.winner ? `🏆 ${esc(P.winner)} won the last game.` : ''}</p>
+      <div class="joinMe" style="color:${P.color || 'var(--accent)'}">${esc(P.name)}</div>
+      <p>Waiting for the host to start the game…</p>
+      ${others.length ? `<p class="muted" style="margin:18px 0 0">Playing with you:</p>${chips(others)}` : ''}
+      <button class="ghost big" onclick="phoneLeave()">Leave</button>`;
+  } else if (P.state === 'playing' || P.state === 'watching') {
+    el.innerHTML = P.turn ? phoneTurnHtml(P.turn) : `<div class="bigIcon">📺</div><div class="joinMe" style="color:${P.color || 'var(--accent)'}">${esc(P.name)}</div>
+      <p>The game is starting. Watch the TV!</p>`;
+  } else {
+    el.innerHTML = `<div class="bigIcon">👋</div><p>${esc(P.err || 'You left the game.')}</p>
+      <button class="primary big" onclick="phoneJoin('')">Join a game</button>`;
+  }
+}
+
+// Phones as controllers: the TV sends the active player's phone a simple picture of what's on screen (pick
+// buttons, items, the question and its choices, or a pop-up's buttons). A tap on the phone comes back as "press
+// button N", and the TV presses that same button, so every game rule runs in one place, on the TV.
+let phoneSeq = 0, phoneSyncQueued = false, lastView = null, lastSig = ''; // phoneSeq: version of the screen a tap must match
+function syncPhones() {
+  if (!room || phoneSyncQueued) return;
+  phoneSyncQueued = true;
+  setTimeout(() => {
+    phoneSyncQueued = false;
+    if (!room || !document.getElementById('game').classList.contains('active')) return;
+    const view = turnView(), sig = JSON.stringify({ ...view, timer: null, scores: null });
+    if (sig !== lastSig) { lastSig = sig; phoneSeq++; }
+    roomSend(lastView = { ...view, v: phoneSeq });
+  });
+}
+const txt = el => el ? el.textContent.replace(/\s+/g, ' ').trim() : '';
+const btnInfo = b => { // a button's main label, its small second line, color and state
+  const clone = b.cloneNode(true); clone.querySelector('small')?.remove();
+  const cs = getComputedStyle(b), bg = cs.backgroundImage !== 'none' ? cs.backgroundImage : cs.backgroundColor;
+  return { label: txt(clone), sub: txt(b.querySelector('small')), color: bg, fg: cs.color, disabled: b.disabled, cls: b.className };
+};
+function turnView() {
+  const p = players[turn];
+  const view = { t: 'turn', pid: p?.pid || null, name: p?.name, color: p?.color, round,
+    scores: players.map(o => ({ name: o.name, color: o.color, score: o.score, turn: o === p })) };
+  const m = document.querySelector('#modal .modalBox');
+  if (m) {
+    const body = m.cloneNode(true); body.querySelectorAll('h2, .actions, .bigIcon, button, input').forEach(e => e.remove());
+    body.querySelectorAll('p, div, li, br').forEach(e => e.after(' ')); // keep a space between paragraphs
+    return { ...view, kind: 'modal', icon: txt(m.querySelector('.bigIcon')), title: txt(m.querySelector('h2')), body: txt(body).slice(0, 400),
+      buttons: [...m.querySelectorAll('.actions button')].map(btnInfo),
+      // buttons inside the pop-up itself (Category Lock families and categories, Exodia's family picks…)
+      extra: modalBodyButtons().map(b => ({ ...btnInfo(b), open: b.classList.contains('lockFamHead') && b.closest('.lockFamily')?.classList.contains('open') })) };
+  }
+  if (!current) {
+    const st = document.getElementById('stage');
+    return { ...view, kind: 'pick', head: txt(st.querySelector('.turn')),
+      buttons: [...st.querySelectorAll('.tierPick > button')].map(btnInfo),
+      items: [...st.querySelectorAll('.itemBar button.itemCard')].map(btnInfo) };
+  }
+  const q = current, c = catOf(q.categoryId) || NO_CAT, t = tierOf(q.tierId);
+  const base = { ...view, cat: catLabel(c), catColor: c.color, tier: `${t.name} · ${t.points} pt${t.points == 1 ? '' : 's'}`, tierColor: t.color };
+  if (q.intro) return { ...base, kind: 'intro' };
+  const right = q.shuffled ? q.shuffled.indexOf(q.answer) : -1;
+  return { ...base, kind: 'question', q: q.text, choices: q.shuffled || null, picked: q.picked ?? null, revealed,
+    answer: revealed ? q.answer : null, right: revealed ? right : -1, timesUp, timer: timer ? { left: timer.left, low: timer.left <= (data.settings.timer.warnAt ?? 10) } : null,
+    win: stakes(p).win, lose: stakes(p).lose, autoNext: autoNextSecs(), canNext: !!document.querySelector('#qReveal .actions button.primary') && revealed };
+}
+const modalBodyButtons = () => [...document.querySelectorAll('#modal .modalBox button')].filter(b => !b.closest('.actions'));
+// A tap from the active player's phone: only their own turn, and only on the screen the TV last sent them
+function phoneAct(m) {
+  const p = players[turn];
+  if (!p?.pid || m.pid !== p.pid || m.v !== lastView?.v) return;
+  const k = String(m.id || ''), n = parseInt(k.slice(1), 10), press = b => { if (b && !b.disabled) { b.click(); setTimeout(syncPhones); } };
+  if (k[0] === 'x') return press(modalBodyButtons()[n]);
+  if (k[0] === 'm') return press(document.querySelectorAll('#modal .modalBox .actions button')[n]);
+  if (document.getElementById('modal')) return; // a pop-up is open on the TV: answer that first
+  if (k[0] === 'p' && !current) return press(document.querySelectorAll('#stage .tierPick > button')[n]);
+  if (k[0] === 'i' && !current) return press(document.querySelectorAll('#stage .itemBar button.itemCard')[n]);
+  if (k[0] === 'c' && current && !current.intro && !revealed && current.shuffled?.[n] !== undefined) return pickChoice(n);
+  if (k === 'next' && current && revealed) return press(document.querySelector('#qReveal .actions button.primary'));
+}
+function phoneTap(id) {
+  const T = phone?.turn; if (!T || phone.sent === T.v + id) return;
+  phone.sent = T.v + id; phoneSend('act', { v: T.v, id });
+  document.querySelectorAll('#joinBody button').forEach(b => b.disabled = true); // wait for the TV's reply
+}
+function phoneTurnHtml(T) {
+  const mine = T.pid === myPid() && phone.state !== 'watching', me = T.scores.find(o => o.name.toLowerCase() === (phone.name || '').toLowerCase());
+  const bar = phone.state === 'watching' ? `<div class="pcBar"><span style="font-weight:800">👀 Watching</span><span>Round ${T.round}</span></div>`
+    : `<div class="pcBar"><span style="color:${phone.color || 'var(--accent)'};font-weight:800">${esc(phone.name)}</span><span>${me ? `${me.score} pts` : ''} · Round ${T.round}</span></div>`;
+  const scores = `<div class="pcScores">${[...T.scores].sort((a, b) => b.score - a.score).map(o =>
+    `<div class="${o.turn ? 'cur' : ''}"><span style="color:${o.color}">${esc(o.name)}</span><b>${o.score}</b></div>`).join('')}</div>`;
+  const pills = T.cat ? `<div class="joinList"><span class="pill" style="background:${T.catColor}">${esc(T.cat)}</span><span class="pill" style="background:${T.tierColor}">${esc(T.tier)}</span></div>` : '';
+  const btn = (b, id, extra = '') => `<button class="${extra}" style="${b.color ? `background:${b.color};color:${b.fg}` : ''}" ${b.disabled ? 'disabled' : ''} onclick="phoneTap('${id}')">${esc(b.label)}${b.sub ? `<small>${esc(b.sub)}</small>` : ''}</button>`;
+  const choicesHtml = (clickable) => T.choices ? `<div class="pcList">${T.choices.map((c, i) => {
+      const cls = [T.revealed && i === T.right && 'right', T.revealed && T.picked === i && i !== T.right && 'wrongPick', T.picked === i && 'picked'].filter(Boolean).join(' ');
+      return `<button class="${cls}" ${clickable ? `onclick="phoneTap('c${i}')"` : 'disabled'}><b>${'ABCDEF'[i]}.</b> ${esc(c)}</button>`; }).join('')}</div>` : '';
+  if (!mine) {
+    const watching = T.kind === 'question' ? `${pills}<div class="pcQ">${esc(T.q)}</div>${choicesHtml(false)}${T.revealed ? `<p class="pcResult">✅ ${esc(T.answer)}</p>` : ''}` : '';
+    return `${bar}<div class="pcHead"><span style="color:${T.color}">${esc(T.name)}</span>'s turn</div>${watching || '<p class="muted">Watch the TV!</p>'}${scores}`;
+  }
+  if (T.kind === 'modal') return `${bar}<div class="bigIcon">${esc(T.icon)}</div><div class="pcHead">${esc(T.title)}</div>${T.body ? `<p>${esc(T.body)}</p>` : ''}
+    ${T.extra?.length ? `<div class="pcBtns pcModalBtns">${T.extra.map((b, i) => btn({ ...b, label: (b.cls.includes('lockFamHead') ? (b.open ? '▾ ' : '▸ ') : '') + b.label },
+      'x' + i, [/lockFamHead/.test(b.cls) && 'wide', /\bon\b/.test(b.cls) && 'picked'].filter(Boolean).join(' '))).join('')}</div>` : ''}
+    <div class="pcList pcModal">${T.buttons.map((b, i) => btn({ ...b, color: '' }, 'm' + i, b.cls.includes('primary') ? 'primary' : b.cls.includes('bad') ? 'bad' : '')).join('')}</div>`;
+  if (T.kind === 'pick') return `${bar}<div class="pcHead">🎯 Your turn! Pick one:</div>
+    <div class="pcBtns">${T.buttons.map((b, i) => btn(b, 'p' + i, /lockedBtn|exodiaBtn|groupBack/.test(b.cls) ? 'wide' : '')).join('')}</div>
+    ${T.items.length ? `<div class="pcItems"><p class="muted" style="margin:0 0 8px">🎒 Your items (use one before picking):</p><div class="pcList">${T.items.map((b, i) => btn({ ...b, color: '' }, 'i' + i)).join('')}</div></div>` : ''}`;
+  if (T.kind === 'intro') return `${bar}<div class="pcHead">Get ready…</div>${pills}<p class="muted">Your question is coming up on the TV.</p>`;
+  const timerHtml = T.timer ? `<div class="pcTimer ${T.timer.low ? 'low' : ''}">⏱️ ${T.timer.left}s</div>` : '';
+  const result = T.revealed ? (T.picked != null && !T.timesUp ? `<div class="pcResult">${T.picked === T.right ? `🎉 Correct! +${T.win}` : `❌ Not quite${T.lose ? ` −${T.lose}` : ''}`}</div>${T.picked !== T.right ? `<p>Answer: <b>${esc(T.answer)}</b></p>` : ''}`
+      : `${T.timesUp ? '<div class="pcResult">⏰ Time\'s up!</div>' : ''}<p>Answer: <b>${esc(T.answer)}</b></p><p class="muted">The host will mark it on the TV.</p>`) : '';
+  return `${bar}${pills}${timerHtml}<div class="pcQ">${esc(T.q)}</div>
+    ${T.choices ? choicesHtml(!T.revealed) : (T.revealed ? '' : '<p class="muted">Say your answer out loud! The host will mark it.</p>')}
+    ${result}${T.revealed && T.picked != null && !T.timesUp ? `<p class="muted">${T.autoNext ? `Next turn in ${T.autoNext}s…` : 'The host will continue on the TV.'}</p>` : ''}`;
+}
 
 // ---------- Items ----------
 // hot = earned on a streak of correct answers, cold = earned on a streak of wrong answers (stronger, to help catch up)
@@ -2467,6 +2904,7 @@ function renderExodiaPicker() {
       <span>${on ? '✓ ' : ''}${esc(f.name)}</span><small>${f.count} q</small></button>`; }).join('');
   const go = document.getElementById('exoGo');
   go.disabled = chosen.length < need; go.textContent = chosen.length < need ? `Pick ${need - chosen.length} more` : '🃏 Start Exodia';
+  syncPhones();
 }
 function exodiaStart() {
   const { idx, chosen, fams } = exodiaPick, p = players[turn];
@@ -2557,9 +2995,9 @@ function modal(html, buttons = [{ label: 'Continue', cls: 'primary' }]) {
     const el = document.createElement('button'); el.className = b.cls || ''; el.innerHTML = b.label;
     el.onclick = () => { closeModal(); b.fn?.(); }; bar.appendChild(el);
   });
-  document.body.appendChild(o);
+  document.body.appendChild(o); syncPhones();
 }
-function closeModal() { document.getElementById('modal')?.remove(); }
+function closeModal() { if (document.getElementById('modal')) { document.getElementById('modal').remove(); syncPhones(); saveGameSoon(); } }
 // In-game versions of the browser's alert() and confirm(), so messages match the rest of the game
 function notice(msg, { title = 'Heads up', icon = '💡' } = {}) {
   return new Promise(res => modal(`<div class="bigIcon">${icon}</div><h2>${title}</h2><p>${msg}</p>`, [{ label: 'OK', cls: 'primary', fn: res }]));
@@ -2589,7 +3027,7 @@ function startGame() {
   // the scoreboard starts at the top and holds still until the turn order is closed, then a few more seconds
   boardDir = 1; boardPauseUntil = Infinity;
   const startBoard = () => { document.getElementById('boardScroll').scrollTop = 0; boardPauseUntil = performance.now() + BOARD_START_DELAY; };
-  go('game'); renderGame(); sfx('start');
+  go('game'); renderGame(); sfx('start'); roomSend({ t: 'started' }); renderPhoneStatus();
   const showOrder = () => modal(`<div class="bigIcon">🎲</div><h2>Turn order</h2>
     <ol class="turnOrder">${players.map(p => `<li>${esc(p.name)}</li>`).join('')}</ol>`,
     [{ label: '📖 How to play', fn: () => howToPlay(showOrder) }, { label: "Let's go!", cls: 'primary', fn: startBoard }]);
@@ -2607,7 +3045,7 @@ async function restartGame() {
   if (!await ask("Same players, but scores and items go back to zero. This game won't count toward Games or Wins.", { title: 'Restart the game?', icon: '🔄', ok: 'Restart', danger: true })) return;
   document.querySelector('#stage audio')?.pause(); stopTimer(); current = null; closeModal(); startGame();
 }
-async function quitGame() { if (await ask("You'll go back to the main menu and this game will end.", { title: 'End this game?', icon: '🚪', ok: 'End game', danger: true })) { document.querySelector('#stage audio')?.pause(); stopTimer(); current = null; go('menu'); } }
+async function quitGame() { if (await ask("You'll go back to the main menu and this game will end.", { title: 'End this game?', icon: '🚪', ok: 'End game', danger: true })) { document.querySelector('#stage audio')?.pause(); stopTimer(); current = null; clearSavedGame(); roomSend({ t: 'quit' }); go('menu'); } }
 
 // Everything currently affecting a player. kind: 'buff' (helps them), 'debuff' (hurts them) or 'info' (neutral).
 // short = the tag on the scoreboard; text = the full explanation (player details and the current player's turn)
@@ -2871,6 +3309,7 @@ function renderGame() {
     b.prepend(t);
   });
   st.dataset.view = current ? 'q' : 'pick:' + turn + ':' + (pickGroup || '');
+  syncPhones(); saveGameSoon();
   if (!keep) st.scrollTop = 0;
   const stage = document.getElementById('stage');
   stage.classList.remove('stageIn'); void stage.offsetWidth; stage.classList.add('stageIn');
@@ -2965,12 +3404,14 @@ function renderReveal() {
     }).join('')}</div>` : ''}
     ${revealed && pickedRight !== null && !timesUp ? `<div class="answer">✅ ${esc(q.answer)}</div>
       <div class="pickResult ${pickedRight ? 'good' : 'bad'}">${pickedRight ? `🎉 Correct! <b>+${st.win}</b>` : `❌ Wrong${st.lose ? ` <b>−${st.lose}</b>` : ''}`}</div>
-      <div class="actions"><button class="primary" onclick="mark(${pickedRight})">Next ▶</button></div>
+      <div class="actions"><button class="primary" onclick="mark(${pickedRight})">Next ▶${autoNextSecs() ? ` <small>(auto in ${autoNextSecs()}s)</small>` : ''}</button></div>
       <p class="muted" style="text-align:center;margin:6px 0 0;font-size:.85rem"><a href="#" style="color:var(--muted)" onclick="current.picked = null; renderReveal(); return false">Change result</a></p>`
     : revealed ? `${timesUp ? `<div class="timesUp">⏰ Time's up!${late ? ' <small>If they answered just in time, you can still mark it correct.</small>' : ''}</div>` : ''}<div class="answer">✅ ${esc(q.answer)}</div>
       <div class="actions">${timesUp && !late ? '' : `<button class="good ${pickedRight === true ? 'suggest' : ''}" onclick="mark(true)">Correct (+${st.win})</button>`}
       <button class="bad ${pickedRight === false ? 'suggest' : ''}" onclick="mark(false)">${timesUp && !late ? 'Continue — counts as wrong' : 'Wrong'}${st.lose ? ` (−${st.lose})` : ''}</button></div>`
       : `<div class="actions"><button class="primary" onclick="reveal()">Reveal answer</button></div>`}`;
+  scheduleAutoNext();
+  syncPhones(); saveGameSoon();
 }
 function countLabel(match) {
   const n = gameQs().filter(match).length;
@@ -3059,6 +3500,20 @@ function reveal() { stopTimer(); revealed = true; renderReveal(); }
 // ("Change result" falls back to the host's Correct / Wrong buttons)
 function pickChoice(i) { if (revealed || !current) return; current.picked = i; reveal(); }
 
+// Phone players don't need to tap Next: after they answer, the result shows briefly and the game moves on
+let autoNextTimer = null, autoNextFor = null;
+const autoNextSecs = () => room && players[turn]?.pid && current?.picked != null && !timesUp ? data.settings.phoneAutoNext || 0 : 0;
+function scheduleAutoNext() {
+  const secs = autoNextSecs(), q = current;
+  if (!revealed || !secs) { if (!revealed || q?.picked == null) { clearTimeout(autoNextTimer); autoNextFor = null; } return; }
+  if (autoNextFor === q) return; // already counting down for this answer
+  autoNextFor = q; clearTimeout(autoNextTimer);
+  autoNextTimer = setTimeout(() => {
+    autoNextFor = null;
+    if (current === q && revealed && q.picked != null && !document.getElementById('modal')) document.querySelector('#qReveal .actions button.primary')?.click();
+  }, secs * 1000);
+}
+
 // ---------- Timer ----------
 let timer = null, timesUp = false, audioCtx;
 function startTimer(p) {
@@ -3075,7 +3530,7 @@ function tick() {
   timer.left--;
   if (timer.left <= (data.settings.timer.warnAt ?? 10) && timer.left > 0) beep(timer.left <= 3 ? 1100 : 880, .08);
   if (timer.left <= 0) { beep(180, .6, .25); stopTimer(); timesUp = true; revealed = true; renderReveal(); }
-  renderTimer();
+  renderTimer(); syncPhones(); saveGameSoon();
 }
 function toggleTimerPause() { if (timer) { timer.paused = !timer.paused; renderTimer(); } }
 function renderTimer() {
@@ -3493,7 +3948,7 @@ function renderLockPicker() {
         .map(x => chip(x.c.id, `${g.group} › ${x.c.name}`, x.c.color, x.count))),
       ...loose.filter(e => e.c.name.toLowerCase().includes(q)).map(e => chip(e.c.id, e.c.name, e.c.color, e.count))];
     el.innerHTML = hits.length ? `<div class="lockChips">${hits.join('')}</div>` : '<p class="muted">No category matches.</p>';
-    return;
+    return syncPhones();
   }
   el.innerHTML = `<div class="lockFamilies">${groups.map((g, gi) => {
     const open = lockPick.open === g.group;
@@ -3502,6 +3957,7 @@ function renderLockPicker() {
       ${open ? `<div class="lockChips">${chip('g:' + g.group, `🎲 Any ${g.group}`, g.color, g.count)}${[...g.cats].sort((a, b) => catOrder(a.c, b.c)).map(x => chip(x.c.id, x.c.name, x.c.color, x.count)).join('')}</div>` : ''}
     </div>`; }).join('')}</div>
     ${loose.length ? `<div class="lockChips" style="margin-top:10px">${loose.map(e => chip(e.c.id, e.c.name, e.c.color, e.count)).join('')}</div>` : ''}`;
+  syncPhones();
 }
 function applyItem(idx, ti, catId) {
   const p = players[turn], key = p.items[idx], it = ITEMS[key], v = players[ti];
@@ -3580,13 +4036,61 @@ function finishItem(p, idx, html, sound = 'use') {
   modal(html);
 }
 
+// ---------- Saved game ----------
+// The game in progress is saved on this device after every change, so a reload (or a closed tab) can pick up where
+// it left off. Players that point at other players (Side Bets, Phone a Friend, Tax…) are saved as { $p: index }.
+const GAME_KEY = 'potatoQuizGame', GAME_MAX_AGE = 12 * 3600 * 1000;
+let gameSaveQueued = false;
+function saveGameSoon() { if (gameSaveQueued) return; gameSaveQueued = true; setTimeout(() => { gameSaveQueued = false; saveGame(); }, 250); }
+const encGame = v => Array.isArray(v) ? v.map(encGame)
+  : v instanceof Set ? { $set: [...v] }
+  : v && typeof v === 'object' ? (players.includes(v) ? { $p: players.indexOf(v) } : Object.fromEntries(Object.entries(v).map(([k, x]) => [k, encGame(x)])))
+  : v;
+const decGame = v => Array.isArray(v) ? v.map(decGame)
+  : v && typeof v === 'object' ? ('$p' in v ? players[v.$p] : '$set' in v ? new Set(v.$set) : Object.fromEntries(Object.entries(v).map(([k, x]) => [k, decGame(x)])))
+  : v;
+function saveGame() {
+  if (!document.getElementById('game').classList.contains('active') || !players.length) return;
+  const st = { at: Date.now(), room: room?.code || null,
+    players: players.map(p => Object.fromEntries(Object.entries(p).map(([k, x]) => [k, encGame(x)]))),
+    turn, round, used: [...used], current: encGame(current), revealed, itemUsedThisTurn, bets: encGame(bets), pickGroup,
+    itemsThisGame, feedLog, turnPrizes, catsThisGame, famsThisGame, timesUp, dodgeNote, lastPlaceRound, lastPlaceNotes: encGame(lastPlaceNotes), shownRound,
+    timer: timer && { left: timer.left, total: timer.total, paused: timer.paused, crunched: timer.crunched } };
+  try { localStorage.setItem(GAME_KEY, JSON.stringify(st)); } catch (e) {}
+}
+function clearSavedGame() { try { localStorage.removeItem(GAME_KEY); } catch (e) {} }
+async function resumeGame() {
+  let st = null; try { st = JSON.parse(localStorage.getItem(GAME_KEY)); } catch (e) {}
+  if (!st?.players?.length || Date.now() - st.at > GAME_MAX_AGE) { clearSavedGame(); return null; }
+  const names = st.players.map(p => esc(p.name)), list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
+  if (!await ask(`<b>${list}</b> ${names.length > 1 ? 'were' : 'was'} in the middle of a game (round ${st.round}).`,
+    { title: 'Resume the game?', icon: '🥔', ok: 'Resume', cancel: 'Start fresh' })) { clearSavedGame(); return null; }
+  players = st.players; players.forEach(p => { for (const k in p) p[k] = decGame(p[k]); if (p.pid) { p.seen = Date.now(); p.offline = false; } });
+  turn = st.turn; round = st.round; used = new Set(st.used); current = decGame(st.current); revealed = st.revealed; itemUsedThisTurn = st.itemUsedThisTurn;
+  bets = decGame(st.bets); pickGroup = st.pickGroup; itemsThisGame = st.itemsThisGame; feedLog = st.feedLog; turnPrizes = st.turnPrizes;
+  catsThisGame = st.catsThisGame; famsThisGame = st.famsThisGame; timesUp = st.timesUp; dodgeNote = st.dodgeNote;
+  lastPlaceRound = st.lastPlaceRound; lastPlaceNotes = decGame(st.lastPlaceNotes); shownRound = st.shownRound;
+  shownScores = new Map(); boardDir = 1; boardPauseUntil = 0; prefilled = true;
+  document.getElementById('itemCards').innerHTML = '';
+  stopTimer(); go('game');
+  if (current?.intro) showQuestion(); // it was still on the "here comes your question" card: go straight to the question
+  else {
+    if (st.timer && current && !revealed) timer = { ...st.timer, id: setInterval(tick, 1000) }; // the clock carries on where it was
+    renderGame();
+  }
+  setTimeout(renderFeed); renderPhoneStatus();
+  toast('Game resumed');
+  return st;
+}
+
 // ---------- Winner ----------
 function showWinner(w, how) {
+  clearSavedGame();
   players.forEach(p => playerStat(p.name).games++); // only finished games count toward games and wins
   playerStat(w.name).wins++;
   players.forEach(p => p.items.forEach(k => itemStat(k).unused++)); // still in hand when the game ended
   saveStats();
-  stopTimer(); go('winner'); sfx('win');
+  stopTimer(); go('winner'); sfx('win'); roomSend({ t: 'ended', winner: w.name });
   document.getElementById('winnerName').textContent = w.name;
   document.getElementById('winnerPts').textContent = `${w.score} point${w.score === 1 ? "" : "s"}${how === 'exodia' ? ' · won by 🃏 Exodia!' : ''}`;
   const rest = [...players].sort((a, b) => b.score - a.score || (b === w) - (a === w)); // winner first on a tie
@@ -3606,6 +4110,8 @@ function confetti() {
 }
 
 async function start() {
+  const joinCode = new URLSearchParams(location.search).get('join');
+  if (joinCode !== null) return startPhone(joinCode); // a phone joining a game doesn't need the question bank
   try {
     const r = await fetch(`questions.json?v=${APP_VERSION}`);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -3628,6 +4134,7 @@ document.getElementById('versionTag').textContent = `v${APP_VERSION}`;
 applyFx();
 migrateOldMedia();
 renderMenu();
+resumeGame().then(resumeRoom);
 }
 start();
 </script>
