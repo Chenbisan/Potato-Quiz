@@ -1016,7 +1016,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '4.0.0';
+const APP_VERSION = '4.0.1';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -2071,8 +2071,15 @@ async function delCat(id) {
 const PKEY = 'potatoQuizPlayers_v1';
 let roster = loadRoster();
 function loadRoster() {
-  try { const r = JSON.parse(localStorage.getItem(PKEY)); if (r && r.recent) return r; } catch (e) {}
-  return { recent: [], lastGame: [] };
+  try {
+    const r = JSON.parse(localStorage.getItem(PKEY));
+    if (r && r.recent) {
+      // 4.0.1: 4.0.0 saved phone players into "last game's lineup", which then came back as local players; clear it once
+      if (!r.lineupFix) { r.lastGame = []; r.lineupFix = 1; try { localStorage.setItem(PKEY, JSON.stringify(r)); } catch (e) {} }
+      return r;
+    }
+  } catch (e) {}
+  return { recent: [], lastGame: [], lineupFix: 1 };
 }
 // Categories switched off for the game (remembered for next time). '' = Uncategorized.
 const offCats = () => roster.offCats ??= [];
@@ -2301,7 +2308,8 @@ async function resetSeenCounts() { if (await ask('Every question\'s "seen" count
 function saveRoster() { try { localStorage.setItem(PKEY, JSON.stringify(roster)); } catch (e) {} }
 const MAX_RECENT = 40;
 function rememberPlayers() {
-  const names = players.map(p => p.name), lower = names.map(n => n.toLowerCase());
+  // Only players added on this screen are remembered: phone players join by themselves, so they never come back as local players
+  const names = players.filter(p => !p.pid).map(p => p.name), lower = names.map(n => n.toLowerCase());
   roster.lastGame = names;
   roster.recent = [...names, ...roster.recent.filter(n => !lower.includes(n.toLowerCase()))].slice(0, MAX_RECENT);
   saveRoster();

@@ -1,5 +1,8 @@
 # What's new in Potato Quiz
 
+## 4.0.1 — 2026-10-18
+- Fixed: players from a phone game no longer show up as players added on the host screen the next time you set up a game.
+
 ## 4.0.0 — 2026-10-18
 - **📱 Play on your phones:** open a room on the setup screen and everyone joins from their own phone by scanning the QR code or typing the 4-letter room code. Put the host screen on a TV (casting works great) and play from the couch.
 - **Your turn, your phone:** pick a difficulty or category, use your items (including choosing who to target, Category Lock and Exodia), and tap your answer right on your phone. The result shows for a moment and the game moves on by itself. You can change how long under Settings › Game › Playing on phones.
