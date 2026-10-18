@@ -1,5 +1,13 @@
 # What's new in Potato Quiz
 
+## 3.9.0 — 2026-10-17
+- **📚 New Books & Literature family:** 9 categories and about 4,200 questions: General, Classics, Modern Fiction, Mystery, Thriller & Horror, Fantasy & Sci-Fi Books, YA & BookTok, Children's Books, Poetry & Shakespeare, and Book-to-Screen. Book questions from Art & Literature moved here, and that category is now **Art & Artists**.
+- **🦷 Dentistry › Histology & Embryology:** a new category with about 500 questions on tooth development, the pharyngeal arches, face and palate formation, and the microscopic structure of enamel, dentin, pulp, cementum, the PDL, bone and oral mucosa, written at dental-hygiene board level.
+- The difficulty counts on the setup screen now update when you turn categories on or off, so they show how many questions you'll actually get.
+- The difficulty buttons stay the same size: all of them are equal width and don't shift when counts change or you switch one off, even if you rename or add difficulties.
+- Removed questions about divisive modern politics.
+- Removed the empty Animals & Nature category (animal questions live in the Animals family).
+
 ## 3.8.0 — 2026-10-17
 - **🦷 New Dentistry family:** Dentistry is now its own family with 15 categories and about 4,800 questions. The clinical ones (Periodontics, Pharmacology & Anesthesia, Radiography, Head & Neck Anatomy, Oral Pathology, Patient Cases and more) are written at dental-hygiene board level, perfect for a game night with hygienists. Turn on just the Dentistry family for an all-dental quiz. Dentistry › General keeps the fun facts for everyone.
 - **🩺 Bigger Medicine family:** 9 new categories (Diseases & Conditions, Drugs & Pharmacy, First Aid & Emergencies, Mental Health & the Brain, Medical Terms, Doctors, Nurses & Hospitals, Vaccines & Public Health, Medical Tech & Breakthroughs, and Medical TV & Movies), now about 3,500 questions in all.

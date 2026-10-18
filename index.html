@@ -351,6 +351,11 @@
   .catToggle { border-radius: 999px; padding: 7px 14px; background: transparent; border: 2px solid var(--line); color: var(--muted); text-decoration: line-through; }
   .catToggle.on { background: var(--c); border-color: var(--c); color: #111; font-weight: 700; text-decoration: none; }
   .catToggle small { opacity: .7; margin-left: 4px; }
+  /* difficulty buttons keep their size: same weight on/off, counts in a fixed-width slot */
+  #tierPicker .catToggle { font-weight: 700; font-variant-numeric: tabular-nums; }
+  #tierPicker .catToggle .n { display: inline-block; min-width: var(--nw, 5ch); text-align: left; }
+  #tierPicker .catToggle { min-width: var(--tw, auto); }
+  #tierPicker .catToggle .ic { display: inline-block; width: 1em; text-align: center; }
   .turnOrder { text-align: left; display: inline-block; font-size: 1.25rem; line-height: 1.8; margin: 8px 0 0; padding-left: 28px; }
   .turnOrder li:first-child { color: var(--accent); font-weight: 800; }
   .tierPick .exodiaBtn { background: linear-gradient(135deg, #3a2a00, #8a6a10); color: #ffe27a; border: 2px solid #ffcc33; grid-column: 1 / -1; }
@@ -924,7 +929,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '3.8.0';
+const APP_VERSION = '3.9.0';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -971,6 +976,7 @@ const SEED_CATEGORIES = [
   { id: 'cat_dentistry', name: "General", color: '#7fe7ff', group: "Dentistry", was: "Dentistry", v: 6 },
   { id: 'cat_dent_anatomy', name: "Tooth Anatomy & Numbering", color: '#2fd4c4', group: "Dentistry" },
   { id: 'cat_dent_headneck', name: "Head & Neck Anatomy", color: '#38d8cb', group: "Dentistry" },
+  { id: 'cat_dent_histo', name: "Histology & Embryology", color: '#3ddace', group: "Dentistry" },
   { id: 'cat_dent_perio', name: "Periodontics", color: '#41dcd2', group: "Dentistry" },
   { id: 'cat_dent_instruments', name: "Instruments & Instrumentation", color: '#4ae0d9', group: "Dentistry" },
   { id: 'cat_dent_radiology', name: "Radiography", color: '#53e3df', group: "Dentistry" },
@@ -1083,11 +1089,20 @@ const SEED_CATEGORIES = [
   { id: 'cat_food_cooking', name: "Ingredients & Cooking", color: '#ffc684', group: "Food" },
   { id: 'cat_food_brands', name: "Fast Food & Brands", color: '#fedba3', group: "Food" },
   { id: 'cat_general', name: "General", color: '#8fb8ff', group: "General Knowledge", was: "General Knowledge", v: 7, split: true },
-  { id: 'cat_general_animals', name: "Animals & Nature", color: '#51b0ff', group: "General Knowledge" },
   { id: 'cat_general_language', name: "Language & Words", color: '#70b4ff', group: "General Knowledge" },
   { id: 'cat_general_inventions', name: "Inventions & Everyday Things", color: '#8fbcfe', group: "General Knowledge" },
-  { id: 'cat_general_arts', name: "Art & Literature", color: '#adc8ff', group: "General Knowledge" },
+  { id: 'cat_general_arts', name: "Art & Artists", color: '#adc8ff', group: "General Knowledge" },
   { id: 'cat_general_holidays', name: "Holidays & Traditions", color: '#b2c6ff', group: "General Knowledge" },
+  // bank version 15: the Books & Literature family (book questions from Art & Literature moved here)
+  { id: 'cat_books', name: "General", color: '#c58cff', group: "Books & Literature" },
+  { id: 'cat_books_classics', name: "Classics", color: '#b07cf0', group: "Books & Literature" },
+  { id: 'cat_books_modern', name: "Modern Fiction", color: '#9a6ee0', group: "Books & Literature" },
+  { id: 'cat_books_mystery', name: "Mystery, Thriller & Horror", color: '#8a62d0', group: "Books & Literature" },
+  { id: 'cat_books_fantasy', name: "Fantasy & Sci-Fi Books", color: '#7b58c2', group: "Books & Literature" },
+  { id: 'cat_books_ya', name: "YA & BookTok", color: '#d29cff', group: "Books & Literature" },
+  { id: 'cat_books_kids', name: "Children's Books", color: '#e0aaff', group: "Books & Literature" },
+  { id: 'cat_books_poetry', name: "Poetry & Shakespeare", color: '#a77ae8', group: "Books & Literature" },
+  { id: 'cat_books_screen', name: "Book-to-Screen", color: '#c287ff', group: "Books & Literature" },
   { id: 'cat_movies', name: "General", color: '#ff5e8a', group: "Movies", was: "Movies", v: 5, split: true },
   { id: 'cat_movies_superhero', name: "Marvel & Superheroes", color: '#ff207d', group: "Movies" },
   { id: 'cat_movies_scifi', name: "Star Wars & Sci-Fi", color: '#ff4988', group: "Movies" },
@@ -1195,6 +1210,9 @@ const SEED_RETIER = {"actors":"11,81,98,112,113,114,115,116,117,118,121,122,124,
 // The starter bank lives in questions.json (loaded at startup). Each entry: id, cat, tier, q, a, wrong[], since.
 // "since" = bank version that added it (only used to upgrade old full saves); new entries can leave it out.
 let BANK = [];
+// Impossible questions (tier "impossible" in questions.json) are set aside: they're never drawn, listed or saved. Reserved for
+// future items and special events.
+let IMPOSSIBLE_BANK = [];
 const seedQuestions = () => BANK.map(o => ({ id: o.id, categoryId: o.cat, tierId: o.tier, text: o.q, answer: o.a, wrong: [...(o.wrong || [])], since: o.since ?? Infinity }));
 const DEFAULT = {
   seedVersion: SEED_VERSION,
@@ -1367,6 +1385,15 @@ function upgrade(d) {
       // unless the player renamed it); categories are put back in the bank's order so new ones sit with their family
       const dent = d.categories.find(c => c.id === 'cat_dentistry');
       if (dent?.group === 'Medicine') { dent.group = 'Dentistry'; if (dent.name === 'Dentistry') dent.name = 'General'; }
+      const order = new Map(SEED_CATEGORIES.map((c, i) => [c.id, i]));
+      d.categories = d.categories.map((c, i) => [c, order.get(c.id) ?? 10000 + i]).sort((x, y) => x[1] - y[1]).map(x => x[0]);
+    }
+    if (fromVersion < 15) {
+      // 4.0: book questions moved to the new Books & Literature family, so Art & Literature becomes Art & Artists
+      // (unless renamed); the empty Animals & Nature category (replaced by the Animals family) goes if nothing uses it
+      const arts = d.categories.find(c => c.id === 'cat_general_arts');
+      if (arts?.name === 'Art & Literature') arts.name = 'Art & Artists';
+      if (!d.questions.some(q => q.categoryId === 'cat_general_animals')) d.categories = d.categories.filter(c => c.id !== 'cat_general_animals');
       const order = new Map(SEED_CATEGORIES.map((c, i) => [c.id, i]));
       d.categories = d.categories.map((c, i) => [c, order.get(c.id) ?? 10000 + i]).sort((x, y) => x[1] - y[1]).map(x => x[0]);
     }
@@ -1939,10 +1966,22 @@ function renderChoicePicker() {
 }
 function renderTierPicker() {
   const off = offTiers();
+  // counts follow the categories that are on (and the After Dark switch), so they match what the game can draw
+  const offC = new Set(offCats()), inPlay = visibleQs().filter(q => !offC.has(q.categoryId || ''));
   document.getElementById('tierPicker').innerHTML = data.tiers.map(t => {
-    const on = !off.includes(t.id), n = data.questions.filter(q => q.tierId === t.id).length;
-    return `<button class="catToggle ${on ? 'on' : ''}" style="--c:${t.color}" onclick="toggleTier('${t.id}')">${on ? '✓' : '✕'} ${esc(t.name)} <small>${t.points} pt${t.points == 1 ? '' : 's'} · ${n}</small></button>`;
+    const on = !off.includes(t.id), n = inPlay.filter(q => q.tierId === t.id).length;
+    return `<button class="catToggle ${on ? 'on' : ''}" style="--c:${t.color}" onclick="toggleTier('${t.id}')"><span class="ic">${on ? '✓' : '✕'}</span> ${esc(t.name)} <small>${t.points} pt${t.points == 1 ? '' : 's'} · <span class="n">${n}</span></small></button>`;
   }).join('');
+  fitTierButtons();
+}
+// Every difficulty button gets the same width (the widest one's), and the count slot fits the largest possible
+// count, so nothing moves when counts change, difficulties are toggled, renamed, re-pointed or added
+function fitTierButtons() {
+  const box = document.getElementById('tierPicker'); if (!box) return;
+  box.style.setProperty('--nw', String(visibleQs().length).length + 'ch');
+  box.style.removeProperty('--tw');
+  const w = Math.max(0, ...[...box.children].map(b => b.offsetWidth));
+  if (w) box.style.setProperty('--tw', w + 'px');
 }
 function toggleCat(id) {
   const off = offCats(), i = off.indexOf(id);
@@ -2531,7 +2570,7 @@ setInterval(() => {
   box.scrollTop += boardDir * 0.7;
   if (box.scrollTop >= max - 1 || box.scrollTop <= 0) { boardDir = box.scrollTop <= 0 ? 1 : -1; boardPauseUntil = performance.now() + 3000; }
 }, 30);
-addEventListener('resize', () => { fitBoard(); slideEffects(); });
+addEventListener('resize', () => { fitBoard(); slideEffects(); fitTierButtons(); });
 
 // ---------- Activity bar & item cards (non-blocking) ----------
 // The bar under the turn strip shows the latest 3 events; History lists the last 40.
@@ -3410,7 +3449,7 @@ async function start() {
     const r = await fetch(`questions.json?v=${APP_VERSION}`);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const bank = await r.json();
-    BANK = bank.questions; SEED_VERSION = bank.version ?? SEED_VERSION;
+    BANK = bank.questions.filter(q => q.tier !== 'impossible'); IMPOSSIBLE_BANK = bank.questions.filter(q => q.tier === 'impossible'); SEED_VERSION = bank.version ?? SEED_VERSION;
   } catch (e) {
     document.body.innerHTML = `<div class="card" style="max-width:560px;margin:60px auto;text-align:center">
       <h2>🥔 Couldn't load the questions</h2><p class="muted">The question bank (questions.json) didn't load: ${esc(e.message)}.
