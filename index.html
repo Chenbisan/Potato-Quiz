@@ -615,6 +615,7 @@
   .musicBtn { position: fixed; right: 14px; bottom: 14px; z-index: 18; width: 48px; height: 48px; border-radius: 50%; padding: 0; font-size: 1.35rem;
     background: var(--panel); border: 1px solid var(--line); box-shadow: 0 6px 18px var(--shadow); }
   body[data-screen="game"] .musicBtn, body[data-screen="join"] .musicBtn { display: none; }
+  .themeBtn { right: 70px; } /* light / dark toggle, next to the music button (in a game it's in the ☰ menu) */
   .volCtrl { gap: 12px; align-items: center; }
   .volCtrl input[type=range] { width: min(320px, 60vw); accent-color: var(--accent); padding: 0; }
   .volCtrl b { min-width: 3.5ch; font-variant-numeric: tabular-nums; }
@@ -696,6 +697,7 @@
 </section>
 
 <button id="musicBtn" class="musicBtn" onclick="toggleMusic()" aria-label="Music on or off">🎵</button>
+<button id="themeBtn" class="musicBtn themeBtn" onclick="toggleTheme()" aria-label="Light or dark mode">☀️</button>
 
 <!-- JOIN (on a player's phone) -->
 <section id="join" class="screen"><div class="joinBox"><div class="joinTop"><button id="joinBack" class="ghost" onclick="phoneExit()">← Menu</button></div><h1>🥔 Potato Quiz</h1><div id="joinBody"></div></div></section>
@@ -1122,7 +1124,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '4.2.3';
+const APP_VERSION = '4.2.4';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -4050,6 +4052,7 @@ function applyTheme() {
   const light = data.settings.theme === 'light';
   document.documentElement.dataset.theme = light ? 'light' : 'dark';
   const btn = document.getElementById('themeMenuBtn'); if (btn) btn.textContent = light ? '🌙 Dark mode' : '☀️ Light mode';
+  const fb = document.getElementById('themeBtn'); if (fb) { fb.textContent = light ? '🌙' : '☀️'; fb.title = light ? 'Switch to dark mode' : 'Switch to light mode'; }
   const sel = document.getElementById('themeSel'); if (sel) sel.value = light ? 'light' : 'dark';
 }
 function toggleTheme() {

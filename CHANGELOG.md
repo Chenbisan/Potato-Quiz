@@ -1,5 +1,8 @@
 # What's new in Potato Quiz
 
+## 4.2.4 — 2026-10-18
+- **☀️/🌙 Light/dark switch on the menus:** a button next to the 🎵 music button changes the theme in one tap. In a game it's still in the ☰ menu.
+
 ## 4.2.3 — 2026-10-18
 - **😇 New item: Angel** (Rare).
   - For your next 2 turns, items other players use on you have no effect, but you can't use items yourself. Everyone-items like Nuke, Blue Shell and Storm Cloud still reach you.
