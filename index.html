@@ -716,7 +716,7 @@
         <div class="menuVol" title="Volume (same as Settings › Audio › Master)"><span id="menuVolIcon">🔊</span><input type="range" id="menuVol" min="0" max="100" aria-label="Volume"
           oninput="setMenuVolume(this.value)" onchange="setMenuVolume(this.value, true)"><b id="menuVolVal"></b></div>
         <button role="menuitem" onclick="closeGameMenu(); flagLastQuestion()">🚩 Flag last question</button>
-        <button role="menuitem" onclick="closeGameMenu(); restartGame()">🔄 Restart game</button>
+        <button role="menuitem" onclick="closeGameMenu(); restartGame()">🔁 Restart game</button>
         <button role="menuitem" class="danger" onclick="closeGameMenu(); quitGame()">✕ End game</button>
       </div>
     </div>
@@ -1124,7 +1124,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '4.2.4';
+const APP_VERSION = '4.2.5';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -3077,7 +3077,7 @@ function phoneTurnHtml(T) {
   const choicesHtml = (clickable) => T.choices ? `<div class="pcList">${T.choices.map((c, i) => {
       const cls = [T.revealed && i === T.right && 'right', T.revealed && T.picked === i && i !== T.right && 'wrongPick', T.picked === i && 'picked'].filter(Boolean).join(' ');
       return `<button class="${cls}" ${clickable ? `onclick="phoneTap('c${i}')"` : 'disabled'}><b>${'ABCDEF'[i]}.</b> ${esc(c)}</button>`; }).join('')}</div>` : '';
-  if (!mine && T.kind === 'modal' && T.ownerName) return `${bar}<div class="pcHead">⏳ Waiting for <span style="color:${(T.scores.find(o => o.name === T.ownerName) || {}).color || 'inherit'}">${esc(T.ownerName)}</span> to choose…</div><p class="muted">${esc(T.title)}</p>${scores}`;
+  if (!mine && T.kind === 'modal' && T.ownerName) return `${bar}<div class="pcHead">🤔 Waiting for <span style="color:${(T.scores.find(o => o.name === T.ownerName) || {}).color || 'inherit'}">${esc(T.ownerName)}</span> to choose…</div><p class="muted">${esc(T.title)}</p>${scores}`;
   if (!mine) {
     const watching = T.kind === 'question' ? `${pills}<div class="pcQ">${esc(T.q)}</div>${choicesHtml(false)}${T.revealed ? `<p class="pcResult">✅ ${esc(T.answer)}</p>` : ''}` : '';
     return `${bar}<div class="pcHead"><span style="color:${T.color}">${esc(T.name)}</span>'s turn</div>${watching || '<p class="muted">Watch the TV!</p>'}${scores}`;
@@ -3086,7 +3086,7 @@ function phoneTurnHtml(T) {
     ${T.extra?.length ? `<div class="pcBtns pcModalBtns">${T.extra.map((b, i) => btn({ ...b, label: (b.cls.includes('lockFamHead') ? (b.open ? '▾ ' : '▸ ') : '') + b.label },
       'x' + i, [/lockFamHead/.test(b.cls) && 'wide', /\bon\b/.test(b.cls) && 'picked'].filter(Boolean).join(' '))).join('')}</div>` : ''}
     <div class="pcList pcModal">${T.buttons.map((b, i) => btn({ ...b, color: '' }, 'm' + i, b.cls.includes('primary') ? 'primary' : b.cls.includes('bad') ? 'bad' : '')).join('')}</div>`;
-  if (T.kind === 'pick') return `${bar}<div class="pcHead">🎯 Your turn! Pick one:</div>
+  if (T.kind === 'pick') return `${bar}<div class="pcHead">👉 Your turn! Pick one:</div>
     <div class="pcBtns">${T.buttons.map((b, i) => btn(b, 'p' + i, /lockedBtn|exodiaBtn|groupBack/.test(b.cls) ? 'wide' : '')).join('')}</div>
     ${T.items.length ? `<div class="pcItems"><p class="muted" style="margin:0 0 8px">🎒 Your items · ${esc(T.itemRule)}</p><div class="pcList">${T.items.map((b, i) => btn({ ...b, color: '' }, 'i' + i)).join('')}</div></div>` : ''}`;
   if (T.kind === 'intro') return `${bar}<div class="pcHead">Get ready…</div>${pills}<p class="muted">Your question is coming up on the TV.</p>`;
@@ -3116,7 +3116,7 @@ const ITEMS = {
   swap:       { icon: '🔄', name: 'Swap',          target: true,  hot: false, cold: true,  desc: 'Swap your score with a player you choose.' },
   phone:      { icon: '📞', name: 'Phone a Friend', target: true, hot: false, cold: true,  desc: "Use before picking: choose a friend to answer for you. If they're right, you both get the full points. If they're wrong, they lose the question's points." },
   tax:        { icon: '💸', name: 'Tax',           target: true,  hot: true,  cold: true,  desc: "On a player's next question, half of what they earn (rounded down) goes to you." },
-  dodge:      { icon: '💨', name: 'Meat Shield',   target: false, hot: true,  cold: true,  desc: "Use before picking: if you get it wrong, pick a player to take the hit — they lose the question's points instead." },
+  dodge:      { icon: '🍖', name: 'Meat Shield',   target: false, hot: true,  cold: true,  desc: "Use before picking: if you get it wrong, pick a player to take the hit — they lose the question's points instead." },
   nuke:       { icon: '☢️', name: 'Nuke',          target: false, hot: false, cold: true,  desc: "Everyone's score (yours included) becomes the average of all scores, rounded up." },
   exodia:     { icon: '🃏', name: 'Exodia',        target: false, hot: true,  cold: true,  desc: 'Get your next 5 questions right, climbing the difficulty ladder, and win instantly. One wrong answer and you lose half your points.' },
   catchup:    { icon: '📈', name: 'Catch Up',      target: false, hot: false, cold: true,  desc: 'Jump up to match the score of the player just ahead of you.' },
@@ -3398,7 +3398,7 @@ function closeGameMenu() { document.getElementById('gameMenu')?.classList.remove
 document.addEventListener('click', e => { if (!e.target.closest?.('.gameMenu')) closeGameMenu(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeGameMenu(); });
 async function restartGame() {
-  if (!await ask("Same players, but scores and items go back to zero. This game won't count toward Games or Wins.", { title: 'Restart the game?', icon: '🔄', ok: 'Restart', danger: true })) return;
+  if (!await ask("Same players, but scores and items go back to zero. This game won't count toward Games or Wins.", { title: 'Restart the game?', icon: '🔁', ok: 'Restart', danger: true })) return;
   document.querySelector('#stage audio')?.pause(); stopTimer(); current = null; closeModal(); logGameEnd('restart'); startGame();
 }
 async function quitGame() { if (await ask("You'll go back to the main menu and this game will end.", { title: 'End this game?', icon: '🚪', ok: 'End game', danger: true })) { document.querySelector('#stage audio')?.pause(); stopTimer(); current = null; clearSavedGame(); logGameEnd('quit'); roomSend({ t: 'quit' }); go('menu'); } }
@@ -3418,7 +3418,7 @@ function effectList(p) {
   if (p.beginner) add('buff', `🐣${p.beginner}`, `Beginner's Luck: easiest questions worth double, ${p.beginner} turn${p.beginner === 1 ? '' : 's'} left`);
   if (p.helper) add('buff', '📞', `Phone a Friend: ${p.helper.name} answers for them this turn`);
   if (p.angel) add('buff', `😇${p.angel}`, `Angel: items used on them have no effect, and they can't use items · ${p.angel} turn${p.angel === 1 ? '' : 's'} left`);
-  if (p.dodge) add('buff', '💨', 'Meat Shield ready this turn');
+  if (p.dodge) add('buff', '🍖', 'Meat Shield ready this turn');
   if (p.exodia) add('info', `🃏${p.exodia.pieces}/${p.exodia.path.length}`, `Exodia: ${p.exodia.pieces} of ${p.exodia.path.length} pieces${exodiaFamNames(p).length ? ' · ' + exodiaFamNames(p).join(' / ') : ''}`);
   bets.filter(x => x.from === p).forEach(x => add('info', '🤝', `Side Bet on ${x.on.name}${x.against ? ` against ${x.against.name}` : ''}`));
   if (data.settings.gamble && (gambleNeedsRight(p) || gambleWait(p))) add('info', gambleNeedsRight(p) ? '🎰🔒' : `🎰${gambleWait(p)}`,
@@ -3799,7 +3799,7 @@ const gambleNeedsRight = p => data.settings.gambleNeedsWin && p.gambleLocked;
 function stakeBadge(p) {
   const tags = [current.gamble && '🎰 Gamble ×2', current.random && data.settings.randomBonus > 0 && `🎲 Random +${data.settings.randomBonus}`, p.boost === 'double' && '⚡ Double ×2', p.boost === 'triple' && '🔱 Triple ×3', p.halfGain && '🌧️ Storm ½',
     p.beginner > 0 && current.tierId === easiestTierId() && "🐣 Beginner's Luck ×2",
-    p.helper && `📞 ${esc(p.helper.name)} answers`, p.tax && `💸 taxed ½`, p.dodge && '💨 Meat Shield ready'].filter(Boolean);
+    p.helper && `📞 ${esc(p.helper.name)} answers`, p.tax && `💸 taxed ½`, p.dodge && '🍖 Meat Shield ready'].filter(Boolean);
   if (!tags.length) return '';
   const st = stakes(p);
   return `<span class="pill stakePill">${tags.join(' · ')}: +${st.win}${st.lose ? ` / −${st.lose}` : ''}</span>`;
@@ -4197,16 +4197,16 @@ function mark(correct) {
     if (!correct && !others.length) {
       // Nobody can be hit yet (e.g. everyone is on 0), so don't waste the item
       p.items.push('dodge'); itemStat('dodge').used--;
-      dodgeNote = `<p>💨 Nobody can take the hit right now, so ${esc(p.name)} keeps Meat Shield for later.</p>`;
+      dodgeNote = `<p>🍖 Nobody can take the hit right now, so ${esc(p.name)} keeps Meat Shield for later.</p>`;
     }
     if (!correct && others.length) {
       stopTimer();
       const pts = tierOf(current.tierId).points;
-      const pickVictim = () => modal(`<div class="bigIcon">💨</div><h2>Meat Shield!</h2><p>${esc(p.name)} got it wrong — who takes the hit of <b>${pts}</b> point${pts === 1 ? '' : 's'}?</p>`,
+      const pickVictim = () => modal(`<div class="bigIcon">🍖</div><h2>Meat Shield!</h2><p>${esc(p.name)} got it wrong — who takes the hit of <b>${pts}</b> point${pts === 1 ? '' : 's'}?</p>`,
         [...others.map(v => ({ label: `${esc(v.name)} <small>(${v.score} pts)</small>`, fn: () => {
           const si = v.items.indexOf('shield');
           if (si >= 0) { v.items.splice(si, 1); itemStat('shield').used++; dodgeNote = `<p>🛡️ <b>${esc(v.name)}</b> blocked ${esc(p.name)}'s Meat Shield with a Shield!</p>`; }
-          else { const lost = Math.min(pts, v.score); v.score -= lost; dodgeNote = `<p>💨 ${esc(p.name)} used <b>${esc(v.name)}</b> as a meat shield — ${esc(v.name)} loses <b>${lost}</b>!</p>`; }
+          else { const lost = Math.min(pts, v.score); v.score -= lost; dodgeNote = `<p>🍖 ${esc(p.name)} used <b>${esc(v.name)}</b> as a meat shield — ${esc(v.name)} loses <b>${lost}</b>!</p>`; }
           mark(false);
         } })), ...angels.map(v => ({ label: `😇 ${esc(v.name)} <small>(Angel)</small>`, cls: 'angelPick', fn: () => angelNotice(v, pickVictim) }))]);
       return pickVictim();
@@ -4420,7 +4420,7 @@ function useItem(idx) {
       exodiaFamilyPicker(idx); // the player picks 3 families first; Exodia starts from there
     }
     if (key === 'angel') { p.angel = ANGEL_TURNS; p.angelFresh = true; finishItem(p, idx, `<div class="bigIcon">😇</div><h2>Angel!</h2><p>For ${esc(p.name)}'s next ${ANGEL_TURNS} turns, items other players use on them have no effect. But ${esc(p.name)} can't use items during those turns either.</p>`); }
-    if (key === 'dodge') { p.dodge = true; finishItem(p, idx, `<div class="bigIcon">💨</div><h2>Meat Shield!</h2><p>If ${esc(p.name)} gets this one wrong, they pick a player to take the hit and lose the question's points instead.</p>`); }
+    if (key === 'dodge') { p.dodge = true; finishItem(p, idx, `<div class="bigIcon">🍖</div><h2>Meat Shield!</h2><p>If ${esc(p.name)} gets this one wrong, they pick a player to take the hit and lose the question's points instead.</p>`); }
     if (key === 'triple') { p.boost = 'triple'; finishItem(p, idx, `<div class="bigIcon">🔱</div><h2>Triple Threat!</h2><p>${esc(p.name)} wins <b>triple</b> points if right… and loses triple if wrong.</p>`); }
     if (key === 'blueshell') blueShell(p, idx);
     if (key === 'storm') stormCloud(p, idx);

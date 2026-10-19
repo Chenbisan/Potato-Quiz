@@ -1,5 +1,9 @@
 # What's new in Potato Quiz
 
+## 4.2.5 — 2026-10-18
+- **🍖 Meat Shield has a new icon** to match its new name.
+- Icons no longer double up during a game: Restart game is now 🔁 (🔄 is Swap), and on phones "Your turn" is 👉 and "Waiting for…" is 🤔 (🎯 and ⏳ belong to Category Lock and Time Crunch).
+
 ## 4.2.4 — 2026-10-18
 - **☀️/🌙 Light/dark switch on the menus:** a button next to the 🎵 music button changes the theme in one tap. In a game it's still in the ☰ menu.
 
