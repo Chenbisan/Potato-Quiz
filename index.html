@@ -188,6 +188,25 @@
   #liveBoard li::before { content: ''; position: absolute; left: 0; top: 0; height: 32px; /* 6px padding + 22px name line + a little below */ width: var(--prog, 0%); background: var(--pc); opacity: .22; z-index: -1;
     transition: width .6s ease; border-top-left-radius: 8px; }
   .rowName { font-weight: 800; font-size: .95rem; }
+  /* 😇 Angel: a warm-white halo ring and glow that breathes, with a slow shimmer across the row (all inside the row,
+     so the scrolling board can't clip it) */
+  #liveBoard li.angel { box-shadow: inset 5px 0 0 var(--pc), inset 0 0 0 2px #fff1bf, inset 0 0 16px 2px rgba(255, 236, 170, .45); animation: angelGlow 2.6s ease-in-out infinite; }
+  #liveBoard li.angel.current { box-shadow: inset 5px 0 0 var(--pc), inset 0 0 0 2px var(--accent), inset 0 0 0 4px #fff1bf, inset 0 0 16px 2px rgba(255, 236, 170, .45); }
+  #liveBoard li.angel::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit;
+    background: linear-gradient(110deg, transparent 30%, rgba(255, 249, 225, .28) 50%, transparent 70%) 0 0 / 250% 100%; animation: angelShimmer 3.2s linear infinite; }
+  .turnChip.angel { border-color: #fff1bf; box-shadow: 0 0 14px 2px rgba(255, 236, 170, .55); animation: angelChip 2.6s ease-in-out infinite; }
+  .pcScores div.angel { box-shadow: inset 0 0 0 2px #fff1bf, inset 0 0 14px rgba(255, 236, 170, .45); }
+  @keyframes angelGlow { 50% { filter: brightness(1.12); } }
+  @keyframes angelChip { 50% { box-shadow: 0 0 22px 5px rgba(255, 240, 190, .8); } }
+  @keyframes angelShimmer { from { background-position: 125% 0; } to { background-position: -125% 0; } }
+  body.fxOff #liveBoard li.angel, body.fxOff #liveBoard li.angel::after, body.fxOff .turnChip.angel { animation: none; }
+  @media (prefers-reduced-motion: reduce) { #liveBoard li.angel, #liveBoard li.angel::after, .turnChip.angel { animation: none; } }
+  .modal .actions button.angelPick { opacity: .75; } .modal .actions button.angelPick:hover { opacity: 1; }
+  [data-theme="light"] #liveBoard li.angel { box-shadow: inset 5px 0 0 var(--pc), inset 0 0 0 2px #d9a52e, inset 0 0 16px 2px rgba(222, 170, 50, .35); }
+  [data-theme="light"] #liveBoard li.angel.current { box-shadow: inset 5px 0 0 var(--pc), inset 0 0 0 2px var(--accent), inset 0 0 0 4px #d9a52e, inset 0 0 16px 2px rgba(222, 170, 50, .35); }
+  [data-theme="light"] #liveBoard li.angel::after { background-image: linear-gradient(110deg, transparent 30%, rgba(255, 236, 170, .55) 50%, transparent 70%); }
+  [data-theme="light"] .turnChip.angel { border-color: #d9a52e; box-shadow: 0 0 14px 2px rgba(222, 170, 50, .45); }
+  [data-theme="light"] .pcScores div.angel { box-shadow: inset 0 0 0 2px #d9a52e, inset 0 0 14px rgba(222, 170, 50, .35); }
   .rowName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .rowHead .rowTag { flex: none; }
   .rowRight { margin-left: auto; display: flex; align-items: center; gap: 6px; flex: none; }
@@ -480,41 +499,42 @@
   .confetti { position: fixed; top: -10px; width: 10px; height: 14px; animation: fall linear forwards; pointer-events: none; }
   @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
 
-  /* ☀️ Light theme: warm cream and peach, white cards, brown text (the bright game buttons stay the same) */
+  /* ☀️ Light theme: warm sand and latte with cream cards and brown text — soft, not glaring (no pure white surfaces);
+     the bright game buttons stay the same. --card is the lightest surface (buttons, item cards, chips). */
   :root[data-theme="light"] {
-    --bg: #fff4e6; --panel: #ffffff; --panel2: #fff0db; --text: #3b2a1c; --muted: #8b735c;
-    --glow: #ffdcb8; --line: #e6cba6; --line-soft: #f1e0c8; --deep: #f7e8d3; --deep2: #f2dfc4; --shadow: rgba(170, 110, 50, .16); --title: #e8790c;
+    --bg: #e8dac5; --panel: #f3e8d7; --panel2: #eadcc6; --card: #f8efe2; --text: #3a2a1c; --muted: #6f5a45;
+    --glow: #f0dfc5; --line: #d2b994; --line-soft: #ddcab0; --deep: #e3d2b9; --deep2: #dbc8ac; --shadow: rgba(110, 75, 35, .16); --title: #c9650c;
     color-scheme: light;
   }
   [data-theme="light"] button:hover { filter: brightness(.96); }
   /* plain buttons: white with a soft edge (low specificity, so colored buttons keep their colors) */
-  :where([data-theme="light"]) button { background: #fff; border: 1px solid var(--line-soft); box-shadow: 0 2px 6px var(--shadow); }
+  :where([data-theme="light"]) button { background: var(--card); border: 1px solid var(--line-soft); box-shadow: 0 2px 6px var(--shadow); }
   :where([data-theme="light"]) button.ghost { background: transparent; box-shadow: none; border-color: var(--line); }
   :where([data-theme="light"]) .tierPick button, :where([data-theme="light"]) .menuDrop button, :where([data-theme="light"]) .lockChip { border: 0; }
   [data-theme="light"] .newsHead { color: #d9620f; }
-  [data-theme="light"] input, [data-theme="light"] select, [data-theme="light"] textarea { background: #fffaf3; }
+  [data-theme="light"] input, [data-theme="light"] select, [data-theme="light"] textarea { background: var(--card); }
   [data-theme="light"] .fx.buff { background: rgba(46,204,113,.14); border-color: #2fb36a; color: #17663a; }
   [data-theme="light"] .fx.debuff { background: rgba(255,92,92,.12); border-color: #e05252; color: #a3201a; }
   [data-theme="light"] .fx.info { background: rgba(120,110,95,.1); border-color: #b9a78f; color: #5f5243; }
   [data-theme="light"] .streakLbl.hot { color: #d9620f; } [data-theme="light"] .streakLbl.cold { color: #1f73b8; }
-  [data-theme="light"] .slot.full { background: #fff7ec; }
-  [data-theme="light"] .turnChip { background: #fff; }
+  [data-theme="light"] .slot.full { background: var(--card); }
+  [data-theme="light"] .turnChip { background: var(--card); }
   [data-theme="light"] .turnChip.next { color: var(--text); }
   [data-theme="light"] .feedLine.fresh { color: var(--text); }
-  [data-theme="light"] .rarityTag { background: rgba(255,255,255,.7); filter: brightness(.8); }
+  [data-theme="light"] .rarityTag { background: rgba(255,250,240,.6); filter: brightness(.8); }
   [data-theme="light"] .flyPts { text-shadow: 0 2px 6px rgba(120,80,40,.35); }
   [data-theme="light"] .modal { background: rgba(80, 50, 20, .35); }
   [data-theme="light"] .lockedBtn, [data-theme="light"] .exodiaBtn { color: #2a1a00; }
-  [data-theme="light"] .news { background: linear-gradient(135deg, #fff1d6, #ffe6ea); border-color: #f2c66a; }
+  [data-theme="light"] .news { background: linear-gradient(135deg, #f4e3c3, #f0dcd2); border-color: #dcb25e; }
   [data-theme="light"] .tierPick .gambleBtn { background: linear-gradient(135deg, #3b2a12, #6b4a10); }
   [data-theme="light"] .noFx { opacity: .8; }
   [data-theme="light"] #liveBoard li::before { opacity: .28; }
-  [data-theme="light"] .itemCard { background: #fff; border-color: var(--line); box-shadow: 0 2px 8px var(--shadow); }
+  [data-theme="light"] .itemCard { background: var(--card); border-color: var(--line); box-shadow: 0 2px 8px var(--shadow); }
   [data-theme="light"] .itemCard small { color: var(--muted); }
-  [data-theme="light"] .selfTarget { background: #fff7e6; }
-  [data-theme="light"] .luckyBanner { background: #fff3c2; color: #7a5200; box-shadow: 0 0 0 2px #f5c242; }
+  [data-theme="light"] .selfTarget { background: var(--card); }
+  [data-theme="light"] .luckyBanner { background: #f5e3ae; color: #6e4900; box-shadow: 0 0 0 2px #e2b036; }
   [data-theme="light"] .tierPick .exodiaBtn { background: linear-gradient(135deg, #ffe08a, #ffc23d); color: #4a3000; }
-  [data-theme="light"] .exodiaPieces span.got { background: #ffe9a8; }
+  [data-theme="light"] .exodiaPieces span.got { background: #f2d98f; }
   [data-theme="light"] .turnChip { border-color: var(--line); }
   [data-theme="light"] .stakePill, [data-theme="light"] .rewardHint { color: #7a5200; }
   @keyframes bumpLight { 30% { transform: scale(1.06); background: #d8f5e2; } }
@@ -601,7 +621,7 @@
   #qReveal button.drain { position: relative; overflow: hidden; isolation: isolate; }
   #qReveal button.drain::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 0; z-index: -1; background: rgba(0,0,0,.42);
     animation: drainDown var(--drain, 3s) linear var(--drainDelay, 0s) forwards; }
-  [data-theme="light"] #qReveal button.drain::before { background: rgba(255,255,255,.6); }
+  [data-theme="light"] #qReveal button.drain::before { background: rgba(255,248,235,.55); }
   @keyframes drainDown { to { height: 100%; } }
 </style>
 </head>
@@ -948,7 +968,7 @@
       <div class="ctrl volCtrl"><input type="range" id="volMusic" min="0" max="100" oninput="setVolume('music', this.value)" onchange="setVolume('music', this.value, true)"><b id="volMusicVal"></b></div>
       <div class="help">Even at 100% the music stays a little softer than the sound effects, so right / wrong answers are always clear.</div></div>
     <div class="setting"><div class="setName">Style</div>
-      <div class="ctrl"><select id="musicStyle" onchange="setMusicStyle(this.value)"><option value="lounge">🛗 Lounge (mellow elevator jazz)</option><option value="gameshow">🎤 Game show (upbeat trivia)</option></select></div>
+      <div class="ctrl"><select id="musicStyle" onchange="setMusicStyle(this.value)"><option value="lounge">🎷 Lounge (mellow elevator jazz)</option><option value="gameshow">🎤 Game show (upbeat trivia)</option></select></div>
       <div class="help">Composed by the game as it plays, so it never needs downloading. Plays on the host screen only, never on players' phones. Mute it anytime with the 🎵 button in the corner, or from the ☰ menu during a game.</div></div>
   </div>
   <div class="card" data-stab="audio">
@@ -1002,7 +1022,7 @@
       <label class="switch"><input type="checkbox" id="itemsEnabled" onchange="saveItemSettings()"> Items enabled</label>
     </div>
     <div class="itemsDep">
-      <p class="help" style="margin-top:10px">Players earn an item when they get several answers <b>right</b> in a row (🔥 hot streak) or <b>wrong</b> in a row (🧊 cold streak).
+      <p class="help" style="margin-top:10px">Players earn an item when they get several answers <b>right</b> in a row (🔥 hot streak) or <b>wrong</b> in a row (❄️ cold streak).
         Cold-streak items are stronger so players who are behind can catch up. A player can use one item per turn, before picking a question.</p>
       <div class="setting">
         <div class="setName">🔥 Hot streak: right answers in a row that give an item</div>
@@ -1010,7 +1030,7 @@
         <div class="help">Separate numbers with commas. With 3, 5, 7, a player earns an item on their 3rd, 5th and 7th right answer in a row.</div>
       </div>
       <div class="setting">
-        <div class="setName">🧊 Cold streak: wrong answers in a row that give a comeback item</div>
+        <div class="setName">❄️ Cold streak: wrong answers in a row that give a comeback item</div>
         <div class="ctrl"><input id="itemColdStreaks" placeholder="2, 3, 4, 5" style="width:160px" onchange="saveItemSettings()"></div>
         <div class="help">Shorter than the hot streak so players who are behind get help sooner. Default 2, 3, 4, 5.</div>
       </div>
@@ -1020,7 +1040,7 @@
         <div class="help">When a player earns an item with a full bag, they choose one to drop (the new item can be the one).</div>
       </div>
       <div class="setting">
-        <div class="setName">🪃 Last-place boost</div>
+        <div class="setName">🍀 Last-place boost</div>
         <div class="ctrl">After round <input type="number" id="lastPlaceAfter" min="0" max="100" style="width:80px" onchange="saveItemSettings()"><span class="unit">(0 = off)</span></div>
         <div class="help">From then on, whoever is in last place at the start of each round gets a free Common cold-streak item. Players tied for last each get one; nobody does if everyone is tied.</div>
       </div>
@@ -1061,7 +1081,7 @@
     <div class="row" style="margin-top:10px"><button class="small" onclick="setAllItems(true)">✓ Tick all</button>
       <button class="small" onclick="setAllItems(false)">✕ Untick all</button>
       <button class="small ghost" onclick="resetItemSettings()">↩ Reset items to default</button></div>
-    <div class="tableScroll"><table style="margin-top:10px"><thead><tr><th>Item</th><th>Rarity</th><th>What it does</th><th style="text-align:center">🔥 Hot streak</th><th style="text-align:center">🧊 Cold streak</th><th style="text-align:center">🎁 Prize</th></tr></thead>
+    <div class="tableScroll"><table style="margin-top:10px"><thead><tr><th>Item</th><th>Rarity</th><th>What it does</th><th style="text-align:center">🔥 Hot streak</th><th style="text-align:center">❄️ Cold streak</th><th style="text-align:center">🎁 Prize</th></tr></thead>
       <tbody id="itemTable"></tbody></table></div>
   </div>
   <div class="card" data-stab="data">
@@ -1102,7 +1122,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '4.2.2';
+const APP_VERSION = '4.2.3';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1113,7 +1133,7 @@ for (const [oldKey, newKey] of [['teamQuizData_v1', KEY], ['teamQuizPlayers_v1',
   } catch (e) {}
 }
 // Bump when a settings migration is added in upgrade(); a reset starts at this rev so no migration re-runs
-const SETTINGS_REV = 10;
+const SETTINGS_REV = 11;
 let SEED_VERSION = 10; // set from questions.json's "version" at startup; // 10: every starter question gets 2 extra wrong answers for 6-answer games; 5: category groups; 6: more families + Disney+, Theme Parks, Generations; 7: every category in a family (General Knowledge, Cars, Pop Culture); 8: pre-1990 questions most players won't know moved to Obscure; 9: regional culture families
 // Tier difficulty is their order in the list (easiest first, hardest last); points only decide scoring
 const OBSCURE_TIER = { id: 't4', name: 'Obscure', points: 10, color: '#b36bff' };
@@ -1518,9 +1538,9 @@ function upgrade(d) {
     }
     d.settings.rev = 7;
   }
-  if (d.settings.rev < SETTINGS_REV) {
+  if (d.settings.rev < 8) { // (was "< SETTINGS_REV", which re-ran this block — and every later one — on each new settings version)
     // 3.3: Exodia, Nuke and Swap stop being question prizes (they all were by default in 3.0–3.2)
-    for (const k of NO_PRIZE) if (d.settings.items?.pools?.[k]) d.settings.items.pools[k].reward = false;
+    for (const k of ['exodia', 'nuke', 'swap']) if (d.settings.items?.pools?.[k]) d.settings.items.pools[k].reward = false;
     // cold streaks still on the 3.0 default (2, 4, 6) move to the new default (2, 3, 4, 5)
     if (d.settings.items?.coldStreaks?.join() === '2,4,6') d.settings.items.coldStreaks = [2, 3, 4, 5];
     d.settings.rev = 8;
@@ -1535,6 +1555,11 @@ function upgrade(d) {
     // 4.2.1: sound effects a bit softer by default (100% → 70%), unless changed
     if (d.settings.audio.sfx === 100) d.settings.audio.sfx = 70;
     d.settings.rev = 10;
+  }
+  if (d.settings.rev < 11) {
+    // 4.2.3: Blue Shell becomes Legendary (and, like the other Legendaries, not a question prize), unless its rarity was changed
+    if (d.settings.items?.rarity?.blueshell === 2) { d.settings.items.rarity.blueshell = 3; if (d.settings.items.pools?.blueshell) d.settings.items.pools.blueshell.reward = false; }
+    d.settings.rev = 11;
   }
   if (!d.categories) {
     d.categories = structuredClone(DEFAULT.categories);
@@ -1889,8 +1914,8 @@ function renderItemSettings() {
     <span class="rarityTag" style="--rc:${RARITIES[r].color}">${RARITIES[r].stars} ${RARITIES[r].name}</span>
     <input type="number" min="0" max="100" value="${st.rarityWeights[r] ?? 0}"
       onchange="data.settings.items.rarityWeights[${r}] = Math.max(0, parseInt(this.value) || 0); save(); toast('Saved')"></div>`).join('');
-  // Item list view: filter by source (🔥 / 🧊 / 🎁 ticked) and sort (Common first by default); remembered on this device
-  const v = itemListView, FILTERS = [['all', 'All'], ['hot', '🔥 Hot streak'], ['cold', '🧊 Cold streak'], ['reward', '🎁 Prize'], ['off', '⛔ Off']];
+  // Item list view: filter by source (🔥 / ❄️ / 🎁 ticked) and sort (Common first by default); remembered on this device
+  const v = itemListView, FILTERS = [['all', 'All'], ['hot', '🔥 Hot streak'], ['cold', '❄️ Cold streak'], ['reward', '🎁 Prize'], ['off', '⛔ Off']];
   document.getElementById('itemFilter').innerHTML = FILTERS.map(([f, label]) =>
     `<button class="small ${v.filter === f ? 'primary' : 'ghost'}" onclick="itemListView.filter='${f}'; saveItemView(); renderItemSettings()">${label}</button>`).join('');
   document.getElementById('itemSort').value = v.sort;
@@ -2979,7 +3004,7 @@ const btnInfo = b => { // a button's main label, its small second line, color an
 function turnView() {
   const p = players[turn];
   const view = { t: 'turn', pid: p?.pid || null, name: p?.name, color: p?.color, round,
-    scores: players.map(o => ({ name: o.name, color: o.color, score: o.score, turn: o === p })) };
+    scores: players.map(o => ({ name: o.name, color: o.color, score: o.score, turn: o === p, angel: o.angel > 0 })) };
   const m = document.querySelector('#modal .modalBox');
   if (m) {
     const body = m.cloneNode(true); body.querySelectorAll('h2, .actions, .bigIcon, button, input').forEach(e => e.remove());
@@ -3044,7 +3069,7 @@ function phoneTurnHtml(T) {
   const bar = phone.state === 'watching' ? `<div class="pcBar"><span style="font-weight:800">👀 Watching</span><span>Round ${T.round}</span></div>`
     : `<div class="pcBar"><span style="color:${phone.color || 'var(--accent)'};font-weight:800">${esc(phone.name)}</span><span>${me ? `${me.score} pts` : ''} · Round ${T.round}</span></div>`;
   const scores = `<div class="pcScores">${[...T.scores].sort((a, b) => b.score - a.score).map(o =>
-    `<div class="${o.turn ? 'cur' : ''}"><span style="color:${o.color}">${esc(o.name)}</span><b>${o.score}</b></div>`).join('')}</div>`;
+    `<div class="${o.turn ? 'cur' : ''} ${o.angel ? 'angel' : ''}"><span style="color:${o.color}">${o.angel ? '😇 ' : ''}${esc(o.name)}</span><b>${o.score}</b></div>`).join('')}</div>`;
   const pills = T.cat ? `<div class="joinList"><span class="pill" style="background:${T.catColor}">${esc(T.cat)}</span><span class="pill" style="background:${T.tierColor}">${esc(T.tier)}</span></div>` : '';
   const btn = (b, id, extra = '') => `<button class="${extra}" style="${b.color ? `background:${b.color};color:${b.fg}` : ''}" ${b.disabled ? 'disabled' : ''} onclick="phoneTap('${id}')">${esc(b.label)}${b.sub ? `<small>${esc(b.sub)}</small>` : ''}</button>`;
   const choicesHtml = (clickable) => T.choices ? `<div class="pcList">${T.choices.map((c, i) => {
@@ -3073,6 +3098,7 @@ function phoneTurnHtml(T) {
 
 // ---------- Items ----------
 // hot = earned on a streak of correct answers, cold = earned on a streak of wrong answers (stronger, to help catch up)
+// Icons: use emoji from 2018 or earlier (Emoji 11). Newer ones (🪜 🪃 🛗 🧊…) show as blank boxes on Windows 10 and older phones.
 const ITEMS = {
   pickpocket: { icon: '🧤', name: 'Pickpocket',    target: true,  hot: true,  cold: false, desc: 'Steal 2, 4 or 6 points (random) from a player you choose.' },
   heist:      { icon: '💰', name: 'Heist',         target: true,  hot: false, cold: true,  desc: 'Steal 6, 8 or 10 points (random) from a player you choose.' },
@@ -3084,24 +3110,25 @@ const ITEMS = {
   timecrunch: { icon: '⏳', name: 'Time Crunch',   target: true,  hot: true,  cold: true,  desc: "Halve a player's timer on their next question.", needsTimer: true },
   storm:      { icon: '🌧️', name: 'Storm Cloud',   target: false, hot: false, cold: true,  desc: 'Everyone else earns half points (rounded up) on their next turn.' },
   beginner:   { icon: '🐣', name: "Beginner's Luck", target: false, hot: false, cold: true, desc: 'For your next 5 turns, the easiest questions are worth double for you. Using another adds 5 more turns.' },
-  bet:        { icon: '🤝', name: 'Side Bet',      target: true,  hot: true,  cold: true,  desc: "Bet on a player's next question: if they get it right, you earn the same points they do. If they get it wrong, you lose nothing." },
+  bet:        { icon: '🤝', name: 'Side Bet',      target: true,  hot: true,  cold: true,  desc: "Pick a player to bet on and one to bet against. If the first gets their next question right, you win that question's points; if they get it wrong, the other player wins them. Nobody loses points." },
   swap:       { icon: '🔄', name: 'Swap',          target: true,  hot: false, cold: true,  desc: 'Swap your score with a player you choose.' },
   phone:      { icon: '📞', name: 'Phone a Friend', target: true, hot: false, cold: true,  desc: "Use before picking: choose a friend to answer for you. If they're right, you both get the full points. If they're wrong, they lose the question's points." },
   tax:        { icon: '💸', name: 'Tax',           target: true,  hot: true,  cold: true,  desc: "On a player's next question, half of what they earn (rounded down) goes to you." },
-  dodge:      { icon: '💨', name: 'Dodge the Bullet', target: false, hot: true, cold: true, desc: "Use before picking: if you get it wrong, choose a player who loses the question's points." },
+  dodge:      { icon: '💨', name: 'Meat Shield',   target: false, hot: true,  cold: true,  desc: "Use before picking: if you get it wrong, pick a player to take the hit — they lose the question's points instead." },
   nuke:       { icon: '☢️', name: 'Nuke',          target: false, hot: false, cold: true,  desc: "Everyone's score (yours included) becomes the average of all scores, rounded up." },
   exodia:     { icon: '🃏', name: 'Exodia',        target: false, hot: true,  cold: true,  desc: 'Get your next 5 questions right, climbing the difficulty ladder, and win instantly. One wrong answer and you lose half your points.' },
-  catchup:    { icon: '🪜', name: 'Catch Up',      target: false, hot: false, cold: true,  desc: 'Jump up to match the score of the player just ahead of you.' },
-  blueshell:  { icon: '🐢', name: 'Blue Shell',    target: false, hot: false, cold: true,  desc: 'Hits the leader (not you) for −10 points. Ties are all hit. No choosing needed.' },
+  catchup:    { icon: '📈', name: 'Catch Up',      target: false, hot: false, cold: true,  desc: 'Jump up to match the score of the player just ahead of you.' },
+  blueshell:  { icon: '🐢', name: 'Blue Shell',    target: false, hot: false, cold: true,  desc: 'Hits whoever is in 1st place (even you) for 10% of the winning score. Ties for 1st are all hit. Only players in the bottom quarter can get one.' },
+  angel:      { icon: '😇', name: 'Angel',         target: false, hot: true,  cold: true,  desc: "For your next 2 turns, items other players use on you have no effect — but you can't use items yourself." },
   shield:     { icon: '🛡️', name: 'Shield',        target: false, hot: true,  cold: true,  desc: 'Automatically blocks the next item used against you.', passive: true },
 };
 // Item rarity tiers: when an item is earned, a tier is chosen by its weight, then an item within it
 const RARITIES = { 1: { name: 'Common', stars: '⭐', color: '#9aa4c4' }, 2: { name: 'Rare', stars: '⭐⭐', color: '#4da3ff' }, 3: { name: 'Legendary', stars: '⭐⭐⭐', color: '#ffcc33' } };
-const DEFAULT_RARITY = { pickpocket: 1, skip: 1, shield: 1, double: 1, timecrunch: 1, phone: 1, bet: 1, dodge: 1, beginner: 1,
-  heist: 2, hardlock: 2, catlock: 2, triple: 2, storm: 2, tax: 2, catchup: 2, blueshell: 2, exodia: 3, nuke: 3, swap: 3 };
+const DEFAULT_RARITY = { pickpocket: 1, skip: 1, shield: 1, double: 1, timecrunch: 1, phone: 1, bet: 1, dodge: 1, beginner: 1, angel: 2,
+  heist: 2, hardlock: 2, catlock: 2, triple: 2, storm: 2, tax: 2, catchup: 2, blueshell: 3, exodia: 3, nuke: 3, swap: 3 };
 const itemRarity = k => data.settings.items.rarity?.[k] ?? DEFAULT_RARITY[k] ?? 1;
-const LOCK_TURNS = 2, BLUE_SHELL_POINTS = 10, BEGINNER_TURNS = 5, EXODIA_PIECES = 5; // minimum; Exodia grows to one piece per tier if there are more tiers than this
-const NO_PRIZE = ['exodia', 'nuke', 'swap']; // not question prizes by default
+const LOCK_TURNS = 2, BEGINNER_TURNS = 5, EXODIA_PIECES = 5, ANGEL_TURNS = 2; // minimum; Exodia grows to one piece per tier if there are more tiers than this
+const NO_PRIZE = ['exodia', 'nuke', 'swap', 'blueshell']; // the Legendaries: not question prizes by default
 const defaultItemSettings = () => ({
   enabled: true, streaks: [3, 5, 7], coldStreaks: [2, 3, 4, 5], // hot = right in a row; cold = wrong in a row (shorter, for comebacks)
   // question prizes go to trailing players, so every item can be a prize (before 3.0 only hot-streak items could,
@@ -3118,11 +3145,12 @@ const itemsOn = () => data.settings.items.enabled;
 const rand = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
 // Items handed out this game, by item: within a rarity, an item that already showed up is less likely to show up again
 let itemsThisGame = {};
-function randomItem(kind, rarity = null) {
+function randomItem(kind, rarity = null, forP = null) { // forP: who gets it (Blue Shell only goes to the bottom quarter)
   const multiTier = rankedTiers().length > 1; // Hard Lock / Beginner's Luck do nothing with a single difficulty in play
   const pool = Object.keys(ITEMS).filter(k => data.settings.items.pools[k]?.[kind] && (!ITEMS[k].needsTimer || data.settings.timer.enabled)
     && (multiTier || !['hardlock', 'beginner'].includes(k))
-    && (players.length > 2 || k !== 'phone')); // with 2 players the only friend is your opponent
+    && (players.length > 2 || k !== 'phone') // with 2 players the only friend is your opponent
+    && (k !== 'blueshell' || !forP || blueShellEligible(forP)));
   if (!pool.length) return null;
   // Each item's chance = its rarity's weight shared among ALL items of that rarity (so 60 / 30 / 10 means each Common
   // is ~6.7, each Rare ~3.8, each Legendary ~3.3 with the default list). Sharing by the whole list, not just the items
@@ -3151,7 +3179,15 @@ function exodiaPath(path = exodiaSequence()) {
   return path.map(id => tierOf(id)?.name || '?').join(' → ');
 }
 // Item description for display; Exodia's includes the actual difficulties it will ask
+// 🐢 Blue Shell, Mario Kart style: only the bottom quarter of players can get one (at least last place; not while
+// everyone is tied), and it hits 1st place — whoever that is, the thrower included — for 10% of the winning score
+const blueShellHit = () => Math.max(1, Math.round((data.settings.targetPoints || 0) * 0.1));
+function blueShellEligible(p) {
+  const scores = players.map(o => o.score).sort((a, b) => a - b), top = scores.at(-1);
+  return p.score < top && p.score <= scores[Math.max(1, Math.floor(players.length / 4)) - 1];
+}
 function itemDesc(k) {
+  if (k === 'blueshell') return `Hits whoever is in 1st place (even you) for ${blueShellHit()} points, 10% of the winning score. Ties for 1st are all hit. Only players in the bottom quarter can get one.`;
   return k === 'exodia'
     ? `Pick ${EXODIA_FAMS} families, then get your next ${exodiaSequence().length} questions from them right (${exodiaPath()}) to win instantly. One wrong answer and you lose half your points.`
     : ITEMS[k].desc;
@@ -3251,7 +3287,7 @@ function howToHTML() {
   }
   if (itemsOn()) {
     const how = [`<b>${nth(it.streaks)}</b> right answers in a row 🔥`];
-    if (it.coldStreaks?.length) how.push(`<b>${nth(it.coldStreaks)}</b> misses in a row 🧊 (to help you catch up)`);
+    if (it.coldStreaks?.length) how.push(`<b>${nth(it.coldStreaks)}</b> misses in a row ❄️ (to help you catch up)`);
     extras.push(row('🎁', 'Items', `Earn an item when your streak reaches ${how.join(', or ')}.${it.rewards && it.rewardChance > 0 ? ` Players in the bottom half may also see 🎁 on a ${byCat ? 'category' : 'difficulty'}${it.rewardAfterRounds ? ` (from round ${it.rewardAfterRounds + 1})` : ''}: pick it and answer right to win that item.` : ''}${it.lastPlaceAfter ? ` After round ${it.lastPlaceAfter}, whoever is in last place gets a free item each round.` : ''}`));
     extras.push(row('🎒', 'Using items', `Use <b>one item per turn</b>, before you pick a question. Your bag holds ${maxItems()}. Some items help you; others steal points or lock another player.`));
   }
@@ -3329,7 +3365,7 @@ function startGame() {
   if (!gameQs().length) return notice('Turn at least one category and one difficulty back on.', { title: 'No questions in play', icon: '🥔' });
   rememberPlayers(); turnPrizes = {}; assignColors(players);
   // games played are counted when a game finishes with a winner (quitting with End game doesn't count)
-  players.forEach(p => Object.assign(p, { score: 0, items: [], history: [], streak: { kind: null, count: 0 }, skip: 0, hardLock: 0, catLock: null, boost: null, halfTime: false, halfGain: false, beginner: 0, helper: null, tax: null, dodge: false, exodia: null, turnsPlayed: 0, lastGamble: -Infinity, gambleLocked: false }));
+  players.forEach(p => Object.assign(p, { score: 0, items: [], history: [], streak: { kind: null, count: 0 }, skip: 0, hardLock: 0, catLock: null, boost: null, halfTime: false, halfGain: false, beginner: 0, angel: 0, angelFresh: false, helper: null, tax: null, dodge: false, exodia: null, turnsPlayed: 0, lastGamble: -Infinity, gambleLocked: false }));
   bets = []; itemsThisGame = {}; lastPlaceRound = 0; catsThisGame = {}; famsThisGame = {}; feedLog = []; lastPlaceNotes = [];
   document.getElementById('itemCards').innerHTML = ''; setTimeout(renderFeed);
   // Random turn order each game (Fisher–Yates shuffle)
@@ -3379,9 +3415,10 @@ function effectList(p) {
   if (p.boost === 'triple') add('buff', '🔱×3', 'Triple Threat this turn (triple points, or lose triple)');
   if (p.beginner) add('buff', `🐣${p.beginner}`, `Beginner's Luck: easiest questions worth double, ${p.beginner} turn${p.beginner === 1 ? '' : 's'} left`);
   if (p.helper) add('buff', '📞', `Phone a Friend: ${p.helper.name} answers for them this turn`);
-  if (p.dodge) add('buff', '💨', 'Dodge the Bullet ready this turn');
+  if (p.angel) add('buff', `😇${p.angel}`, `Angel: items used on them have no effect, and they can't use items · ${p.angel} turn${p.angel === 1 ? '' : 's'} left`);
+  if (p.dodge) add('buff', '💨', 'Meat Shield ready this turn');
   if (p.exodia) add('info', `🃏${p.exodia.pieces}/${p.exodia.path.length}`, `Exodia: ${p.exodia.pieces} of ${p.exodia.path.length} pieces${exodiaFamNames(p).length ? ' · ' + exodiaFamNames(p).join(' / ') : ''}`);
-  bets.filter(x => x.from === p).forEach(x => add('info', '🤝', `Side Bet on ${x.on.name}`));
+  bets.filter(x => x.from === p).forEach(x => add('info', '🤝', `Side Bet on ${x.on.name}${x.against ? ` against ${x.against.name}` : ''}`));
   if (data.settings.gamble && (gambleNeedsRight(p) || gambleWait(p))) add('info', gambleNeedsRight(p) ? '🎰🔒' : `🎰${gambleWait(p)}`,
     gambleNeedsRight(p) ? 'Gamble locked until they get a regular question right' : `Gamble ready in ${gambleWait(p)} turn${gambleWait(p) === 1 ? '' : 's'}`);
   return e;
@@ -3407,8 +3444,8 @@ function histDots(p) {
 function streakLabel(p) {
   const k = p.streak.kind, n = p.streak.count, goal = nextStreakGoal(p);
   if (!k || !n) return '';
-  const icon = k === 'hot' ? '🔥' : '🧊';
-  // same format for both streaks: icon + progress toward the next item (🔥 2/3, 🧊 1/2); past the last item, just the count
+  const icon = k === 'hot' ? '🔥' : '❄️';
+  // same format for both streaks: icon + progress toward the next item (🔥 2/3, ❄️ 1/2); past the last item, just the count
   return `<span class="streakLbl ${k}" title="${n} ${k === 'hot' ? 'right' : 'wrong'} in a row${goal ? ` — an item at ${goal}` : ''}">${icon} ${n}${goal ? `/${goal}` : ''}</span>`;
 }
 // Items live in a bag with a fixed number of slots (Settings › Items, 5 by default), so every row is the same size
@@ -3446,7 +3483,7 @@ function renderBoard() {
   const order = players.map((p, i) => ({ p, i })).sort((a, b) => b.p.score - a.p.score);
   // every row has the same 3 lines whatever the game size; the board scrolls itself when it's taller than the screen
   document.getElementById('liveBoard').innerHTML = order.map(({ p, i }) =>
-    `<li data-pi="${i}" class="${i === turn ? 'current' : ''}" style="display:block;--pc:${pc(p)};--prog:${Math.min(100, Math.max(0, p.score / target * 100))}%">
+    `<li data-pi="${i}" class="${i === turn ? 'current' : ''} ${p.angel > 0 ? 'angel' : ''}" style="display:block;--pc:${pc(p)};--prog:${Math.min(100, Math.max(0, p.score / target * 100))}%">
       <div class="rowHead"><i class="pDot" style="background:${pc(p)}"></i><span class="rowName" style="color:${pcText(p)}" title="${esc(p.name)}">${esc(p.name)}</span>
         <span class="rowRight">${streakLabel(p)}<b>${p.score}</b></span></div>
       <div class="infoRow">${itemsOn() ? boardBag(p) : ''}<span class="fxRow"><span class="fxTrack">${effectList(p).map(x => effectTag(x)).join('') || '<span class="noFx">no effects</span>'}</span></span></div></li>`).join('');
@@ -3632,7 +3669,14 @@ function renderGame() {
   const stage = document.getElementById('stage');
   stage.classList.remove('stageIn'); void stage.offsetWidth; stage.classList.add('stageIn');
 }
-const itemRule = () => itemUsedThisTurn ? 'item used this turn (1 per turn)' : '1 per turn, and only before you pick a question'; // same words on the host and phones
+const angelLocked = p => p?.angel > 0 && !p.angelFresh; // 😇 Angel: protected, but no items of your own
+// Tapping an Angel in a "who?" list: explain, then go back to the list (nothing is used up)
+function angelNotice(v, back) {
+  modal(`<div class="bigIcon">😇</div><h2>${esc(v.name)} is an Angel</h2><p>They can't be picked while the Angel protects them (${v.angel} more turn${v.angel === 1 ? '' : 's'}). Choose someone else.</p>`,
+    [{ label: 'Pick someone else', cls: 'primary', fn: back }]);
+}
+const itemRule = () => angelLocked(players[turn]) ? `😇 Angel: no items for ${players[turn].angel} more turn${players[turn].angel === 1 ? '' : 's'}`
+  : itemUsedThisTurn ? 'item used this turn (1 per turn)' : '1 per turn, and only before you pick a question'; // same words on the host and phones
 function itemBar(p) {
   if (!p.items.length) return '';
   return `<div class="itemBar"><div class="muted" style="margin-bottom:8px">🎒 ${esc(p.name)}'s items · ${itemRule()}</div>
@@ -3640,7 +3684,7 @@ function itemBar(p) {
       const it = ITEMS[k];
       return it.passive
         ? `<div class="itemCard passive" title="${esc(itemDesc(k))}"><span class="itemIcon">${it.icon}</span> ${it.name}<small>Active — ${esc(itemDesc(k).charAt(0).toLowerCase() + itemDesc(k).slice(1))}</small></div>`
-        : `<button class="itemCard" title="${esc(itemDesc(k))}" onclick="useItem(${i})" ${itemUsedThisTurn ? 'disabled' : ''}><span class="itemIcon">${it.icon}</span> ${it.name} ${rarityTag(k)}<small>${esc(itemDesc(k))}</small></button>`;
+        : `<button class="itemCard" title="${esc(itemDesc(k))}" onclick="useItem(${i})" ${itemUsedThisTurn || angelLocked(p) ? 'disabled' : ''}><span class="itemIcon">${it.icon}</span> ${it.name} ${rarityTag(k)}<small>${esc(itemDesc(k))}</small></button>`;
     }).join('')}</div></div>`;
 }
 // Answer choices for a question: 4 (answer + first 3 wrong) or 6 in a "harder" game.
@@ -3753,7 +3797,7 @@ const gambleNeedsRight = p => data.settings.gambleNeedsWin && p.gambleLocked;
 function stakeBadge(p) {
   const tags = [current.gamble && '🎰 Gamble ×2', current.random && data.settings.randomBonus > 0 && `🎲 Random +${data.settings.randomBonus}`, p.boost === 'double' && '⚡ Double ×2', p.boost === 'triple' && '🔱 Triple ×3', p.halfGain && '🌧️ Storm ½',
     p.beginner > 0 && current.tierId === easiestTierId() && "🐣 Beginner's Luck ×2",
-    p.helper && `📞 ${esc(p.helper.name)} answers`, p.tax && `💸 taxed ½`, p.dodge && '💨 Dodge ready'].filter(Boolean);
+    p.helper && `📞 ${esc(p.helper.name)} answers`, p.tax && `💸 taxed ½`, p.dodge && '💨 Meat Shield ready'].filter(Boolean);
   if (!tags.length) return '';
   const st = stakes(p);
   return `<span class="pill stakePill">${tags.join(' · ')}: +${st.win}${st.lose ? ` / −${st.lose}` : ''}</span>`;
@@ -3771,7 +3815,7 @@ let turnPrizes = {};
 function prizeFor(key) {
   if (!(key in turnPrizes)) {
     const p = players[turn], hit = p && !p.exodia && !(p.hardLock > 0) && !p.catLock && rewardEligible(p) && Math.random() * 100 < data.settings.items.rewardChance;
-    turnPrizes[key] = hit ? randomItem('reward') : null;
+    turnPrizes[key] = hit ? randomItem('reward', null, p) : null;
     if (turnPrizes[key]) itemStat(turnPrizes[key]).shown++;
   }
   return turnPrizes[key];
@@ -3941,7 +3985,7 @@ function applyVolumes(now) {
 // so the host only plays a file. Each file has 1 s of spare audio either side of an exact loop, so it repeats seamlessly.
 // Plays on the host only, never on a player's phone.
 const MUSIC_STYLES = {
-  lounge: { name: '🛗 Lounge', file: 'music/lounge.m4a', loop: 4032000 / 44100, gain: .37246 },     // mellow elevator jazz
+  lounge: { name: '🎷 Lounge', file: 'music/lounge.m4a', loop: 4032000 / 44100, gain: .37246 },     // mellow elevator jazz
   gameshow: { name: '🎤 Game show', file: 'music/gameshow.m4a', loop: 729931 / 44100, gain: .35029 }, // upbeat game-show
 };
 const MUSIC_PAD = 1;
@@ -4139,28 +4183,30 @@ function dropPoints(row, text) {
   el.style.left = (r.right - 28) + 'px'; el.style.top = (r.top + 18) + 'px';
   document.body.appendChild(el); setTimeout(() => el.remove(), 1000);
 }
-let dodgeNote = ''; // result of a Dodge the Bullet, shown with the end-of-turn notes
+let dodgeNote = ''; // result of a Meat Shield (item key 'dodge'), shown with the end-of-turn notes
 function mark(correct) {
   const p = players[turn];
-  // Dodge the Bullet: on a wrong answer, first let the player choose who takes the hit
+  // Meat Shield: on a wrong answer, first let the player choose who takes the hit (not someone under an Angel's protection)
   if (p.dodge) {
     p.dodge = false;
-    const others = players.filter(o => o !== p && o.score > 0); // only players who actually have points to lose
+    const others = players.filter(o => o !== p && o.score > 0 && !(o.angel > 0)); // only players with points to lose, and not protected by an Angel
+    const angels = players.filter(o => o !== p && o.score > 0 && o.angel > 0); // shown, but tapping them explains why not
     if (!correct && !others.length) {
       // Nobody can be hit yet (e.g. everyone is on 0), so don't waste the item
       p.items.push('dodge'); itemStat('dodge').used--;
-      dodgeNote = `<p>💨 Nobody has any points to lose yet, so ${esc(p.name)} keeps Dodge the Bullet for later.</p>`;
+      dodgeNote = `<p>💨 Nobody can take the hit right now, so ${esc(p.name)} keeps Meat Shield for later.</p>`;
     }
     if (!correct && others.length) {
       stopTimer();
       const pts = tierOf(current.tierId).points;
-      return modal(`<div class="bigIcon">💨</div><h2>Dodge the Bullet!</h2><p>${esc(p.name)} got it wrong — who takes the hit of <b>${pts}</b> point${pts === 1 ? '' : 's'}?</p>`,
-        others.map(v => ({ label: `${esc(v.name)} <small>(${v.score} pts)</small>`, fn: () => {
+      const pickVictim = () => modal(`<div class="bigIcon">💨</div><h2>Meat Shield!</h2><p>${esc(p.name)} got it wrong — who takes the hit of <b>${pts}</b> point${pts === 1 ? '' : 's'}?</p>`,
+        [...others.map(v => ({ label: `${esc(v.name)} <small>(${v.score} pts)</small>`, fn: () => {
           const si = v.items.indexOf('shield');
-          if (si >= 0) { v.items.splice(si, 1); itemStat('shield').used++; dodgeNote = `<p>🛡️ <b>${esc(v.name)}</b> blocked ${esc(p.name)}'s Dodge the Bullet with a Shield!</p>`; }
-          else { const lost = Math.min(pts, v.score); v.score -= lost; dodgeNote = `<p>💨 ${esc(p.name)} dodged the bullet — <b>${esc(v.name)}</b> loses <b>${lost}</b>!</p>`; }
+          if (si >= 0) { v.items.splice(si, 1); itemStat('shield').used++; dodgeNote = `<p>🛡️ <b>${esc(v.name)}</b> blocked ${esc(p.name)}'s Meat Shield with a Shield!</p>`; }
+          else { const lost = Math.min(pts, v.score); v.score -= lost; dodgeNote = `<p>💨 ${esc(p.name)} used <b>${esc(v.name)}</b> as a meat shield — ${esc(v.name)} loses <b>${lost}</b>!</p>`; }
           mark(false);
-        } })));
+        } })), ...angels.map(v => ({ label: `😇 ${esc(v.name)} <small>(Angel)</small>`, cls: 'angelPick', fn: () => angelNotice(v, pickVictim) }))]);
+      return pickVictim();
     }
   }
   logAnswer(p, correct);
@@ -4209,12 +4255,16 @@ function mark(correct) {
   }
 
   if (p.hardLock > 0) p.hardLock--;
-  // Side Bets placed on this player pay out the same points they earned; a wrong answer costs the bettor nothing
-  // (so the player can't throw the question to hurt the bettor without losing their own points too)
+  if (p.angel > 0) { if (p.angelFresh) p.angelFresh = false; else p.angel--; }
+  // Side Bets on this player: right → the bettor wins the question's points; wrong → the player bet against wins them.
+  // Nobody loses points either way.
+  const betPts = tierOf(current.tierId)?.points || 0;
   const betNotes = bets.filter(b => b.on === p).map(b => {
-    if (!correct) return `<p>🤝 <b>${esc(b.from.name)}</b>'s bet on ${esc(p.name)} didn't pay off this time.</p>`;
-    b.from.score += gained;
-    return `<p>🤝 <b>${esc(b.from.name)}</b>'s bet on ${esc(p.name)} paid off: <b>+${gained}</b>!</p>`;
+    const winner = correct ? b.from : b.against;
+    if (!winner) return `<p>🤝 <b>${esc(b.from.name)}</b>'s bet on ${esc(p.name)} didn't pay off this time.</p>`; // a bet from before 4.2.3
+    winner.score += betPts;
+    return correct ? `<p>🤝 <b>${esc(b.from.name)}</b>'s bet on ${esc(p.name)} paid off: <b>+${betPts}</b>!</p>`
+      : `<p>🤝 ${esc(p.name)} missed, so <b>${esc(winner.name)}</b> wins ${esc(b.from.name)}'s Side Bet: <b>+${betPts}</b>!</p>`;
   }).join('');
   bets = bets.filter(b => b.on !== p);
   const turnNotes = dodgeNote + extraNotes.join('') + betNotes;
@@ -4237,13 +4287,13 @@ function mark(correct) {
   // activity bar: who answered what, right or wrong, the points, and where their streak stands
   { const c = catOf(current.categoryId), where = c ? (c.group ? `${c.group} › ${c.name}` : c.name) : 'Uncategorized';
     const pts = correct ? ` (+${st.win})` : st.lose ? ` (−${st.lose})` : '', goal = nextStreakGoal(p);
-    const streak = `${kind === 'hot' ? '🔥' : '🧊'} ${p.streak.count}${goal ? '/' + goal : ''}`;
+    const streak = `${kind === 'hot' ? '🔥' : '❄️'} ${p.streak.count}${goal ? '/' + goal : ''}`;
     logEvent(`${correct ? '✅' : '❌'} <b style="color:${pcText(p)}">${esc(p.name)}</b> answered ${esc(tierOf(current.tierId)?.name || '')} · ${esc(where)} <b>${correct ? 'right' : 'wrong'}</b>${pts} · ${streak}`); }
   const prize = correct && current.reward && itemsOn() ? current.reward : null;
   if (prize) { p.items.push(prize); itemStat(prize).earned++; }
   let earned = null;
   if (itemsOn() && streakList(kind).includes(p.streak.count)) {
-    earned = randomItem(kind);
+    earned = randomItem(kind, null, p);
     if (earned) { p.items.push(earned); const s = itemStat(earned); s.shown++; s.earned++; }
   }
   current = null;
@@ -4261,7 +4311,7 @@ function mark(correct) {
   [turnNotes, exodiaNote].forEach(h => { if (h) h.split('</p>').map(x => x.replace(/^\s*<p>/, '').trim()).filter(Boolean).forEach(logEvent); });
   skipped.forEach(n => logEvent(`⏭️ <b>${esc(n)}</b>'s turn was skipped`));
   if (prize) itemGained(p, prize, 'won a question prize:');
-  if (earned) itemGained(p, earned, kind === 'hot' ? `earned (🔥 ${count} in a row):` : `got a comeback item (🧊 ${count} misses):`);
+  if (earned) itemGained(p, earned, kind === 'hot' ? `earned (🔥 ${count} in a row):` : `got a comeback item (❄️ ${count} misses):`);
   lastPlaceNotes.splice(0).forEach(([lp, k]) => itemGained(lp, k, `got a last-place boost:`));
   resolveOverflow();
   setTimeout(() => sfx('turn'), 650);
@@ -4301,7 +4351,7 @@ function renderTurnInfo() {
   strip.classList.toggle('many', players.length > 6);
   document.getElementById('turnStrip').innerHTML = players.map((p, i) => {
     const tag = i === turn ? '<em>NOW</em>' : i === next ? '<em>NEXT</em>' : p.skip > 0 ? '<em>SKIPPED</em>' : '';
-    return `<span class="turnChip ${i === turn ? 'now' : i === next ? 'next' : ''} ${p.skip > 0 ? 'skipped' : ''}" style="--pc:${pc(p)}">${tag}<i class="pDot" style="background:${pc(p)}"></i>${esc(p.name)}</span>`;
+    return `<span class="turnChip ${i === turn ? 'now' : i === next ? 'next' : ''} ${p.skip > 0 ? 'skipped' : ''} ${p.angel > 0 ? 'angel' : ''}" style="--pc:${pc(p)}">${tag}<i class="pDot" style="background:${pc(p)}"></i>${esc(p.name)}</span>`;
   }).join('<span class="turnArrow">›</span>');
   // one line only: slide the strip so the current player sits in the middle
   const nowChip = strip.querySelector('.turnChip.now');
@@ -4330,7 +4380,7 @@ function lastPlaceGift() {
   const low = Math.min(...players.map(p => p.score));
   if (players.every(p => p.score === low)) return;
   players.filter(p => p.score === low).forEach(p => {
-    const k = randomItem('cold', 1); if (!k) return;
+    const k = randomItem('cold', 1, p); if (!k) return;
     p.items.push(k); const st = itemStat(k); st.shown++; st.earned++;
     lastPlaceNotes.push([p, k]); // shown as an item card when the turn ends
   });
@@ -4340,7 +4390,7 @@ function advanceTurn() {
   for (let n = 0; n < players.length * 2; n++) {
     turn = (turn + 1) % players.length; if (turn === 0) { round++; lastPlaceGift(); }
     const p = players[turn];
-    if (p.skip > 0) { p.skip--; p.halfGain = false; if (p.beginner > 0) p.beginner--; skipped.push(p.name); continue; }
+    if (p.skip > 0) { p.skip--; p.halfGain = false; if (p.beginner > 0) p.beginner--; if (p.angel > 0) { if (p.angelFresh) p.angelFresh = false; else p.angel--; } skipped.push(p.name); continue; }
     break;
   }
   itemUsedThisTurn = false; pickGroup = null; turnPrizes = {};
@@ -4351,7 +4401,9 @@ function advanceTurn() {
 function useItem(idx) {
   const p = players[turn], key = p.items[idx], it = ITEMS[key];
   if (itemUsedThisTurn || current) return;
+  if (angelLocked(p)) return toast(`😇 Angel: no items for ${p.angel} more turn${p.angel === 1 ? '' : 's'}`);
   if (key === 'phone' && players.length <= 2) return toast('Phone a Friend needs at least 3 players');
+  if (key === 'bet' && players.length <= 2) return toast('Side Bet needs at least 3 players');
   if (!it.target) {
     if (key === 'double') { p.boost = 'double'; finishItem(p, idx, `<div class="bigIcon">⚡</div><h2>Double Points!</h2><p>${esc(p.name)}'s answer this turn is worth double.</p>`); }
     if (key === 'nuke') {
@@ -4364,7 +4416,8 @@ function useItem(idx) {
       if (p.exodia) return toast('Exodia is already in progress!');
       exodiaFamilyPicker(idx); // the player picks 3 families first; Exodia starts from there
     }
-    if (key === 'dodge') { p.dodge = true; finishItem(p, idx, `<div class="bigIcon">💨</div><h2>Dodge the Bullet!</h2><p>If ${esc(p.name)} gets this one wrong, they choose a player who loses the question's points.</p>`); }
+    if (key === 'angel') { p.angel = ANGEL_TURNS; p.angelFresh = true; finishItem(p, idx, `<div class="bigIcon">😇</div><h2>Angel!</h2><p>For ${esc(p.name)}'s next ${ANGEL_TURNS} turns, items other players use on them have no effect. But ${esc(p.name)} can't use items during those turns either.</p>`); }
+    if (key === 'dodge') { p.dodge = true; finishItem(p, idx, `<div class="bigIcon">💨</div><h2>Meat Shield!</h2><p>If ${esc(p.name)} gets this one wrong, they pick a player to take the hit and lose the question's points instead.</p>`); }
     if (key === 'triple') { p.boost = 'triple'; finishItem(p, idx, `<div class="bigIcon">🔱</div><h2>Triple Threat!</h2><p>${esc(p.name)} wins <b>triple</b> points if right… and loses triple if wrong.</p>`); }
     if (key === 'blueshell') blueShell(p, idx);
     if (key === 'storm') stormCloud(p, idx);
@@ -4374,7 +4427,7 @@ function useItem(idx) {
       if (!above.length) return toast("You're already in the lead — save Catch Up for later!");
       const to = Math.min(...above), gain = to - p.score;
       p.score = to;
-      finishItem(p, idx, `<div class="bigIcon">🪜</div><h2>Catch Up!</h2><p>${esc(p.name)} jumps <b>+${gain}</b> to ${to} points, level with ${players.filter(o => o !== p && o.score === to).map(o => esc(o.name)).join(' & ')}.</p>`);
+      finishItem(p, idx, `<div class="bigIcon">📈</div><h2>Catch Up!</h2><p>${esc(p.name)} jumps <b>+${gain}</b> to ${to} points, level with ${players.filter(o => o !== p && o.score === to).map(o => esc(o.name)).join(' & ')}.</p>`);
     }
     return;
   }
@@ -4382,13 +4435,17 @@ function useItem(idx) {
   if (!others.length && key !== 'catlock') return toast('No other players to use this on');
   // Category Lock can also be used on yourself: it locks you into a category you like for this one turn
   const self = key === 'catlock' ? [{ label: `🙋 Myself <small>(1 turn — pick a favorite)</small>`, cls: 'selfTarget', fn: () => pickTarget(idx, turn) }] : [];
+  const friendly = key === 'phone' || key === 'bet'; // helping or betting on an Angel is fine
   modal(`<div class="bigIcon">${it.icon}</div><h2>${it.name}</h2><p class="muted">${esc(itemDesc(key))}</p><p>Use it on who?</p>`,
-    [...others.map(({ o, i }) => ({ label: `${esc(o.name)} <small>(${o.score} pts)</small>`, fn: () => pickTarget(idx, i) })), ...self,
+    [...others.map(({ o, i }) => o.angel > 0 && !friendly
+      ? { label: `😇 ${esc(o.name)} <small>(Angel)</small>`, cls: 'angelPick', fn: () => angelNotice(o, () => useItem(idx)) }
+      : { label: `${esc(o.name)} <small>(${o.score} pts)</small>`, fn: () => pickTarget(idx, i) }), ...self,
      { label: 'Cancel', cls: 'ghost' }]);
 }
 function pickTarget(idx, ti) {
   const p = players[turn], key = p.items[idx];
   if (key !== 'catlock') return applyItem(idx, ti);
+  if (players[ti].angel > 0 && ti !== turn) return applyItem(idx, ti); // under an Angel: blocked anyway, so skip the category picker
   if (players[ti].catLock && ti !== turn) return applyItem(idx, ti, players[ti].catLock.id); // already locked: just adds turns
   catLockPicker(idx, ti);
 }
@@ -4438,14 +4495,19 @@ function applyItem(idx, ti, catId) {
     p.helper = v;
     return finishItem(p, idx, `<div class="bigIcon">📞</div><h2>Phone a Friend!</h2><p><b>${esc(v.name)}</b> answers ${esc(p.name)}'s next question. If ${esc(v.name)} is right, they <b>both</b> get the full points. If ${esc(v.name)} is wrong, ${esc(v.name)} loses the question's points.</p>`);
   }
-  if (key === 'bet') { // not an attack, so Shields don't block it
-    bets.push({ from: p, on: v });
-    return finishItem(p, idx, `<div class="bigIcon">🤝</div><h2>Side Bet!</h2><p>${esc(p.name)} is betting on <b>${esc(v.name)}</b>. If ${esc(v.name)} gets their next question right, ${esc(p.name)} earns the same points. If they get it wrong, ${esc(p.name)} loses nothing.</p>`);
+  if (key === 'bet') { // not an attack, so Shields and Angels don't block it. Step 2: who is the bet against?
+    const rivals = players.filter(o => o !== p && o !== v);
+    return modal(`<div class="bigIcon">🤝</div><h2>Side Bet on ${esc(v.name)}</h2><p>Who are you betting against? If ${esc(v.name)} gets their next question <b>wrong</b>, that player wins its points.</p>`,
+      [...rivals.map(b => ({ label: `${esc(b.name)} <small>(${b.score} pts)</small>`, fn: () => {
+        bets.push({ from: p, on: v, against: b });
+        finishItem(p, idx, `<div class="bigIcon">🤝</div><h2>Side Bet!</h2><p>${esc(p.name)} bets on <b>${esc(v.name)}</b> against <b>${esc(b.name)}</b>. If ${esc(v.name)} gets their next question right, ${esc(p.name)} wins its points. If wrong, ${esc(b.name)} wins them. Nobody loses points.</p>`);
+      } })), { label: 'Cancel', cls: 'ghost' }]);
   }
   if (key === 'catlock' && v === p) { // locking yourself: this turn only (or one more turn if you're already locked)
     if (p.catLock) p.catLock.turns += 1; else p.catLock = { id: catId, turns: 1 };
     return finishItem(p, idx, `<div class="bigIcon">🎯</div><h2>Category Lock!</h2><p>${esc(p.name)} locks themself into <b>${esc(choiceLabel(p.catLock.id))}</b>${p.catLock.turns > 1 ? ` for ${p.catLock.turns} turns` : ' for this turn'}.</p>`);
   }
+  if (v.angel > 0) return finishItem(p, idx, `<div class="bigIcon">😇</div><h2>Protected!</h2><p>${esc(v.name)} is under an Angel's protection, so ${esc(p.name)}'s ${it.name} has no effect.</p>`, 'block');
   const shieldAt = v.items.indexOf('shield');
   if (shieldAt >= 0) {
     v.items.splice(shieldAt, 1); itemStat('shield').used++;
@@ -4475,18 +4537,17 @@ function applyItem(idx, ti, catId) {
   }
   finishItem(p, idx, `<div class="bigIcon">${it.icon}</div>${msg}`);
 }
-// Hits whoever is in the lead (ties included), never the player who throws it
+// Hits whoever is in 1st place (ties included), even the player who throws it, for 10% of the winning score
 function blueShell(p, idx) {
-  const others = players.filter(o => o !== p);
-  if (!others.length) return toast('No other players to hit');
-  const top = Math.max(...others.map(o => o.score));
-  const lines = others.filter(o => o.score === top).map(v => {
+  const top = Math.max(...players.map(o => o.score)), hit = blueShellHit();
+  const lines = players.filter(o => o.score === top).map(v => {
+    const who = `<b>${esc(v.name)}</b>${v === p ? ' (oops, that\'s you!)' : ''}`;
     const si = v.items.indexOf('shield');
-    if (si >= 0) { v.items.splice(si, 1); itemStat('shield').used++; return `🛡️ <b>${esc(v.name)}</b> blocked it with a Shield!`; }
-    const lost = Math.min(BLUE_SHELL_POINTS, v.score); v.score -= lost;
-    return `💥 <b>${esc(v.name)}</b> loses ${lost} point${lost === 1 ? '' : 's'}`;
+    if (si >= 0) { v.items.splice(si, 1); itemStat('shield').used++; return `🛡️ ${who} blocked it with a Shield!`; }
+    const lost = Math.min(hit, v.score); v.score -= lost;
+    return `💥 ${who} loses ${lost} point${lost === 1 ? '' : 's'}`;
   });
-  finishItem(p, idx, `<div class="bigIcon">🐢</div><h2>Blue Shell!</h2><p>${esc(p.name)} launched it at the leader…</p><p>${lines.join('<br>')}</p>`);
+  finishItem(p, idx, `<div class="bigIcon">🐢</div><h2>Blue Shell!</h2><p>${esc(p.name)} launched it at 1st place…</p><p>${lines.join('<br>')}</p>`);
 }
 function stormCloud(p, idx) {
   const lines = players.filter(o => o !== p).map(v => {

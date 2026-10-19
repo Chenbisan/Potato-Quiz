@@ -1,5 +1,20 @@
 # What's new in Potato Quiz
 
+## 4.2.3 — 2026-10-18
+- **😇 New item: Angel** (Rare).
+  - For your next 2 turns, items other players use on you have no effect, but you can't use items yourself. Everyone-items like Nuke, Blue Shell and Storm Cloud still reach you.
+  - While it's active, the player glows on the scoreboard and in the turn bar.
+  - Angels still appear when an item asks you to pick a player. Tapping one explains they can't be picked, and your item isn't used up.
+- **🤝 Side Bet works differently:** pick a player to bet on and a player to bet against. If the first gets their next question right, you win that question's points. If they get it wrong, the player you bet against wins them. Nobody loses points. Needs at least 3 players.
+- **💨 Dodge the Bullet is now called Meat Shield.** It works the same way: get it wrong, and pick someone to take the hit.
+- **🐢 Blue Shell, Mario Kart style:**
+  - Only players in the bottom quarter of the scores can get one.
+  - It hits whoever is in 1st place, even the player who throws it, for 10% of the winning score (−6 in a game to 60). Ties for 1st are all hit.
+  - It's now Legendary, and like the other Legendaries it's no longer a question prize. If you'd changed its rarity in Settings, your choice is kept.
+- **Softer light mode:** warm sand and latte tones instead of near-white, with cream cards, so it's easy on the eyes but still cozy. Grey text is a bit darker too, so it's easier to read.
+- Fixed: some icons showed up as blank boxes on Windows 10 and older phones. They now use emoji every device has: Catch Up 📈, Last-place boost 🍀, Lounge music 🎷 and cold streaks ❄️.
+- Fixed: item settings you'd changed, like turning Exodia, Nuke or Swap back on as question prizes, could be reset when the game updated.
+
 ## 4.2.2 — 2026-10-18
 - The game start sound is much gentler. It used a buzzy, harsh tone that could hurt your ears. It's the same little fanfare, now smoother and a bit quieter.
 
