@@ -1,5 +1,25 @@
 # What's new in Potato Quiz
 
+## 4.3.0 — 2026-10-19
+- **Cleaner questions:** we read through every question in the game and fixed about 550 of them:
+  - Questions that gave their own answer away are reworded (no more "In 'Home Alone 2: Lost in New York', which city is Kevin lost in?").
+  - Questions in the wrong category moved home, like the Hitchhiker's Guide "42" question, which was filed under Math.
+  - Wrong choices that were also right were replaced, and outdated facts were updated.
+  - About 220 duplicates and a few political questions were removed.
+- Fixed: after a Nuke (or any tie), players kept getting reshuffled on the scoreboard. Tied players now keep their spots.
+- **🎒 Items and 📜 History on your phone:** while other players take their turns, your phone has two tabs:
+  - **Items** lists what's in your bag and what each item does, so you can plan your next move. You still use them on your own turn.
+  - **History** shows what's happened so far, newest first, like the TV's game activity.
+- Phones use much less data during a game: the host now sends the whole screen only when something changes, plus a small update for the clock.
+- **💡 Send feedback:** got an idea or found a bug? Tap 💡 Send feedback on the main menu, in the ☰ game menu or at the bottom of your phone's screen. It goes straight to the game's maker. Only your message is sent, no names.
+- **📋 Copy link:** the room card has a button that copies the join link, so friends can join from a computer or from a group chat.
+- **Screens stay on during a game:** phones that have joined (or are watching) no longer go to sleep while other players take their turns, and neither does the TV. Needs a fairly recent browser.
+- **Safer online games:**
+  - Nobody else can pretend to be you or the host. Each device signs what it sends, and messages that don't match are ignored.
+  - Phones block anything harmful hidden in game messages.
+  - The page can only talk to the game's own servers.
+- The main menu now says who made the game.
+
 ## 4.2.5 — 2026-10-18
 - **🍖 Meat Shield has a new icon** to match its new name.
 - Icons no longer double up during a game: Restart game is now 🔁 (🔄 is Swap), and on phones "Your turn" is 👉 and "Waiting for…" is 🤔 (🎯 and ⏳ belong to Category Lock and Time Crunch).

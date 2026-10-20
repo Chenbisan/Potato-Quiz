@@ -1,6 +1,6 @@
-# Turns question flags from players (stored in Supabase) into GitHub issues, and marks them resolved when the issue closes.
+# Turns question flags and feedback from players (stored in Supabase) into GitHub issues, and marks them resolved when the issue closes.
 # Needs the repo secret SUPABASE_SECRET_KEY (Supabase → Project Settings → API Keys → secret key).
-name: Question flags
+name: Question flags and feedback
 on:
   schedule:
     - cron: '*/30 * * * *'   # every 30 minutes
@@ -15,12 +15,15 @@ concurrency:
   cancel-in-progress: false
 jobs:
   sync:
-    if: github.event_name != 'issues' || contains(github.event.issue.labels.*.name, 'question-flag')
+    if: github.event_name != 'issues' || contains(github.event.issue.labels.*.name, 'question-flag') || contains(github.event.issue.labels.*.name, 'feedback')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
-          sparse-checkout: .github/scripts
+          sparse-checkout: |   # the script, plus questions.json so flagged questions are shown as they really are
+            .github/scripts
+            questions.json
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v5
         with:
           node-version: 24

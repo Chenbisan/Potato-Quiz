@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Only this site, the two script CDNs and the Supabase project can be reached; nothing can embed plugins or redirect forms -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: https://vatbltqkvqksimbmkqql.supabase.co wss://vatbltqkvqksimbmkqql.supabase.co; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
 <title>Potato Quiz</title>
 <style>
   :root {
@@ -156,6 +159,11 @@
   .famCell small { color: var(--muted); font-size: .78rem; }
   .coffeeLink { color: var(--muted); text-decoration: none; border-bottom: 1px dotted currentColor; }
   .coffeeLink:hover { color: var(--accent); }
+  .credit { margin: -14px 0 0; text-align: center; font-size: .8rem; letter-spacing: .04em; color: var(--muted); opacity: .8; }
+  .credit b { color: var(--accent); font-weight: 700; }
+  .joinFoot { margin: 26px 0 0; font-size: .9rem; }
+  #fbKinds button.on { background: var(--accent); color: #222; font-weight: 700; border-color: var(--accent); }
+  #fbMsg { font: inherit; padding: 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--deep); color: var(--text); resize: vertical; }
   .coffeePop { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60; display: flex; gap: 12px; align-items: center; max-width: calc(100vw - 32px);
     background: var(--panel); border: 1px solid var(--line); border-left: 4px solid #ff6b8a; border-radius: 12px; padding: 12px 16px; box-shadow: 0 10px 30px rgba(0,0,0,.45);
     animation: coffeeIn .35s ease-out; cursor: pointer; text-align: left; }
@@ -576,6 +584,15 @@
   .pcTimer.low { color: var(--bad); }
   .pcItems { margin-top: 18px; text-align: left; }
   .pcScores { display: grid; gap: 4px; margin-top: 16px; text-align: left; }
+  .pcTabs { display: flex; gap: 6px; margin-top: 14px; } .pcTabs > * { flex: 1; padding: 8px; border-radius: 10px; font-weight: 700; font-size: .9rem; background: var(--panel2); color: var(--muted); border: 1px solid transparent; text-align: center; }
+  .pcTabs > .on { color: var(--text); border-color: var(--accent); }
+  .pcHistory { margin-top: 10px; text-align: left; max-height: 46vh; overflow-y: auto; }
+  .pcHist { padding: 7px 10px; margin-bottom: 5px; border-radius: 8px; background: var(--panel2); font-size: .85rem; line-height: 1.35; }
+  .pcHist .feedRound { margin-right: 6px; }
+  .pcBag { margin-top: 10px; text-align: left; } .pcBag > p { margin: 0 0 8px; font-size: .9rem; }
+  .pcBagItem { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; margin-bottom: 6px; border-radius: 10px; background: var(--panel2); }
+  .pcBagItem .ic { font-size: 1.5rem; line-height: 1.2; } .pcBagItem b { font-size: .95rem; }
+  .pcBagItem small { display: block; color: var(--muted); font-size: .8rem; margin-top: 3px; line-height: 1.3; } .pcBagItem .rarityTag { font-size: .65rem; }
   .pcScores div { display: flex; justify-content: space-between; padding: 6px 10px; border-radius: 8px; background: var(--panel2); }
   .pcScores div.cur { outline: 2px solid var(--accent); font-weight: 800; }
   .pcList button.right:disabled, .pcList button.wrongPick:disabled, .pcList button.picked:disabled { opacity: 1; }
@@ -642,7 +659,8 @@
     <button onclick="go('settings')">⚙️ Settings</button>
   </div>
   <p class="sub" id="menuStats" style="margin-top:30px"></p>
-  <p class="sub" style="margin-top:-30px"><a id="menuVersion" class="versionLink" target="_blank" rel="noopener"></a> · <a href="#" class="coffeeLink" onclick="coffee(); return false">☕ Buy me a coffee</a></p>
+  <p class="sub" style="margin-top:-30px"><a id="menuVersion" class="versionLink" target="_blank" rel="noopener"></a> · <a href="#" class="coffeeLink" onclick="coffee(); return false">☕ Buy me a coffee</a> · <a href="#" class="coffeeLink" onclick="feedbackForm('menu'); return false">💡 Send feedback</a></p>
+  <p class="credit">Created by <b>Chenbisan</b></p>
 </section>
 
 <!-- PLAYER SETUP -->
@@ -700,7 +718,7 @@
 <button id="themeBtn" class="musicBtn themeBtn" onclick="toggleTheme()" aria-label="Light or dark mode">☀️</button>
 
 <!-- JOIN (on a player's phone) -->
-<section id="join" class="screen"><div class="joinBox"><div class="joinTop"><button id="joinBack" class="ghost" onclick="phoneExit()">← Menu</button></div><h1>🥔 Potato Quiz</h1><div id="joinBody"></div></div></section>
+<section id="join" class="screen"><div class="joinBox"><div class="joinTop"><button id="joinBack" class="ghost" onclick="phoneExit()">← Menu</button></div><h1>🥔 Potato Quiz</h1><div id="joinBody"></div><p class="joinFoot"><a href="#" class="coffeeLink" onclick="feedbackForm('phone'); return false">💡 Send feedback</a></p></div></section>
 
 <!-- GAME -->
 <section id="game" class="screen">
@@ -716,6 +734,7 @@
         <div class="menuVol" title="Volume (same as Settings › Audio › Master)"><span id="menuVolIcon">🔊</span><input type="range" id="menuVol" min="0" max="100" aria-label="Volume"
           oninput="setMenuVolume(this.value)" onchange="setMenuVolume(this.value, true)"><b id="menuVolVal"></b></div>
         <button role="menuitem" onclick="closeGameMenu(); flagLastQuestion()">🚩 Flag last question</button>
+        <button role="menuitem" onclick="closeGameMenu(); feedbackForm('game')">💡 Send feedback</button>
         <button role="menuitem" onclick="closeGameMenu(); restartGame()">🔁 Restart game</button>
         <button role="menuitem" class="danger" onclick="closeGameMenu(); quitGame()">✕ End game</button>
       </div>
@@ -1124,7 +1143,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '4.2.5';
+const APP_VERSION = '4.3.0';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1796,6 +1815,7 @@ function go(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   ({ menu: renderMenu, setup: renderSetup, editor: renderEditor, settings: renderSettings, stats: () => { renderStats(); renderQuestionStats(); } })[id]?.();
+  keepAwake();
 }
 // "Coming soon" banner on the main menu — edit this list to tell players what's in the works
 const NEWS = [
@@ -2012,7 +2032,7 @@ async function importData(input) {
     if (!await ask(`Your current questions will be replaced with the <b>${d.questions.length}</b> questions in this file.`, { title: 'Import questions?', icon: '📥', ok: 'Replace questions', danger: true })) return;
     const files = d.mediaFiles || {}; delete d.mediaFiles;
     await mediaClear();
-    for (const [id, url] of Object.entries(files)) await mediaPut(id, await (await fetch(url)).blob());
+    for (const [id, url] of Object.entries(files)) if (/^data:(image|audio)\//.test(url)) await mediaPut(id, await (await fetch(url)).blob()); // only embedded files, never links
     data = upgrade(d); save(); renderSettings(); toast('Imported!');
   } catch (e) { notice(esc(e.message), { title: 'Import failed', icon: '⚠️' }); }
   finally { input.value = ''; }
@@ -2491,8 +2511,9 @@ async function resetSeenCounts() { if (await ask('Every question\'s "seen" count
 // and which items were used, plus the families in play and the settings that shape the mix
 // flags: questions players reported, kept here and sent to the Supabase table question_flags, which a GitHub Action
 // turns into GitHub issues (see tools/supabase-flags.sql and .github/workflows/question-flags.yml)
+// feedback: suggestions and bug reports, sent the same way to player_feedback (see tools/supabase-feedback.sql)
 const LOG_KEY = 'potatoQuizLog_v1', MAX_GAMES = 100, MAX_FLAGS = 500;
-let qlog = (() => { try { const l = JSON.parse(localStorage.getItem(LOG_KEY)); if (l?.games && l?.flags) return l; } catch (e) {} return { games: [], flags: [] }; })();
+let qlog = (() => { try { const l = JSON.parse(localStorage.getItem(LOG_KEY)); if (l?.games && l?.flags) return { feedback: [], ...l }; } catch (e) {} return { games: [], flags: [], feedback: [] }; })();
 function saveLog() {
   for (let i = 0; i < 6; i++) {
     try { localStorage.setItem(LOG_KEY, JSON.stringify(qlog)); return; }
@@ -2531,19 +2552,43 @@ function addFlag(q, reason, note, source) {
   if (qlog.flags.length > MAX_FLAGS) qlog.flags = qlog.flags.filter(f => !f.sent).concat(qlog.flags.filter(f => f.sent)).slice(0, MAX_FLAGS);
   saveLog(); sendFlags();
 }
-// Sends flags that haven't gone out yet (retried on start-up and when the device comes back online)
+// Sends flags and feedback that haven't gone out yet (retried on start-up and when the device comes back online)
 async function sendFlags() {
   if (!NET_CONFIG.url || sendFlags.busy || !navigator.onLine) return;
   sendFlags.busy = true;
   try {
-    for (const f of qlog.flags.filter(f => !f.sent)) {
-      const { sent, ...row } = f;
-      const r = await fetch(`${NET_CONFIG.url}/rest/v1/question_flags`, { method: 'POST',
-        headers: { apikey: NET_CONFIG.key, 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify(row) });
-      if (r.ok || r.status === 409) { f.sent = true; saveLog(); } // 409: it already arrived on an earlier try
-      else break;
-    }
+    for (const [list, table] of [[qlog.flags, 'question_flags'], [qlog.feedback, 'player_feedback']])
+      for (const f of list.filter(f => !f.sent)) {
+        const { sent, ...row } = f;
+        const r = await fetch(`${NET_CONFIG.url}/rest/v1/${table}`, { method: 'POST',
+          headers: { apikey: NET_CONFIG.key, 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify(row) });
+        if (r.ok || r.status === 409) { f.sent = true; saveLog(); } // 409: it already arrived on an earlier try
+        else break;
+      }
   } catch (e) {} finally { sendFlags.busy = false; }
+}
+// 💡 Feedback: a suggestion or bug report from the menu, the ☰ game menu or a phone. It goes to the GitHub issues
+// the same way flags do. No names or game data are attached, only the message, its kind and the app version.
+const FEEDBACK_KINDS = { suggestion: '💡 Suggestion', bug: '🐞 Bug', other: '💬 Other' }, FEEDBACK_PER_HOUR = 5;
+let fbDraft = {}; // the open form's kind and text (pop-up buttons close the form before they run)
+function feedbackForm(source, draft = {}) {
+  const kind = FEEDBACK_KINDS[draft.kind] ? draft.kind : 'suggestion';
+  const recent = qlog.feedback.filter(f => Date.now() - Date.parse(f.created_at) < 36e5).length;
+  if (recent >= FEEDBACK_PER_HOUR) return notice("That's a lot of feedback in one hour, thank you! Please try again a little later.", { title: 'Thanks!', icon: '💡' });
+  fbDraft = { kind, message: draft.message || '' };
+  modal(`<div class="bigIcon">💡</div><h2>Send feedback</h2><p class="muted">Ideas, bugs, anything. It goes straight to the person who makes the game. Please don't include personal details.</p>
+    <div class="chips" id="fbKinds" style="justify-content:center">${Object.entries(FEEDBACK_KINDS).map(([k, v]) =>
+      `<button class="small ${k === kind ? 'on' : ''}" data-k="${k}" onclick="fbDraft.kind = '${k}'; document.querySelectorAll('#fbKinds button').forEach(b => b.classList.toggle('on', b === this))">${v}</button>`).join('')}</div>
+    <textarea id="fbMsg" maxlength="1000" rows="5" oninput="fbDraft.message = this.value" placeholder="What would make the game better?" style="width:100%;margin-top:10px">${esc(draft.message || '')}</textarea>`,
+    [{ label: 'Cancel', cls: 'ghost' }, { label: 'Send', cls: 'primary', fn: () => sendFeedback(source, fbDraft) }], { owner: { pid: 'host', name: 'the host' } });
+  setTimeout(() => document.getElementById('fbMsg')?.focus(), 50);
+}
+function sendFeedback(source, { kind, message }) {
+  message = String(message || '').trim();
+  if (message.length < 3) { toast('Type a message first'); return feedbackForm(source, { kind, message }); }
+  qlog.feedback.push({ id: uuid(), created_at: new Date().toISOString(), kind, message: message.slice(0, 1000), source, app_version: APP_VERSION, sent: false });
+  if (qlog.feedback.length > 100) qlog.feedback = qlog.feedback.filter(f => !f.sent).concat(qlog.feedback.filter(f => f.sent)).slice(0, 100);
+  saveLog(); sendFlags(); toast('💡 Thanks! Your feedback was sent.');
 }
 addEventListener('online', sendFlags);
 // host: the flag box under the answer (opening it pauses the phone auto-advance)
@@ -2588,7 +2633,7 @@ function exportAnalytics() {
     questions: ids.map(id => { const q = byId.get(id); return { id, cat: q.categoryId, tier: q.tierId, seen: stats.seen[id] || 0, answered: stats.answered[id] || 0, right: stats.right[id] || 0 }; }),
     drawBalance: { families: stats.famTally || {}, categories: stats.catTally || {} },
     items: stats.items || {}, exodia: stats.exodia || {},
-    games: qlog.games, flags: qlog.flags,
+    games: qlog.games, flags: qlog.flags, feedback: qlog.feedback.map(({ kind, message, app_version, created_at }) => ({ kind, message, app_version, created_at })),
   };
   const a = document.createElement('a'), url = URL.createObjectURL(new Blob([JSON.stringify(out)], { type: 'application/json' }));
   a.href = url; a.download = `potato-quiz-analytics-${new Date().toISOString().slice(0, 10)}.json`; document.body.appendChild(a); a.click(); a.remove();
@@ -2719,7 +2764,51 @@ async function openChannel(code, onMsg, { onUp, onDown } = {}) { // onUp/onDown:
 
 // Host side: the room card on the setup screen
 let room = null; // { code, ch, qr } while this device hosts a room
-const roomSend = m => room?.ch.send(m);
+// ---------- Signed room messages ----------
+// Anyone who knows a room code can listen and send on its channel, so messages are signed (ECDSA P-256, Web Crypto):
+//  • each phone has its own key, kept on the phone. The host remembers it from the player's first join and only accepts
+//    that player's moves when they're signed with it, with an ever-increasing counter, so moves can't be faked or replayed.
+//  • the host signs what it sends too. A phone trusts the host key from the room's first lobby message and ignores
+//    anything else (fake "you were removed", fake screens…). Only the harmless heartbeat and reload notice go unsigned.
+const SIGN = { gen: { name: 'ECDSA', namedCurve: 'P-256' }, use: { name: 'ECDSA', hash: 'SHA-256' } };
+const HOST_KEY = 'potatoQuizHostKey', PHONE_KEY = 'potatoQuizPhoneKey';
+const stableJson = v => JSON.stringify((function sort(x) { return Array.isArray(x) ? x.map(sort) : x && typeof x === 'object' ? Object.fromEntries(Object.keys(x).sort().map(k => [k, sort(x[k])])) : x; })(v));
+const b64 = buf => { let s = ''; for (const c of new Uint8Array(buf)) s += String.fromCharCode(c); return btoa(s); };
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+function keyPair(storeKey) {
+  keyPair.cache ??= {};
+  return keyPair.cache[storeKey] ??= (async () => {
+    try { const k = JSON.parse(localStorage.getItem(storeKey)); if (k?.priv && k?.pub) return { priv: await crypto.subtle.importKey('jwk', k.priv, SIGN.gen, false, ['sign']), pub: k.pub }; } catch (e) {}
+    const k = await crypto.subtle.generateKey(SIGN.gen, true, ['sign', 'verify']);
+    const priv = await crypto.subtle.exportKey('jwk', k.privateKey), { kty, crv, x, y } = await crypto.subtle.exportKey('jwk', k.publicKey), pub = { kty, crv, x, y };
+    try { localStorage.setItem(storeKey, JSON.stringify({ priv, pub })); } catch (e) {}
+    return { priv: k.privateKey, pub };
+  })();
+}
+async function signMsg(m, storeKey) {
+  const { priv } = await keyPair(storeKey), body = { ...m }; delete body.sig;
+  return { ...body, sig: b64(await crypto.subtle.sign(SIGN.use, priv, new TextEncoder().encode(stableJson(body)))) };
+}
+const pubKeys = new Map();
+async function verifyMsg(m, pub) {
+  try {
+    if (!pub || typeof m?.sig !== 'string' || m.sig.length > 200) return false;
+    const { kty, crv, x, y } = pub, id = `${x}.${y}`;
+    let key = pubKeys.get(id);
+    if (!key) { key = await crypto.subtle.importKey('jwk', { kty, crv, x, y }, SIGN.gen, false, ['verify']); pubKeys.set(id, key); }
+    const body = { ...m }; delete body.sig;
+    return await crypto.subtle.verify(SIGN.use, key, unb64(m.sig), new TextEncoder().encode(stableJson(body)));
+  } catch (e) { return false; }
+}
+const HOST_UNSIGNED = new Set(['away', 'beat']); // harmless if faked, and 'away' must go out as the page closes
+function roomSend(m) {
+  const r = room; if (!r) return;
+  if (HOST_UNSIGNED.has(m.t)) return r.ch.send(m);
+  r.out = (r.out || Promise.resolve()).then(async () => { // signed in order, so phones get messages in the order they were sent
+    if (m.t === 'lobby') m = { ...m, hp: (await keyPair(HOST_KEY)).pub }; // phones pin the host key from this
+    r.ch.send(await signMsg(m, HOST_KEY));
+  }).catch(() => {});
+}
 async function openRoom(code = newRoomCode(), quiet = false) {
   // A game is either all on phones or all on this screen, so names can't clash between the two
   const local = players.filter(p => !p.pid);
@@ -2789,21 +2878,43 @@ function renderRoom() {
   el.innerHTML = `<div class="roomRow">
       <div class="roomQr">${room.qr || ''}</div>
       <div style="flex:1;min-width:220px">
-        <div class="muted">Scan the code, or go to the site and tap <b>📱 Join a game</b>:</div>
+        <div class="muted">Scan the code on a phone, open the link on a computer, or go to the site and tap <b>📱 Join a game</b>:</div>
         <div class="roomCode">${room.code}</div>
-        <div class="roomUrl muted">${esc(joinUrl(room.code))}</div>
+        <div class="roomUrl muted">${esc(joinUrl(room.code))} <button class="small" onclick="copyJoinLink()" title="For players joining on a computer, or to send in a group chat">📋 Copy link</button></div>
         <p style="margin:10px 0 0">${phones ? `📱 ${phones} joined on ${phones === 1 ? 'a phone' : 'phones'}` : 'Waiting for players to join…'}</p>
       </div>
       <button class="ghost small" onclick="closeRoom()">Close room</button></div>`;
 }
+// 📋 Copy link: for players joining from a computer, or to drop in a group chat
+async function copyJoinLink() {
+  const url = joinUrl(room?.code || '');
+  try { await navigator.clipboard.writeText(url); }
+  catch (e) { const t = Object.assign(document.createElement('textarea'), { value: url }); document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); }
+  toast('📋 Join link copied');
+}
+const PHONE_SIGNED = new Set(['join', 'act', 'leave', 'flag']); // 'hello' / 'ping' are harmless, so they stay unsigned
 function onHostMsg(m) {
-  if (!room || !m || typeof m !== 'object') return;
+  if (!room || !m || typeof m !== 'object' || Array.isArray(m) || (m.pid != null && (typeof m.pid !== 'string' || m.pid.length > 64))) return;
+  if (!PHONE_SIGNED.has(m.t)) return onHostMsgChecked(m);
+  if (typeof m.pid !== 'string') return;
+  room.in = (room.in || Promise.resolve()).then(async () => {
+    const p = players.find(o => o.pid === m.pid), key = p?.pub || m.pub;
+    if (key) {
+      if (!(await verifyMsg(m, key))) return;                  // forged, or signed with someone else's key
+      if (!(Number(m.n) > (p?.lastN || 0))) return;            // an old message sent again
+    } else if (p?.pub) return;                                 // (unreachable: a pinned player must sign)
+    onHostMsgChecked(m);
+    const q = players.find(o => o.pid === m.pid);              // pin the key on the player's first signed message
+    if (q && key) { q.pub ??= key; q.lastN = Math.max(q.lastN || 0, Number(m.n) || 0); }
+  }).catch(() => {});
+}
+function onHostMsgChecked(m) {
   const inLobby = document.getElementById('setup').classList.contains('active');
   const reply = (ok, extra) => roomSend({ t: ok ? 'joined' : 'rejected', pid: m.pid, ...extra });
   const from = typeof m.pid === 'string' && players.find(o => o.pid === m.pid);
   if (from) { from.seen = Date.now(); if (from.offline) { from.offline = false; renderPhoneStatus(); if (inLobby) renderSetup(); } }
   if (m.t === 'ping') return;
-  if (m.t === 'hello') { sendLobby(); return syncPhones(); }
+  if (m.t === 'hello') { sendLobby(); return syncPhones(true); }
   if (m.t === 'leave') {
     const i = players.findIndex(p => p.pid && p.pid === m.pid);
     if (i >= 0 && inLobby) { players.splice(i, 1); renderSetup(); }
@@ -2860,6 +2971,22 @@ setInterval(() => {
 document.addEventListener('visibilitychange', () => { // back from a locked screen or another app: catch up
   if (document.visibilityState === 'visible' && phone?.ch && phone.state !== 'code') phoneSend('hello');
 });
+// Keeps the screen on while it matters: a phone that has joined or is watching, the TV during a game, or the room
+// lobby while players are joining. Browsers drop the lock when the page is hidden, so it's re-checked every few seconds.
+var wake = { lock: null, busy: false }; // var: go() may run before this line
+async function keepAwake() {
+  const scr = document.body.dataset.screen;
+  const want = document.visibilityState === 'visible' && (scr === 'game' || (scr === 'setup' && !!room)
+    || (scr === 'join' && ['in', 'playing', 'watching'].includes(phone?.state)));
+  if (!wake || !('wakeLock' in navigator) || wake.busy || want === !!wake.lock) return;
+  wake.busy = true;
+  try {
+    if (want) { wake.lock = await navigator.wakeLock.request('screen'); wake.lock.addEventListener('release', () => { wake.lock = null; }); }
+    else { const l = wake.lock; wake.lock = null; await l.release(); }
+  } catch (e) {} finally { wake.busy = false; }
+}
+setInterval(keepAwake, 3000);
+document.addEventListener('visibilitychange', keepAwake);
 function renderJoinBanner() {
   let b = document.getElementById('joinBanner');
   if (!phone?.lost) return b?.remove();
@@ -2880,7 +3007,17 @@ async function phoneConnect() {
   phone.wait = setTimeout(() => { if (phone !== me || phone.state !== 'finding') return;
     phone.ch.close(); phone.ch = null; phone.state = 'code'; phone.err = `No game found with code ${code}. Check the code on the TV.`; renderJoin(); }, 5000);
 }
-function phoneSend(t, extra) { phone?.ch?.send({ t, pid: myPid(), ...extra }); }
+function phoneSend(t, extra) {
+  const P = phone, ch = P?.ch; if (!ch) return;
+  if (t === 'hello') return ch.send({ t }); // no player id until we join, so nobody can grab it first
+  const m = { t, pid: myPid(), ...extra };
+  if (!PHONE_SIGNED.has(t)) return ch.send(m);
+  phoneSend.n = Math.max(Date.now(), (phoneSend.n || 0) + 1); m.n = phoneSend.n; // always increasing, even across reloads
+  P.out = (P.out || Promise.resolve()).then(async () => {
+    if (t === 'join') m.pub = (await keyPair(PHONE_KEY)).pub;
+    if (phone === P && P.ch) P.ch.send(await signMsg(m, PHONE_KEY));
+  }).catch(() => {});
+}
 function phoneSubmit() {
   const name = cleanName(document.getElementById('joinName').value);
   if (!name) { phone.err = 'Please enter your name.'; return renderJoin(); }
@@ -2898,7 +3035,47 @@ function phoneExit() {
   if (!data) { location.href = location.pathname; return; } // came in by a join link: the menu needs the question bank, so load the site
   go('menu'); renderMusicButtons();
 }
-function onPhoneMsg(m) {
+// What a phone accepts from the room: only the host's message types, signed by the host key it pinned, and cleaned up
+// (colors must look like colors, numbers are numbers, class names are plain words) before anything is drawn
+const HOST_TYPES = new Set(['away', 'beat', 'reopened', 'lobby', 'joined', 'rejected', 'kicked', 'closed', 'started', 'quit', 'turn', 'tick', 'ended']);
+const safeCss = v => typeof v === 'string' && v.length <= 400 && /^[#a-zA-Z0-9(),.%\s-]*$/.test(v) && !/url|expression|var\s*\(--/i.test(v) ? v : '';
+const num = v => Number.isFinite(+v) ? +v : 0;
+const word = v => String(v ?? '').replace(/[^\w\s-]/g, '').slice(0, 200);
+function cleanIncoming(m) {
+  m = { ...m };
+  for (const k of ['color', 'catColor', 'tierColor']) if (k in m) m[k] = safeCss(m[k]);
+  for (const k of ['round', 'win', 'lose', 'autoNext', 'bagMax', 'v', 'right', 'max']) if (k in m && m[k] != null) m[k] = num(m[k]);
+  if ('picked' in m && m.picked != null) m.picked = num(m.picked);
+  if (m.timer) m.timer = { left: num(m.timer.left), low: !!m.timer.low };
+  const btns = a => Array.isArray(a) ? a.slice(0, 60).map(b => ({ label: String(b?.label ?? ''), sub: String(b?.sub ?? ''), color: safeCss(b?.color), fg: safeCss(b?.fg),
+    cls: word(b?.cls), disabled: !!b?.disabled, open: !!b?.open })) : [];
+  for (const k of ['buttons', 'items', 'extra']) if (k in m) m[k] = btns(m[k]);
+  const okKey = k => typeof k === 'string' && /^\w{1,30}$/.test(k);
+  if (Array.isArray(m.scores)) m.scores = m.scores.slice(0, 20).map(o => ({ name: String(o?.name ?? ''), color: safeCss(o?.color), score: num(o?.score), turn: !!o?.turn,
+    angel: !!o?.angel, pid: typeof o?.pid === 'string' ? o.pid : null, items: Array.isArray(o?.items) ? o.items.filter(okKey) : null, locked: num(o?.locked) }));
+  if (Array.isArray(m.players)) m.players = m.players.slice(0, 20).map(o => ({ name: String(o?.name ?? ''), color: safeCss(o?.color), phone: !!o?.phone }));
+  if (m.itemInfo && typeof m.itemInfo === 'object') m.itemInfo = Object.fromEntries(Object.entries(m.itemInfo).filter(([k]) => okKey(k)).slice(0, 40)
+    .map(([k, it]) => [k, { icon: String(it?.icon ?? ''), name: String(it?.name ?? ''), desc: String(it?.desc ?? ''), r: num(it?.r), passive: !!it?.passive }]));
+  if (Array.isArray(m.history)) m.history = m.history.slice(0, 40).map(h => [num(h?.[0]), String(h?.[1] ?? '')]);
+  if ('choices' in m) m.choices = Array.isArray(m.choices) ? m.choices.slice(0, 8).map(String) : null;
+  for (const k of ['name', 'q', 'answer', 'cat', 'tier', 'title', 'body', 'icon', 'ownerName', 'owner', 'why', 'winner', 'qid', 'itemRule', 'head']) if (k in m && m[k] != null) m[k] = String(m[k]);
+  return m;
+}
+function onPhoneMsg(raw) {
+  if (!phone || !raw || typeof raw !== 'object' || !HOST_TYPES.has(raw.t)) return; // other phones' traffic is none of our business
+  const P = phone;
+  P.in = (P.in || Promise.resolve()).then(async () => {
+    if (phone !== P) return;
+    if (!HOST_UNSIGNED.has(raw.t)) {
+      if (!P.hostPub) { // the first lobby message sets which host we trust; until then, nothing else counts
+        if (raw.t !== 'lobby' || !raw.hp || !(await verifyMsg(raw, raw.hp))) return;
+        P.hostPub = raw.hp;
+      } else if (!(await verifyMsg(raw, P.hostPub))) return;
+    }
+    onPhoneMsgChecked(cleanIncoming(raw));
+  }).catch(() => {});
+}
+function onPhoneMsgChecked(m) {
   if (!phone || !m || typeof m !== 'object') return;
   phone.heard = Date.now(); if (phone.lost) { phone.lost = false; renderJoinBanner(); }
   const mine = m.pid === myPid();
@@ -2918,7 +3095,7 @@ function onPhoneMsg(m) {
     if (phone.state === 'watching' && !m.started) phone.state = 'name'; // the game is over: spectators can join the next one
     // the host forgot us (its page reloaded): quietly join again
     if (['in', 'playing'].includes(phone.state) && !m.started && !m.players.some(o => o.name.toLowerCase() === phone.name.toLowerCase())) phoneRejoin();
-  } else if (m.t === 'joined' && mine) { try { localStorage.setItem('potatoQuizRoom', phone.code); } catch (e) {} phone.state = phone.lobby?.started ? 'playing' : 'in'; phone.name = m.name; phone.color = m.color; }
+  } else if (m.t === 'joined' && mine) { try { localStorage.setItem('potatoQuizRoom', phone.code); } catch (e) {} phone.state = phone.lobby?.started ? 'playing' : 'in'; phone.name = m.name; phone.color = safeCss(m.color) || null; }
   else if (m.t === 'rejected' && mine) { phone.err = m.why; phone.canWatch = !!m.started; if (['in', 'playing'].includes(phone.state)) phone.state = 'name'; }
   else if (m.t === 'kicked' && mine) { phone.ch.close(); phone.ch = null; phone.state = 'out'; phone.err = 'The host removed you from the game.'; }
   else if (m.t === 'closed' && phone.state !== 'code') { phone.ch?.close(); phone.ch = null; phone.state = 'out'; phone.err = 'The host closed the room.'; }
@@ -2934,6 +3111,13 @@ function onPhoneMsg(m) {
       return;
     }
     phone.sent = null;
+  }
+  else if (m.t === 'tick' && ['playing', 'watching'].includes(phone.state)) {
+    if (phone.turn?.v !== m.v) { if (phone.askedFor !== m.v) { phone.askedFor = m.v; phoneSend('hello'); } return; } // missed a screen: get it
+    phone.turn = { ...phone.turn, timer: m.timer, scores: m.scores };
+    const t = document.querySelector('#joinBody .pcTimer');
+    if (t && m.timer) { t.textContent = `⏱️ ${m.timer.left}s`; t.classList.toggle('low', m.timer.low); }
+    return;
   }
   else if (m.t === 'ended' && phone.state === 'playing') { phone.state = 'in'; phone.winner = m.winner; }
   else if (m.t === 'ended' && phone.state === 'watching') { phone.state = 'name'; phone.winner = m.winner; phone.err = `🏆 ${m.winner} won! You can join the next game.`; }
@@ -2986,15 +3170,20 @@ function renderJoin() {
 // buttons, items, the question and its choices, or a pop-up's buttons). A tap on the phone comes back as "press
 // button N", and the TV presses that same button, so every game rule runs in one place, on the TV.
 let phoneSeq = 0, phoneSyncQueued = false, lastView = null, lastSig = ''; // phoneSeq: version of the screen a tap must match
-function syncPhones() {
+// The full screen goes out only when it changes (or a phone asks with 'hello'); otherwise a small 'tick' with just the
+// clock and scores — the clock updates every second, and resending everything each time adds up over a game night
+function syncPhones(full = false) {
+  if (full) syncPhones.full = true;
   if (!room || phoneSyncQueued) return;
   phoneSyncQueued = true;
   setTimeout(() => {
     phoneSyncQueued = false;
     if (!room || !document.getElementById('game').classList.contains('active')) return;
     const view = turnView(), sig = JSON.stringify({ ...view, timer: null, scores: null });
-    if (sig !== lastSig) { lastSig = sig; phoneSeq++; }
-    roomSend(lastView = { ...view, v: phoneSeq });
+    const changed = sig !== lastSig; if (changed) { lastSig = sig; phoneSeq++; }
+    lastView = { ...view, v: phoneSeq };
+    if (changed || syncPhones.full) roomSend(lastView); else roomSend({ t: 'tick', v: phoneSeq, timer: view.timer, scores: view.scores });
+    syncPhones.full = false;
   });
 }
 const txt = el => el ? el.textContent.replace(/\s+/g, ' ').trim() : '';
@@ -3005,8 +3194,14 @@ const btnInfo = b => { // a button's main label, its small second line, color an
 };
 function turnView() {
   const p = players[turn];
-  const view = { t: 'turn', pid: p?.pid || null, name: p?.name, color: p?.color, round,
-    scores: players.map(o => ({ name: o.name, color: o.color, score: o.score, turn: o === p, angel: o.angel > 0 })) };
+  // bags go to every phone so players can read their items while they wait (items show on the TV scoreboard anyway);
+  // each bag is just item keys, with one shared lookup of the items in play so the message stays small
+  const inPlay = itemsOn() ? [...new Set(players.flatMap(o => o.items))] : [];
+  const view = { t: 'turn', pid: p?.pid || null, name: p?.name, color: p?.color, round, bagMax: maxItems(),
+    history: feedLog.slice(0, 30).map(e => [e.round, e.text ??= plainText(e.html)]), // 📜 plain text only, newest first
+    itemInfo: Object.fromEntries(inPlay.map(k => [k, { icon: ITEMS[k].icon, name: ITEMS[k].name, desc: itemDesc(k), r: itemRarity(k), passive: !!ITEMS[k].passive }])),
+    scores: standings().map(o => ({ name: o.name, color: o.color, score: o.score, turn: o === p, angel: o.angel > 0, pid: o.pid || null, // board order
+      items: itemsOn() ? [...o.items] : null, locked: angelLocked(o) ? o.angel : 0 })) };
   const m = document.querySelector('#modal .modalBox');
   if (m) {
     const body = m.cloneNode(true); body.querySelectorAll('h2, .actions, .bigIcon, button, input').forEach(e => e.remove());
@@ -3050,6 +3245,27 @@ function phoneTap(id) {
   phone.sent = T.v + id; phoneSend('act', { v: T.v, id });
   document.querySelectorAll('#joinBody button').forEach(b => b.disabled = true); // wait for the TV's reply
 }
+// While someone else is playing: 🎒 Items / 📜 History tabs (spectators, who have no bag, just see the history)
+function phoneWaitHtml(T) {
+  const bag = phoneBagHtml(T), hist = T.history || [];
+  const histHtml = `<div class="pcHistory">${hist.length ? hist.map(([r, t]) => `<div class="pcHist"><span class="feedRound">R${r}</span>${esc(t)}</div>`).join('')
+    : '<p class="muted">Nothing has happened yet.</p>'}</div>`;
+  if (!bag) return T.history ? `<div class="pcTabs"><span class="on">📜 History</span></div>${histHtml}` : '';
+  const tab = phone.waitTab === 'history' ? 'history' : 'items';
+  return `<div class="pcTabs"><button class="${tab === 'items' ? 'on' : ''}" onclick="phone.waitTab = 'items'; renderJoin()">🎒 Items</button>`
+    + `<button class="${tab === 'history' ? 'on' : ''}" onclick="phone.waitTab = 'history'; renderJoin()">📜 History</button></div>${tab === 'items' ? bag : histHtml}`;
+}
+// 🎒 on phones while someone else is playing: your items, to read and plan with (you use them on your own turn)
+function phoneBagHtml(T) {
+  if (phone.state === 'watching' || !T.itemInfo) return '';
+  const me = T.scores.find(o => o.pid ? o.pid === myPid() : o.name.toLowerCase() === (phone.name || '').toLowerCase());
+  if (!me || !me.items) return '';
+  if (!me.items.length) return `<div class="pcBag"><p class="muted">🎒 No items yet — get a few answers in a row (right or wrong) to earn one.</p></div>`;
+  return `<div class="pcBag"><p class="muted">🎒 Your items · ${me.items.length} of ${T.bagMax}${me.locked ? ` · 😇 locked for ${me.locked} more turn${me.locked === 1 ? '' : 's'}` : ' · use them on your turn'}</p>
+    ${me.items.map(k => { const it = T.itemInfo[k] || { icon: '❔', name: k, desc: '' }, r = RARITIES[it.r] || RARITIES[1];
+      return `<div class="pcBagItem"><span class="ic">${esc(it.icon)}</span><div><b>${esc(it.name)}</b> <span class="rarityTag" style="--rc:${r.color}">${r.stars} ${r.name}</span>
+        <small>${it.passive ? 'Always on: ' : ''}${esc(it.desc)}</small></div></div>`; }).join('')}</div>`;
+}
 // 🚩 on phones: flag the question that was just answered (sent to the host, which reports it)
 function phoneFlagHtml(T) {
   const L = phone.lastQ; if (!L || T.kind === 'modal') return '';
@@ -3070,17 +3286,17 @@ function phoneTurnHtml(T) {
   const mine = (T.kind === 'modal' && T.owner !== undefined ? T.owner === myPid() : T.pid === myPid()) && phone.state !== 'watching', me = T.scores.find(o => o.name.toLowerCase() === (phone.name || '').toLowerCase());
   const bar = phone.state === 'watching' ? `<div class="pcBar"><span style="font-weight:800">👀 Watching</span><span>Round ${T.round}</span></div>`
     : `<div class="pcBar"><span style="color:${phone.color || 'var(--accent)'};font-weight:800">${esc(phone.name)}</span><span>${me ? `${me.score} pts` : ''} · Round ${T.round}</span></div>`;
-  const scores = `<div class="pcScores">${[...T.scores].sort((a, b) => b.score - a.score).map(o =>
+  const scores = `<div class="pcScores">${T.scores.map(o => // already in the TV scoreboard's order (ties keep their places)
     `<div class="${o.turn ? 'cur' : ''} ${o.angel ? 'angel' : ''}"><span style="color:${o.color}">${o.angel ? '😇 ' : ''}${esc(o.name)}</span><b>${o.score}</b></div>`).join('')}</div>`;
   const pills = T.cat ? `<div class="joinList"><span class="pill" style="background:${T.catColor}">${esc(T.cat)}</span><span class="pill" style="background:${T.tierColor}">${esc(T.tier)}</span></div>` : '';
   const btn = (b, id, extra = '') => `<button class="${extra}" style="${b.color ? `background:${b.color};color:${b.fg}` : ''}" ${b.disabled ? 'disabled' : ''} onclick="phoneTap('${id}')">${esc(b.label)}${b.sub ? `<small>${esc(b.sub)}</small>` : ''}</button>`;
   const choicesHtml = (clickable) => T.choices ? `<div class="pcList">${T.choices.map((c, i) => {
       const cls = [T.revealed && i === T.right && 'right', T.revealed && T.picked === i && i !== T.right && 'wrongPick', T.picked === i && 'picked'].filter(Boolean).join(' ');
       return `<button class="${cls}" ${clickable ? `onclick="phoneTap('c${i}')"` : 'disabled'}><b>${'ABCDEF'[i]}.</b> ${esc(c)}</button>`; }).join('')}</div>` : '';
-  if (!mine && T.kind === 'modal' && T.ownerName) return `${bar}<div class="pcHead">🤔 Waiting for <span style="color:${(T.scores.find(o => o.name === T.ownerName) || {}).color || 'inherit'}">${esc(T.ownerName)}</span> to choose…</div><p class="muted">${esc(T.title)}</p>${scores}`;
+  if (!mine && T.kind === 'modal' && T.ownerName) return `${bar}<div class="pcHead">🤔 Waiting for <span style="color:${(T.scores.find(o => o.name === T.ownerName) || {}).color || 'inherit'}">${esc(T.ownerName)}</span> to choose…</div><p class="muted">${esc(T.title)}</p>${phoneWaitHtml(T)}${scores}`;
   if (!mine) {
     const watching = T.kind === 'question' ? `${pills}<div class="pcQ">${esc(T.q)}</div>${choicesHtml(false)}${T.revealed ? `<p class="pcResult">✅ ${esc(T.answer)}</p>` : ''}` : '';
-    return `${bar}<div class="pcHead"><span style="color:${T.color}">${esc(T.name)}</span>'s turn</div>${watching || '<p class="muted">Watch the TV!</p>'}${scores}`;
+    return `${bar}<div class="pcHead"><span style="color:${T.color}">${esc(T.name)}</span>'s turn</div>${watching || '<p class="muted">Watch the TV!</p>'}${phoneWaitHtml(T)}${scores}`;
   }
   if (T.kind === 'modal') return `${bar}<div class="bigIcon">${esc(T.icon)}</div><div class="pcHead">${esc(T.title)}</div>${T.body ? `<p>${esc(T.body)}</p>` : ''}
     ${T.extra?.length ? `<div class="pcBtns pcModalBtns">${T.extra.map((b, i) => btn({ ...b, label: (b.cls.includes('lockFamHead') ? (b.open ? '▾ ' : '▸ ') : '') + b.label },
@@ -3368,7 +3584,7 @@ function startGame() {
   rememberPlayers(); turnPrizes = {}; assignColors(players);
   // games played are counted when a game finishes with a winner (quitting with End game doesn't count)
   players.forEach(p => Object.assign(p, { score: 0, items: [], history: [], streak: { kind: null, count: 0 }, skip: 0, hardLock: 0, catLock: null, boost: null, halfTime: false, halfGain: false, beginner: 0, angel: 0, angelFresh: false, helper: null, tax: null, dodge: false, exodia: null, turnsPlayed: 0, lastGamble: -Infinity, gambleLocked: false }));
-  bets = []; itemsThisGame = {}; lastPlaceRound = 0; catsThisGame = {}; famsThisGame = {}; feedLog = []; lastPlaceNotes = [];
+  bets = []; itemsThisGame = {}; lastPlaceRound = 0; catsThisGame = {}; famsThisGame = {}; feedLog = []; lastPlaceNotes = []; boardOrder = [];
   document.getElementById('itemCards').innerHTML = ''; setTimeout(renderFeed);
   // Random turn order each game (Fisher–Yates shuffle)
   for (let i = players.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [players[i], players[j]] = [players[j], players[i]]; }
@@ -3479,10 +3695,17 @@ function dropItem(pi, i) {
   closeModal(); renderGame(); resolveOverflow();
 }
 const streakClose = p => { const g = nextStreakGoal(p); return g && p.streak.kind && p.streak.count === g - 1; };
+// Standings: highest score first; tied players keep the order they already had on the board (a Nuke or Swap that
+// ties everyone shouldn't reshuffle the rows). boardOrder is the last order shown, reset when a game starts.
+let boardOrder = [];
+function standings() {
+  const prev = p => { const i = boardOrder.indexOf(p); return i < 0 ? 1e6 + players.indexOf(p) : i; };
+  return boardOrder = [...players].sort((a, b) => b.score - a.score || prev(a) - prev(b));
+}
 function renderBoard() {
   const target = data.settings.targetPoints;
   document.getElementById('targetInfo').textContent = `🏁 First to ${target}`;
-  const order = players.map((p, i) => ({ p, i })).sort((a, b) => b.p.score - a.p.score);
+  const order = standings().map(p => ({ p, i: players.indexOf(p) }));
   // every row has the same 3 lines whatever the game size; the board scrolls itself when it's taller than the screen
   document.getElementById('liveBoard').innerHTML = order.map(({ p, i }) =>
     `<li data-pi="${i}" class="${i === turn ? 'current' : ''} ${p.angel > 0 ? 'angel' : ''}" style="display:block;--pc:${pc(p)};--prog:${Math.min(100, Math.max(0, p.score / target * 100))}%">
@@ -3532,7 +3755,7 @@ addEventListener('resize', () => { fitBoard(); slideEffects(); fitTierButtons();
 // The bar under the turn strip shows the latest 3 events; History lists the last 40.
 let feedLog = [];
 function logEvent(html) {
-  feedLog.unshift({ html, round, at: Date.now() }); feedLog.length = Math.min(feedLog.length, 40);
+  feedLog.unshift({ html, text: plainText(html), round, at: Date.now() }); feedLog.length = Math.min(feedLog.length, 40);
   renderFeed();
 }
 function renderFeed() {
@@ -4591,7 +4814,7 @@ function saveGame() {
   const st = { at: Date.now(), room: room?.code || null,
     players: players.map(p => Object.fromEntries(Object.entries(p).map(([k, x]) => [k, encGame(x)]))),
     turn, round, used: [...used], current: encGame(current), revealed, itemUsedThisTurn, bets: encGame(bets), pickGroup,
-    itemsThisGame, feedLog, turnPrizes, catsThisGame, famsThisGame, timesUp, dodgeNote, lastPlaceRound, lastPlaceNotes: encGame(lastPlaceNotes), shownRound, gameRec,
+    itemsThisGame, feedLog, turnPrizes, catsThisGame, famsThisGame, timesUp, dodgeNote, lastPlaceRound, lastPlaceNotes: encGame(lastPlaceNotes), shownRound, gameRec, boardOrder: boardOrder.map(p => players.indexOf(p)),
     timer: timer && { left: timer.left, total: timer.total, paused: timer.paused, crunched: timer.crunched } };
   try { localStorage.setItem(GAME_KEY, JSON.stringify(st)); } catch (e) {}
 }
@@ -4606,7 +4829,7 @@ async function resumeGame() {
   turn = st.turn; round = st.round; used = new Set(st.used); current = decGame(st.current); revealed = st.revealed; itemUsedThisTurn = st.itemUsedThisTurn;
   bets = decGame(st.bets); pickGroup = st.pickGroup; itemsThisGame = st.itemsThisGame; feedLog = st.feedLog; turnPrizes = st.turnPrizes;
   catsThisGame = st.catsThisGame; famsThisGame = st.famsThisGame; timesUp = st.timesUp; dodgeNote = st.dodgeNote;
-  lastPlaceRound = st.lastPlaceRound; lastPlaceNotes = decGame(st.lastPlaceNotes); shownRound = st.shownRound; gameRec = st.gameRec || null;
+  lastPlaceRound = st.lastPlaceRound; lastPlaceNotes = decGame(st.lastPlaceNotes); shownRound = st.shownRound; gameRec = st.gameRec || null; boardOrder = (st.boardOrder || []).map(i => players[i]).filter(Boolean);
   shownScores = new Map(); boardDir = 1; boardPauseUntil = 0; prefilled = true;
   document.getElementById('itemCards').innerHTML = '';
   stopTimer(); go('game');
@@ -4630,7 +4853,7 @@ function showWinner(w, how) {
   stopTimer(); go('winner'); sfx('win'); roomSend({ t: 'ended', winner: w.name });
   document.getElementById('winnerName').textContent = w.name;
   document.getElementById('winnerPts').textContent = `${w.score} point${w.score === 1 ? "" : "s"}${how === 'exodia' ? ' · won by 🃏 Exodia!' : ''}`;
-  const rest = [...players].sort((a, b) => b.score - a.score || (b === w) - (a === w)); // winner first on a tie
+  const rest = [...standings()].sort((a, b) => b.score - a.score || (b === w) - (a === w)); // winner first on a tie, then board order
   const medals = ['🥇', '🥈', '🥉'];
   document.getElementById('finalBoard').innerHTML = rest.map((p, i) =>
     `<li><span><span class="medal">${medals[i] || (i + 1) + '.'}</span>${esc(p.name)}</span><b>${p.score} pt${p.score === 1 ? "" : "s"}</b></li>`).join('');
