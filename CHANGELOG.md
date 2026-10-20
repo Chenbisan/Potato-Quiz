@@ -1,5 +1,11 @@
 # What's new in Potato Quiz
 
+## 4.3.1 — 2026-10-19
+- **Legendaries are rarer:** ☢️ Nuke, 🔄 Swap, 🃏 Exodia and 🐢 Blue Shell were showing up too often. Their chance drops by half (rarity weights are now 65 / 30 / 5). If you changed these weights yourself, yours are kept.
+- **Fairer item mix:** items of the same rarity now come up about equally often over time. Before, items you can get in more ways (like Exodia, on both hot and cold streaks) came up two or three times as often as others. It's still random, so you can't predict what's next.
+- Legendaries can no longer be won as question prizes, as intended. Some games still offered Exodia or Blue Shell as a prize.
+- **Easier to read in light mode:** yellow text (like the room code, the winner's name and the turn order) is now a darker gold, and item rarity tags (⭐ Common, Rare, Legendary) have darker colors, so they stand out on the light background.
+
 ## 4.3.0 — 2026-10-19
 - **Cleaner questions:** we read through every question in the game and fixed about 550 of them:
   - Questions that gave their own answer away are reworded (no more "In 'Home Alone 2: Lost in New York', which city is Kevin lost in?").

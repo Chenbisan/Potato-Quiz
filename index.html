@@ -11,7 +11,7 @@
   :root {
     --bg: #12122a; --panel: #1d1d3f; --panel2: #26264f; --text: #f3f3ff; --muted: #a3a3c8;
     --glow: #23235a; --line: #44447a; --line-soft: #2f2f5c; --deep: #0f0f26; --deep2: #2a2a52; --shadow: rgba(0,0,0,.3); --title: var(--accent);
-    --accent: #ffcc33; --good: #2ecc71; --bad: #ff5e5e; --blue: #4da3ff; --radius: 14px;
+    --accent: #ffcc33; --accent-ink: var(--accent); --good: #2ecc71; --bad: #ff5e5e; --blue: #4da3ff; --radius: 14px;
   }
   * { box-sizing: border-box; }
   body { margin: 0; font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
@@ -91,7 +91,7 @@
   .game { display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
   @media (max-width: 760px) { .game { grid-template-columns: 1fr; } }
   .turn { font-size: 1.5rem; text-align: center; margin-bottom: 18px; }
-  .turn span { color: var(--accent); font-weight: 800; }
+  .turn span { color: var(--accent-ink); font-weight: 800; }
   .turn span.pill { color: #111; font-weight: 700; vertical-align: middle; }
   .tierPick { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
   .tierPick button { padding: 10px; font-size: 1.2rem; font-weight: 800; color: #111; height: 124px; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; }
@@ -128,7 +128,7 @@
   /* Winner */
   .trophy { font-size: 6rem; text-align: center; animation: bounce 1s infinite alternate; }
   @keyframes bounce { to { transform: translateY(-14px); } }
-  .winnerName { font-size: 3.2rem; text-align: center; color: var(--accent); font-weight: 900; margin: 0; }
+  .winnerName { font-size: 3.2rem; text-align: center; color: var(--accent-ink); font-weight: 900; margin: 0; }
   .final li { font-size: 1.2rem; }
   .medal { width: 34px; display: inline-block; }
   .qMediaSlot { text-align: center; margin: -6px 0 22px; }
@@ -158,9 +158,9 @@
   .famCell { display: inline-flex; flex-direction: column; line-height: 1.2; white-space: nowrap; }
   .famCell small { color: var(--muted); font-size: .78rem; }
   .coffeeLink { color: var(--muted); text-decoration: none; border-bottom: 1px dotted currentColor; }
-  .coffeeLink:hover { color: var(--accent); }
+  .coffeeLink:hover { color: var(--accent-ink); }
   .credit { margin: -14px 0 0; text-align: center; font-size: .8rem; letter-spacing: .04em; color: var(--muted); opacity: .8; }
-  .credit b { color: var(--accent); font-weight: 700; }
+  .credit b { color: var(--accent-ink); font-weight: 700; }
   .joinFoot { margin: 26px 0 0; font-size: .9rem; }
   #fbKinds button.on { background: var(--accent); color: #222; font-weight: 700; border-color: var(--accent); }
   #fbMsg { font: inherit; padding: 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--deep); color: var(--text); resize: vertical; }
@@ -356,7 +356,7 @@
   .twoLbl > span:last-child, .alt .twoLbl > span:first-child { visibility: hidden; }
   .alt .twoLbl > span:last-child { visibility: visible; }
   .catBtns button:disabled { opacity: .4; cursor: default; }
-  .rewardHint { text-align: center; margin: 0 0 10px; color: #ffcc33; font-weight: 600; }
+  .rewardHint { text-align: center; margin: 0 0 10px; color: var(--accent-ink); font-weight: 600; }
   .rarityTag { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; color: var(--rc); border: 1px solid var(--rc); background: rgba(0,0,0,.25); vertical-align: middle; white-space: nowrap; }
   .itemCard { text-align: left; background: #2d2d63; border: 1px solid #4a4a8a; padding: 10px 12px; border-radius: 10px; font-weight: 700; }
   .itemCard small { display: block; font-weight: 400; color: var(--muted); font-size: .8rem; margin-top: 3px; }
@@ -416,7 +416,7 @@
   .impossibleRow .pill { color: #fff; }
   #tierPicker .catToggle .ic { display: inline-block; width: 1em; text-align: center; }
   .turnOrder { text-align: left; display: inline-block; font-size: 1.25rem; line-height: 1.8; margin: 8px 0 0; padding-left: 28px; }
-  .turnOrder li:first-child { color: var(--accent); font-weight: 800; }
+  .turnOrder li:first-child { color: var(--accent-ink); font-weight: 800; }
   .tierPick .exodiaBtn { background: linear-gradient(135deg, #3a2a00, #8a6a10); color: #ffe27a; border: 2px solid #ffcc33; grid-column: 1 / -1; }
   .exodiaPieces { display: flex; justify-content: center; gap: 10px; margin-top: 18px; }
   .exodiaPieces span { width: 44px; height: 58px; border-radius: 8px; border: 2px dashed var(--line); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: var(--muted); }
@@ -474,7 +474,7 @@
   .rowTag { font-size: .62rem; font-weight: 900; letter-spacing: 1px; padding: 2px 6px; border-radius: 6px; margin-left: 4px; vertical-align: middle; }
   .rowTag.now { background: var(--accent); color: #222; }
   .rowTag.next { background: var(--blue); color: #08203d; }
-  .roundBanner { position: fixed; left: 50%; top: 40%; z-index: 25; pointer-events: none; text-align: center; color: var(--accent);
+  .roundBanner { position: fixed; left: 50%; top: 40%; z-index: 25; pointer-events: none; text-align: center; color: var(--accent-ink);
     font-size: 6rem; font-weight: 900; line-height: .9; text-shadow: 0 8px 30px rgba(0,0,0,.6); animation: roundIn 1.6s ease-out forwards; }
   .roundBanner small { display: block; font-size: 1.4rem; letter-spacing: 6px; color: var(--text); }
   @keyframes roundIn { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.5); } 20% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
@@ -498,9 +498,9 @@
   .tierRow.dropAbove td { box-shadow: inset 0 3px 0 var(--accent); }
   .tierRow.dropBelow td { box-shadow: inset 0 -3px 0 var(--accent); }
   th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
-  th.sortable:hover { color: var(--accent); }
+  th.sortable:hover { color: var(--accent-ink); }
   .versionLink { color: var(--muted); text-decoration: none; }
-  .versionLink:hover { color: var(--accent); text-decoration: underline; }
+  .versionLink:hover { color: var(--accent-ink); text-decoration: underline; }
   .versionTag { position: fixed; left: 10px; bottom: 8px; font-size: .75rem; opacity: .6; z-index: 5; }
   .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--good); color: #04210f; padding: 10px 20px; border-radius: 10px; font-weight: 700; opacity: 0; transition: opacity .3s; pointer-events: none; }
   .toast.show { opacity: 1; }
@@ -511,7 +511,7 @@
      the bright game buttons stay the same. --card is the lightest surface (buttons, item cards, chips). */
   :root[data-theme="light"] {
     --bg: #e8dac5; --panel: #f3e8d7; --panel2: #eadcc6; --card: #f8efe2; --text: #3a2a1c; --muted: #6f5a45;
-    --glow: #f0dfc5; --line: #d2b994; --line-soft: #ddcab0; --deep: #e3d2b9; --deep2: #dbc8ac; --shadow: rgba(110, 75, 35, .16); --title: #c9650c;
+    --glow: #f0dfc5; --line: #d2b994; --line-soft: #ddcab0; --deep: #e3d2b9; --deep2: #dbc8ac; --shadow: rgba(110, 75, 35, .16); --title: #c9650c; --accent-ink: #94600a; /* yellow text → dark gold, readable on cream */
     color-scheme: light;
   }
   [data-theme="light"] button:hover { filter: brightness(.96); }
@@ -529,7 +529,9 @@
   [data-theme="light"] .turnChip { background: var(--card); }
   [data-theme="light"] .turnChip.next { color: var(--text); }
   [data-theme="light"] .feedLine.fresh { color: var(--text); }
-  [data-theme="light"] .rarityTag { background: rgba(255,250,240,.6); filter: brightness(.8); }
+  [data-theme="light"] .rarityTag { background: rgba(255,250,240,.75); color: #5f4a2a; border-color: #5f4a2a;
+    color: color-mix(in srgb, var(--rc) 45%, #3a2a1c); border-color: color-mix(in srgb, var(--rc) 55%, #3a2a1c); }
+  [data-theme="light"] .rarityTag .stars { filter: drop-shadow(0 0 .6px #5a3a00) drop-shadow(0 0 .6px #5a3a00); } /* pale ⭐ need an edge on cream */
   [data-theme="light"] .flyPts { text-shadow: 0 2px 6px rgba(120,80,40,.35); }
   [data-theme="light"] .modal { background: rgba(80, 50, 20, .35); }
   [data-theme="light"] .lockedBtn, [data-theme="light"] .exodiaBtn { color: #2a1a00; }
@@ -552,7 +554,7 @@
   .roomRow { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
   .roomQr { background: #fff; padding: 8px; border-radius: 12px; width: 148px; flex: none; }
   .roomQr svg { display: block; width: 100%; height: auto; }
-  .roomCode { font-size: 3rem; font-weight: 900; letter-spacing: .22em; color: var(--accent); line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .roomCode { font-size: 3rem; font-weight: 900; letter-spacing: .22em; color: var(--accent-ink); line-height: 1.1; font-variant-numeric: tabular-nums; }
   .roomUrl { font-size: .9rem; word-break: break-all; }
   .phoneTag { font-size: .85em; }
   #join .joinBox { max-width: 440px; margin: 0 auto; text-align: center; }
@@ -1088,7 +1090,7 @@
   </div>
   <div class="card itemsDep" data-stab="items">
     <h3 class="cardTitle">⭐ Rarity</h3>
-    <div class="help" style="margin-top:0">How likely each rarity is. These are relative weights shared by all the items of that rarity: with 60 / 30 / 10, any single Common item is about twice as likely as a single Rare, and a Legendary is the rarest. An item that already showed up this game is half as likely to show up again. Set a weight to 0 to switch that rarity off.</div>
+    <div class="help" style="margin-top:0">How likely each rarity is. These are relative weights shared by all the items of that rarity: with 65 / 30 / 5, any single Common item is about twice as likely as a single Rare, and a Legendary is the rarest. An item that already showed up this game is half as likely to show up again. Set a weight to 0 to switch that rarity off.</div>
     <div class="rarityGrid" id="rarityWeights"></div>
   </div>
   <div class="card itemsDep" data-stab="itemlist">
@@ -1143,7 +1145,7 @@
 <script>
 // ---------- Storage ----------
 // Game version — bump it (and add a CHANGELOG.md entry) with every published update
-const APP_VERSION = '4.3.0';
+const APP_VERSION = '4.3.1';
 const CHANGELOG_URL = 'https://github.com/Chenbisan/Potato-Quiz/blob/main/CHANGELOG.md';
 const KEY = 'potatoQuizData_v1';
 // One-time move of anything saved before the app was renamed from "Team Quiz"
@@ -1154,7 +1156,7 @@ for (const [oldKey, newKey] of [['teamQuizData_v1', KEY], ['teamQuizPlayers_v1',
   } catch (e) {}
 }
 // Bump when a settings migration is added in upgrade(); a reset starts at this rev so no migration re-runs
-const SETTINGS_REV = 11;
+const SETTINGS_REV = 12;
 let SEED_VERSION = 10; // set from questions.json's "version" at startup; // 10: every starter question gets 2 extra wrong answers for 6-answer games; 5: category groups; 6: more families + Disney+, Theme Parks, Generations; 7: every category in a family (General Knowledge, Cars, Pop Culture); 8: pre-1990 questions most players won't know moved to Obscure; 9: regional culture families
 // Tier difficulty is their order in the list (easiest first, hardest last); points only decide scoring
 const OBSCURE_TIER = { id: 't4', name: 'Obscure', points: 10, color: '#b36bff' };
@@ -1582,6 +1584,15 @@ function upgrade(d) {
     if (d.settings.items?.rarity?.blueshell === 2) { d.settings.items.rarity.blueshell = 3; if (d.settings.items.pools?.blueshell) d.settings.items.pools.blueshell.reward = false; }
     d.settings.rev = 11;
   }
+  if (d.settings.rev < 12) {
+    // 4.3.1: Legendaries were coming up too often (about 14% of items earned). Their weight drops from 10 to 5 (and
+    // Common goes 60 → 65, so the three still add up to 100) unless the weights were changed. Legendaries also stop
+    // being question prizes again, as intended: some saves still had Exodia / Blue Shell in the prize pool.
+    const it = d.settings.items, w = it?.rarityWeights;
+    if (w && w[1] === 60 && w[2] === 30 && w[3] === 10) it.rarityWeights = { 1: 65, 2: 30, 3: 5 };
+    for (const k of ['exodia', 'nuke', 'swap', 'blueshell']) if (it?.pools?.[k]) it.pools[k].reward = false;
+    d.settings.rev = 12;
+  }
   if (!d.categories) {
     d.categories = structuredClone(DEFAULT.categories);
     const cats = new Map(seedQuestions().map(q => [q.id, q.categoryId]));
@@ -1933,7 +1944,7 @@ function renderItemSettings() {
   document.getElementById('rewardAfterRounds').disabled = !st.rewards;
   document.getElementById('rewardRoundRow').style.opacity = st.rewards ? '' : '.45';
   document.getElementById('rarityWeights').innerHTML = [1, 2, 3].map(r => `<div class="rarityCell">
-    <span class="rarityTag" style="--rc:${RARITIES[r].color}">${RARITIES[r].stars} ${RARITIES[r].name}</span>
+    <span class="rarityTag" style="--rc:${RARITIES[r].color}"><span class="stars">${RARITIES[r].stars}</span> ${RARITIES[r].name}</span>
     <input type="number" min="0" max="100" value="${st.rarityWeights[r] ?? 0}"
       onchange="data.settings.items.rarityWeights[${r}] = Math.max(0, parseInt(this.value) || 0); save(); toast('Saved')"></div>`).join('');
   // Item list view: filter by source (🔥 / ❄️ / 🎁 ticked) and sort (Common first by default); remembered on this device
@@ -2631,7 +2642,7 @@ function exportAnalytics() {
     about: 'Balance data from one device; no player names. questions: how often each came up and was answered right. games[].q: id, t tier, c category, k how picked, ok right. games[].items: items used.',
     categoriesOff: roster.offCats || [],
     questions: ids.map(id => { const q = byId.get(id); return { id, cat: q.categoryId, tier: q.tierId, seen: stats.seen[id] || 0, answered: stats.answered[id] || 0, right: stats.right[id] || 0 }; }),
-    drawBalance: { families: stats.famTally || {}, categories: stats.catTally || {} },
+    drawBalance: { families: stats.famTally || {}, categories: stats.catTally || {}, items: stats.itemTally || {} },
     items: stats.items || {}, exodia: stats.exodia || {},
     games: qlog.games, flags: qlog.flags, feedback: qlog.feedback.map(({ kind, message, app_version, created_at }) => ({ kind, message, app_version, created_at })),
   };
@@ -3263,7 +3274,7 @@ function phoneBagHtml(T) {
   if (!me.items.length) return `<div class="pcBag"><p class="muted">🎒 No items yet — get a few answers in a row (right or wrong) to earn one.</p></div>`;
   return `<div class="pcBag"><p class="muted">🎒 Your items · ${me.items.length} of ${T.bagMax}${me.locked ? ` · 😇 locked for ${me.locked} more turn${me.locked === 1 ? '' : 's'}` : ' · use them on your turn'}</p>
     ${me.items.map(k => { const it = T.itemInfo[k] || { icon: '❔', name: k, desc: '' }, r = RARITIES[it.r] || RARITIES[1];
-      return `<div class="pcBagItem"><span class="ic">${esc(it.icon)}</span><div><b>${esc(it.name)}</b> <span class="rarityTag" style="--rc:${r.color}">${r.stars} ${r.name}</span>
+      return `<div class="pcBagItem"><span class="ic">${esc(it.icon)}</span><div><b>${esc(it.name)}</b> <span class="rarityTag" style="--rc:${r.color}"><span class="stars">${r.stars}</span> ${r.name}</span>
         <small>${it.passive ? 'Always on: ' : ''}${esc(it.desc)}</small></div></div>`; }).join('')}</div>`;
 }
 // 🚩 on phones: flag the question that was just answered (sent to the host, which reports it)
@@ -3355,7 +3366,7 @@ const defaultItemSettings = () => ({
   pools: Object.fromEntries(Object.entries(ITEMS).map(([k, it]) => [k, { hot: it.hot, cold: it.cold, reward: !NO_PRIZE.includes(k) }])),
   rewards: true, rewardChance: 35, rewardAfterRounds: 3, // prizes start once this many rounds are done (0 = from the start)
   // question prizes on/off, and the % chance that a question a trailing player picks carries an item prize
-  rarity: { ...DEFAULT_RARITY }, rarityWeights: { 1: 60, 2: 30, 3: 10 },
+  rarity: { ...DEFAULT_RARITY }, rarityWeights: { 1: 65, 2: 30, 3: 5 },
   lastPlaceAfter: 10, // from this round on, whoever is in last place gets a free Common cold-streak item each round (0 = off)
   maxHeld: 6, // bag size: when full, a player picks one item to drop
 });
@@ -3363,6 +3374,7 @@ const itemsOn = () => data.settings.items.enabled;
 const rand = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
 // Items handed out this game, by item: within a rarity, an item that already showed up is less likely to show up again
 let itemsThisGame = {};
+const ITEM_EVEN = 0.35; // even-out strength for item draws (see randomItem)
 function randomItem(kind, rarity = null, forP = null) { // forP: who gets it (Blue Shell only goes to the bottom quarter)
   const multiTier = rankedTiers().length > 1; // Hard Lock / Beginner's Luck do nothing with a single difficulty in play
   const pool = Object.keys(ITEMS).filter(k => data.settings.items.pools[k]?.[kind] && (!ITEMS[k].needsTimer || data.settings.timer.enabled)
@@ -3370,23 +3382,36 @@ function randomItem(kind, rarity = null, forP = null) { // forP: who gets it (Bl
     && (players.length > 2 || k !== 'phone') // with 2 players the only friend is your opponent
     && (k !== 'blueshell' || !forP || blueShellEligible(forP)));
   if (!pool.length) return null;
-  // Each item's chance = its rarity's weight shared among ALL items of that rarity (so 60 / 30 / 10 means each Common
-  // is ~6.7, each Rare ~3.8, each Legendary ~3.3 with the default list). Sharing by the whole list, not just the items
+  // Each item's chance = its rarity's weight shared among ALL items of that rarity (so 65 / 30 / 5 means each Common
+  // is ~7.2, each Rare ~3.8, each Legendary ~1.25 with the default list). Sharing by the whole list, not just the items
   // allowed here, keeps a lone Legendary in a pool (e.g. Exodia on hot streaks) from getting the whole 10% to itself.
   // Every earlier appearance this game halves an item's chance, so the same item rarely comes up twice in a row.
+  // Even-out (like the question draw): stats.itemTally remembers, across games, how often each item came up compared
+  // with the others of its rarity. Items behind get a gentle boost and items ahead a gentle cut, so an item that only
+  // fits a few pools (e.g. Nuke, cold streaks only) isn't left far behind one that fits many (Exodia, hot and cold).
+  // ITEM_EVEN 0.35 keeps it random: over 1,000 items, same-rarity items end up about 33% of a fair share apart.
   const w = data.settings.items.rarityWeights, perRarity = { 1: 0, 2: 0, 3: 0 };
   for (const k in ITEMS) if (Object.values(data.settings.items.pools[k] || {}).some(Boolean)) perRarity[itemRarity(k)]++;
   const cands = pool.filter(k => !rarity || itemRarity(k) === rarity);
   if (!cands.length) return null;
-  const weights = cands.map(k => (rarity ? 1 : (w[itemRarity(k)] ?? 0) / Math.max(1, perRarity[itemRarity(k)])) * 0.5 ** (itemsThisGame[k] || 0));
+  const tally = stats.itemTally ??= {}, inRarity = r => Object.keys(ITEMS).filter(k => itemRarity(k) === r && Object.values(data.settings.items.pools[k] || {}).some(Boolean));
+  const evenOut = {}; // per rarity: { item: boost }
+  for (const r of new Set(cands.map(itemRarity))) {
+    const t = tally[r] ??= {}, all = inRarity(r), avg = () => all.reduce((x, k) => x + (t[k] || 0), 0) / Math.max(1, all.length);
+    let m = avg(); for (const k of all) t[k] = Math.min(m + EVEN_MEMORY, Math.max(m - EVEN_MEMORY, t[k] || 0));
+    m = avg(); evenOut[r] = Object.fromEntries(all.map(k => [k, Math.exp(-ITEM_EVEN * Math.max(-1, Math.min(1, t[k] - m)))]));
+  }
+  const weights = cands.map(k => (rarity ? 1 : (w[itemRarity(k)] ?? 0) / Math.max(1, perRarity[itemRarity(k)]))
+    * (evenOut[itemRarity(k)]?.[k] ?? 1) * 0.5 ** (itemsThisGame[k] || 0));
   const total = weights.reduce((x, y) => x + y, 0);
   if (!(total > 0)) return null;
   let y = Math.random() * total, pick = cands.at(-1);
   for (let i = 0; i < cands.length; i++) { y -= weights[i]; if (y <= 0) { pick = cands[i]; break; } }
   itemsThisGame[pick] = (itemsThisGame[pick] || 0) + 1;
+  const t = stats.itemTally[itemRarity(pick)] ??= {}; t[pick] = (t[pick] || 0) + 1; saveStats();
   return pick;
 }
-const rarityTag = k => { const r = RARITIES[itemRarity(k)]; return `<span class="rarityTag" style="--rc:${r.color}" title="${r.name}">${r.stars} ${r.name}</span>`; };
+const rarityTag = k => { const r = RARITIES[itemRarity(k)]; return `<span class="rarityTag" style="--rc:${r.color}" title="${r.name}"><span class="stars">${r.stars}</span> ${r.name}</span>`; };
 // The hardest tier that actually has questions
 // Tiers that have questions in this game, in difficulty order (the order set in the editor: easiest first)
 const rankedTiers = () => data.tiers.filter(t => gameQs().some(q => q.tierId === t.id));
